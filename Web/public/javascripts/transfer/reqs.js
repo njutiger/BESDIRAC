@@ -31,7 +31,7 @@ function createTransferRequest() {
   ];
   // paging
   var bottombar = new Ext.PagingToolbar({
-    pageSize: 50,
+    pageSize: 25,
     store: store,
     displayInfo: true,
     displayMsg: 'Displaying {0} - {1} of {2}'

@@ -25,7 +25,7 @@ function createRequestMonitor() {
   // create columns
   var columns = [
     {header: "ReqID",
-     dataIndex: "ReqID",
+     dataIndex: "id",
      sortable: true
     }
   ];
@@ -40,17 +40,35 @@ function createRequestMonitor() {
 }
 
 function createRequestStore() {
-  var data = [
-    ["1"],
-    ["2"],
-    ["3"],
-    ["4"]
-  ];
-  var store = new Ext.data.SimpleStore({
-    fields: [
-      "ReqID"
-    ]
+  var reader = new Ext.data.JsonReader({
+    root: 'data',
+    totalProperty: 'num',
+    id: 'id',
+    fields:['id',
+            'username',
+            'dataset',
+            'srcSE',
+            'dstSE',
+            'submit_time',
+            'status',
+            ]
   });
-  store.loadData(data);
+  var setup = gPageDescription.selectedSetup;
+  // confirm the user is OK
+  //if (!gPageDescription.userData && !gPageDescription.userData.group) {
+  //  return;
+  //}
+  var group = gPageDescription.userData.group;
+  var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
+  url = url + '/transfer/monitor/reqs';
+  var store = new Ext.data.Store({
+    reader: reader,
+    proxy: new Ext.data.HttpProxy({
+              url: url,
+              method: 'POST'
+            }),
+    autoLoad: true
+  });
+  store.load();
   return store;
 }

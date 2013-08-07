@@ -15,7 +15,8 @@ class MonitorController(BaseController):
     result_of_reqs = {'num': 0, 'data': []}
     #username = str(credentials.getUsername())
     RPC = getRPCClient("Transfer/TransferRequest")
-    res = RPC.status()
+    cond = {}
+    res = RPC.status(cond)
     if not res["OK"]:
       return result_of_reqs
     result = res["Value"]

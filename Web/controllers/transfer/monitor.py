@@ -20,6 +20,15 @@ class MonitorController(BaseController):
     if not res["OK"]:
       return result_of_reqs
     result = res["Value"]
+
+    # handle the datetime
+    # convert datetime to string
+    def quickconv(d):
+      from  datetime import datetime
+      # submit time is the 5th.
+      return tuple(r.strftime("%Y-%m-%d %H:%M [UTC]") if isinstance(r, datetime) else r for r in d )
+    result = map(quickconv, result)
+
     result_of_reqs["num"] = len(result)
     result_of_reqs["data"] = result
 

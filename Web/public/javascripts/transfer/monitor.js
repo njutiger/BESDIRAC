@@ -27,6 +27,14 @@ function createRequestMonitor() {
     {header: "ReqID",
      dataIndex: "id",
      sortable: true
+    },
+    {header: "User Name",
+     dataIndex: "username",
+     sortable: true
+    },
+    {header: "Dataset",
+     dataIndex: "dataset",
+     sortable: true
     }
   ];
 

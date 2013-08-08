@@ -54,11 +54,15 @@ function createRequestMonitor() {
     }
   ];
 
+  // top bar
+  var topbar = createTopBar();
+
   // main
   var grid = new Ext.grid.GridPanel({
     store: store,
     columns: columns,
-    region: 'center'
+    region: 'center',
+    tbar: topbar
   });
   return grid;
 }
@@ -95,4 +99,14 @@ function createRequestStore() {
   });
   store.load();
   return store;
+}
+
+function createTopBar() {
+  topbar = [
+    {handler: function(wiget, event) {
+      alert("Hello") 
+    },
+    text: "Show Files' State"},
+  ];
+  return topbar;
 }

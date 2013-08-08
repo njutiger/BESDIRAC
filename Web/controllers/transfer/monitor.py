@@ -5,6 +5,8 @@ from dirac.lib.webBase import defaultRedirect
 import dirac.lib.credentials as credentials
 from dirac.lib.diset import getRPCClient
 
+from BESDIRAC.TransferSystem.DB.TransferDB import TransRequestEntryWithID
+
 class MonitorController(BaseController):
 
   def index(self):
@@ -26,7 +28,7 @@ class MonitorController(BaseController):
     def quickconv(d):
       from  datetime import datetime
       # submit time is the 5th.
-      return tuple(r.strftime("%Y-%m-%d %H:%M [UTC]") if isinstance(r, datetime) else r for r in d )
+      return dict(zip(TransRequestEntryWithID._fields, tuple(r.strftime("%Y-%m-%d %H:%M [UTC]") if isinstance(r, datetime) else r for r in d )))
     result = map(quickconv, result)
 
     result_of_reqs["num"] = len(result)

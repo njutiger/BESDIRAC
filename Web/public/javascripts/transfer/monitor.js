@@ -35,6 +35,22 @@ function createRequestMonitor() {
     {header: "Dataset",
      dataIndex: "dataset",
      sortable: true
+    },
+    {header: "src SE",
+     dataIndex: "srcSE",
+     sortable: true
+    },
+    {header: "dst SE",
+     dataIndex: "dstSE",
+     sortable: true
+    },
+    {header: "submit time",
+     dataIndex: "submit_time",
+     sortable: true
+    },
+    {header: "status",
+     dataIndex: "status",
+     sortable: true
     }
   ];
 

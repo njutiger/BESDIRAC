@@ -91,7 +91,7 @@ def eventTypeCheck(eventType):
     entries = []
     
     client = FileCatalogClient()
-    dir = '/zhanggang_test/EventTypeList'
+    dir = '/BES3/EventTypeList'
     result = client.listDirectory(dir)
     if result['OK']:
         for i,v in enumerate(result['Value']['Successful'][dir]['SubDirs']):
@@ -120,24 +120,24 @@ def checkFormat(srcformat,file):
         
 #Before reading information from .root file,we need to use changeFormat
 #function to create a .root link for .dst file
-#def changeFormat(dstfile,rootfile,srcformat=[".dst",".tag"],destformat=[".root"]):
-#    flag = checkFormat(srcformat,dstfile)
-#    if flag==0:
-#        raise JudgeFormat(srcformat)
-#        return
-#    flag = checkFormat(destformat,rootfile)
-#    if flag==0:
-#        raise JudgeFormat(destformat)
-#        return
-#
-#    #if this rootfile has exists,then delete it
-#    if os.path.exists(rootfile):
-#        os.unlink(rootfile)
-#         
-#    #create a new rootfile for dstfile
-#    os.symlink(dstfile,rootfile)
-#    return rootfile
-#
+def changeFormat(dstfile,rootfile,srcformat=[".dst",".tag"],destformat=[".root"]):
+    flag = checkFormat(srcformat,dstfile)
+    if flag==0:
+        raise JudgeFormat(srcformat)
+        return
+    flag = checkFormat(destformat,rootfile)
+    if flag==0:
+        raise JudgeFormat(destformat)
+        return
+
+    #if this rootfile has exists,then delete it
+    if os.path.exists(rootfile):
+        os.unlink(rootfile)
+         
+    #create a new rootfile for dstfile
+    os.symlink(dstfile,rootfile)
+    return rootfile
+
 
 #dstfile like /bes3fs/offline/data/655-1/4040/dst/110504/run_0023474_All_file007_SFO-2.dst
 def getLFN(dstfile,format=[".dst",".tag"]):
@@ -230,12 +230,12 @@ def getRunIdList(jobOptions):
         
         
 #get Boss version, runid, Entry number, JobOptions from root file
-def getCommonInfo(dstfile):
+def getCommonInfo(rootfile):
     
     commoninfo = {}
 
     gROOT.ProcessLine('gSystem->Load("libRootEventData.so");')
-    gROOT.ProcessLine('TFile file("%s");'%dstfile)
+    gROOT.ProcessLine('TFile file("%s");'%rootfile)
     gROOT.ProcessLine('TTree* tree =(TTree*)file.Get("JobInfoTree");')
     gROOT.ProcessLine('TTree* tree1 =(TTree*)file.Get("Event");')
     gROOT.ProcessLine('TBranch* branch =(TBranch*)tree->GetBranch("JobInfo");')

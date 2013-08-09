@@ -5,8 +5,13 @@
 
 import time
 import re
+import os
+
 
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC import S_OK,S_ERROR
+
+from n_addAndRegister import addAndRegister
 
 def _dir_ok(result, dir):
     """Internal function to check success or failure of directory creation.
@@ -60,15 +65,15 @@ def _get_event_type(eventType):
     else:
         return eventType
 
-def _get_exp_num(expNum):
-    #check whether "mexp" exists in filename
-    pat = re.compile(r'mexp')
-    des = pat.search(expNum)
-
-    if des is not None:
-        return "mexp"
-    else:
-        return expNum
+#def _get_exp_num(expNum):
+#    #check whether "mexp" exists in filename
+#    pat = re.compile(r'mexp')
+#    des = pat.search(expNum)
+#
+#    if des is not None:
+#        return "mexp"
+#    else:
+#        return expNum
 
 def createCatalog(client, dir, eventType, round, attributes):
     #TODO: add error handling, try/catch blocks etc
@@ -108,6 +113,7 @@ def createCatalog(client, dir, eventType, round, attributes):
                     #file_dir = round_dir + '/' +attributes['LFN']
                     #print "file_dir is %s"%file_dir
                     addFileToDir(attributes,round_dir)
+                    #addAndRegister(attributes,round_dir)
                     result = _set_metadata(client, attributes, attributes['LFN'])
                     if not result:
                         print ("Error setting metadata")
@@ -121,6 +127,7 @@ def createCatalog(client, dir, eventType, round, attributes):
                 if v == round_dir:
                     dir_exists = 1
                     addFileToDir(attributes,round_dir)
+                    #addAndRegister(attributes,round_dir)
                     result = _set_metadata(client, attributes, attributes['LFN'])
                     if not result:
                         print ("Error setting metadata")
@@ -136,6 +143,7 @@ def createCatalog(client, dir, eventType, round, attributes):
                     print ("Error: %s" % result['Message'])
                 if streamId == "stream0":
                     addFileToDir(attributes,round_dir)
+                    #addAndRegister(attributes,round_dir)
                     result = _set_metadata(client, attributes, attributes['LFN'])
                     if not result:
                         print ("Error setting metadata")
@@ -157,6 +165,7 @@ def createCatalog(client, dir, eventType, round, attributes):
             #TODO: add streamId metadata for stream dir
             if _dir_ok(result, stream_dir):
                 addFileToDir(attributes,stream_dir)
+                #addAndRegister(attributes,round_dir)
                 result = _set_metadata(client, attributes, attributes['LFN'])
                 if not result:
                     print ("Error setting metadata")

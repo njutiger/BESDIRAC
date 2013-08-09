@@ -10,8 +10,8 @@
 # /BES3/SearchExp                                                             #
 # /BES3/EventTypeList                                                         #
 ###############################################################################
-from DIRAC.Core.Base import Script
-Script.parseCommandLine( ignoreErrors = True )
+#from DIRAC.Core.Base import Script
+#Script.parseCommandLine( ignoreErrors = True )
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 def _dir_ok(result, dir):

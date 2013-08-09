@@ -104,7 +104,7 @@ function createRequestStore() {
 }
 
 function createTopBar() {
-  topbar = [
+  var topbar = [
     {handler: function(wiget, event) {
       createFileListWindow();
     },
@@ -114,6 +114,7 @@ function createTopBar() {
 }
 
 function createFileListWindow() {
+  var fl_id = Ext.id()
   // TODO
   // Get the Request ID
   var grid = Ext.getCmp("gMainRequestsList");
@@ -147,8 +148,12 @@ function createFileListWindow() {
      sortable: true
     }
   ];
+
+  // top bar
+  var topbar = createFileListTopBar(fl_id);
+
   var grid = new Ext.grid.GridPanel({
-    id: "mygrid",
+    id: fl_id,
     store: store,
     columns: columns,
     layout: "fit",
@@ -156,6 +161,7 @@ function createFileListWindow() {
     autoHeight: true,
     region: 'center',
     selModel: new Ext.grid.RowSelectionModel({singleSelect : true}),
+    tbar: topbar,
     viewConfig: {
       forceFit: true
     }
@@ -170,6 +176,7 @@ function createFileListWindow() {
       }
     }
   });
+
   var win = new Ext.Window({
     closable: true,
     width: 600,
@@ -178,7 +185,7 @@ function createFileListWindow() {
     autoHeight: true,
     title: "Files Monitor",
     items: [grid],
-    layout: "fit"
+    layout: "fit",
   });
 
   win.show();
@@ -238,4 +245,17 @@ function createFileListStore() {
       }
   });
   return store;
+}
+
+function createFileListTopBar(fl_id) {
+  var topbar = [
+    {
+      handler: function(w,t) {
+        var grid = Ext.getCmp(fl_id);
+        grid.getStore().reload();
+      },
+      text: "Refresh"
+    }
+  ];
+  return topbar;
 }

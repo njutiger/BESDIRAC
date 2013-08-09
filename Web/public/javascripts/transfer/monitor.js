@@ -104,9 +104,92 @@ function createRequestStore() {
 function createTopBar() {
   topbar = [
     {handler: function(wiget, event) {
-      alert("Hello") 
+      createFileListWindow();
     },
     text: "Show Files' State"},
   ];
   return topbar;
+}
+
+function createFileListWindow() {
+  // TODO
+  var req_id = 0;
+  var store = createFileListStore(req_id);
+  var columns = [
+    {header:'id',
+     dataIndex:'id',
+     sortable: true
+    },
+    {header:'LFN',
+     dataIndex:'LFN',
+     sortable: true
+    },
+    {header:'Start Time',
+     dataIndex:'start_time',
+     sortable: true
+    },
+    {header:'Finish Time',
+     dataIndex:'finish_time',
+     sortable: true
+    },
+    {header:'Status',
+     dataIndex:'status',
+     sortable: true
+    }
+  ];
+  var grid = new Ext.grid.GridPanel({
+    store: store,
+    columns: columns,
+    region: 'center'  
+  });
+  var win = new Ext.Window({
+    closable: true,
+    width: 600,
+    height: 400,
+    border: true,
+    title: "Files Monitor",
+    items: [grid]
+  });
+
+  win.show();
+  return win;
+}
+
+function createFileListStore(req_id) {
+  var reader = new Ext.data.JsonReader({
+    root: 'data',
+    totalProperty: 'num',
+    id: 'id',
+    fileds: [
+      "id",
+      "LFN",
+      "trans_req_id",
+      "start_time",
+      "finish_time",
+      "status",
+      "error"
+    ]
+  });
+  // TODO
+  var setup = gPageDescription.selectedSetup;
+  // confirm the user is OK
+  //if (!gPageDescription.userData && !gPageDescription.userData.group) {
+  //  return;
+  //}
+  var group = gPageDescription.userData.group;
+  var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
+  url = url + '/transfer/monitor/req';
+  var store = new Ext.data.Store({
+    reader: reader,
+    proxy: new Ext.data.HttpProxy({
+              url: url,
+              method: 'POST',
+              params: {
+                req_id: req_id
+              }
+            }),
+    autoLoad: true
+  });
+  store.load();
+  return store;
 }

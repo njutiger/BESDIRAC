@@ -49,6 +49,10 @@ class MonitorController(BaseController):
 
     RPC = getRPCClient("Transfer/TransferRequest")
     cond = {"trans_req_id": reqid}
+    res = RPC.show(cond)
+    if not res["OK"]:
+      return result_of_files
+    result = res["Value"]
 
     def quickconv(d):
       from  datetime import datetime
@@ -56,7 +60,7 @@ class MonitorController(BaseController):
       return dict(zip(TransFileListEntryWithID._fields, tuple(r.strftime("%Y-%m-%d %H:%M [UTC]") if isinstance(r, datetime) else r for r in d )))
     result = map(quickconv, result)
 
-    result_of_reqs["num"] = len(result)
-    result_of_reqs["data"] = result
+    result_of_files["num"] = len(result)
+    result_of_files["data"] = result
 
-    return result_of_reqs
+    return result_of_files

@@ -59,7 +59,9 @@ function createRequestMonitor() {
 
   // main
   var grid = new Ext.grid.GridPanel({
+    id: 'gMainRequestsList',
     store: store,
+    sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
     columns: columns,
     region: 'center',
     tbar: topbar
@@ -113,8 +115,16 @@ function createTopBar() {
 
 function createFileListWindow() {
   // TODO
-  var req_id = 0;
-  var store = createFileListStore(req_id);
+  // Get the Request ID
+  var grid = Ext.getCmp("gMainRequestsList");
+  var selected = grid.getSelections();
+  if(selected.length != 1) {
+    // set not exist
+    req_id = -1;
+  } else {
+    req_id = selected[0].id;
+  }
+  var store = createFileListStore();
   var columns = [
     {header:'id',
      dataIndex:'id',
@@ -138,38 +148,59 @@ function createFileListWindow() {
     }
   ];
   var grid = new Ext.grid.GridPanel({
+    id: "mygrid",
     store: store,
     columns: columns,
-    region: 'center'  
+    layout: "fit",
+    height:400,
+    autoHeight: true,
+    region: 'center',
+    selModel: new Ext.grid.RowSelectionModel({singleSelect : true}),
+    viewConfig: {
+      forceFit: true
+    }
+  });
+  //grid.getStore().reload({params:{req_id: req_id}});
+  grid.on({
+    render: {
+      //scope: this,
+      fn: function() {
+        alert("Load Data Req ID: " + req_id);
+        grid.getStore().load({params:{req_id: req_id}});
+      }
+    }
   });
   var win = new Ext.Window({
     closable: true,
     width: 600,
     height: 400,
     border: true,
+    autoHeight: true,
     title: "Files Monitor",
-    items: [grid]
+    items: [grid],
+    layout: "fit"
   });
 
   win.show();
+  //grid.reconfigure(store);
   return win;
 }
 
-function createFileListStore(req_id) {
+function createFileListStore() {
   var reader = new Ext.data.JsonReader({
     root: 'data',
     totalProperty: 'num',
     id: 'id',
-    fileds: [
-      "id",
-      "LFN",
-      "trans_req_id",
-      "start_time",
-      "finish_time",
-      "status",
-      "error"
-    ]
-  });
+    
+  },[
+      {name:"id"},
+      {name:"LFN"},
+      {name:"trans_req_id"},
+      {name:"start_time"},
+      {name:"finish_time"},
+      {name:"status"},
+      {name:"error"}
+    ]);
   // TODO
   var setup = gPageDescription.selectedSetup;
   // confirm the user is OK
@@ -184,12 +215,27 @@ function createFileListStore(req_id) {
     proxy: new Ext.data.HttpProxy({
               url: url,
               method: 'POST',
-              params: {
-                req_id: req_id
-              }
             }),
-    autoLoad: true
+    autoLoad: true,
+    autoSync: true
   });
-  store.load();
+  store.on({
+      'load':{
+          fn: function(store, records, options){
+              //store is loaded, now you can work with it's records, etc.
+              console.info('store load, arguments:', arguments);
+              console.info('Store count = ', store.getCount());
+          },
+          scope:this
+      },
+      'loadexception':{
+          //consult the API for the proxy used for the actual arguments
+          fn: function(obj, options, response, e){
+              console.info('store loadexception, arguments:', arguments);
+              console.info('error = ', e);
+          },
+          scope:this
+      }
+  });
   return store;
 }

@@ -146,6 +146,22 @@ function createFileListWindow() {
     {header:'Status',
      dataIndex:'status',
      sortable: true
+    },
+    {header:'Error',
+     dataIndex:'error',
+     renderer: function(value, metadata, record, rowIndex, colIndex, store) {
+      console.log(record);
+      if (record.json && record.json.error && record.json.error.length>0) {
+        return '<a onclick="hello('
+               +"'"+fl_id+"'"
+               +","
+               +"'"+rowIndex+"'"
+               +')">Error</a>'
+      } else {
+        return 'OK'
+      } 
+     },
+     sortable: false
     }
   ];
 
@@ -166,12 +182,11 @@ function createFileListWindow() {
       forceFit: true
     }
   });
-  //grid.getStore().reload({params:{req_id: req_id}});
   grid.on({
     render: {
       //scope: this,
       fn: function() {
-        alert("Load Data Req ID: " + req_id);
+        //alert("Load Data Req ID: " + req_id);
         grid.getStore().load({params:{req_id: req_id}});
       }
     }
@@ -223,7 +238,7 @@ function createFileListStore() {
               url: url,
               method: 'POST',
             }),
-    autoLoad: true,
+    autoLoad: false,
     autoSync: true
   });
   store.on({
@@ -249,13 +264,35 @@ function createFileListStore() {
 
 function createFileListTopBar(fl_id) {
   var topbar = [
+    // 1. Refresh
     {
       handler: function(w,t) {
         var grid = Ext.getCmp(fl_id);
         grid.getStore().reload();
       },
       text: "Refresh"
+    },
+    // 2. Get Error Info
+    {
+      handler: function(w,t) {
+        var grid = Ext.getCmp(fl_id);
+        getErrorInfo(grid);
+      },
+      text: "Get Error"
     }
   ];
   return topbar;
+}
+
+function getErrorInfo(grid) {
+  var selected = grid.getSelections();
+  if (selected.length != 1) {
+    return;
+  }
+  // Create a panel for the Error Info.
+}
+
+function hello(grid_id, row_index) {
+  alert(grid_id);
+  alert(row_index);
 }

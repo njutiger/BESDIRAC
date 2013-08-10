@@ -293,6 +293,18 @@ function getErrorInfo(grid) {
   var error_info = selected[0].json.error;
   // Create a panel for the Error Info.
   alert(error_info);
+  var win = new Ext.Window({
+    closable: true,
+    width: 600,
+    height: 400,
+    //autoHeight: true,
+    autoScroll: true,
+    title: "Error Info",
+    layout: "fit",
+    html: "<pre>"+error_info+"</pre>"
+  });
+
+  win.show();
 }
 
 function hello(grid_id, row_index) {

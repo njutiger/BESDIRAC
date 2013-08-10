@@ -289,10 +289,16 @@ function getErrorInfo(grid) {
   if (selected.length != 1) {
     return;
   }
+  // Get the error info
+  var error_info = selected[0].json.error;
   // Create a panel for the Error Info.
+  alert(error_info);
 }
 
 function hello(grid_id, row_index) {
   alert(grid_id);
   alert(row_index);
+
+  var grid = Ext.getCmp(grid_id);
+  getErrorInfo(grid);
 }

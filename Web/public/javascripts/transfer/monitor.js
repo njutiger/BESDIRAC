@@ -109,6 +109,11 @@ function createTopBar() {
       createFileListWindow();
     },
     text: "Show Files' State"},
+    "-",
+    {handler: function(w, e) {
+
+    },
+    text: "Create New Request" },
   ];
   return topbar;
 }

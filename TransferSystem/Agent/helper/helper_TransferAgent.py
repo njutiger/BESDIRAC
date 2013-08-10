@@ -36,7 +36,7 @@ class helper_TransferAgent(object):
             "srcSE": req.srcSE,
             "dstSE": req.dstSE}
     # Add the Transfer
-    worker = gTransferFactory.generate("DIRACFTS", info)
+    worker = gTransferFactory.generate("DIRACDMS", info)
     self.transferAgent.transfer_worker.append(worker)
     # Change the status
     self.helper_status_update(

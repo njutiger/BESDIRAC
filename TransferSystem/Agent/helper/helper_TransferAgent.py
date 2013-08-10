@@ -43,7 +43,7 @@ class helper_TransferAgent(object):
         self.transferDB.tables["TransferFileList"],
         result.id,
         {"status":"transfer", 
-          "start_time":datetime.datetime.now()})
+          "start_time":datetime.datetime.utcnow()})
 
     return True
 
@@ -54,7 +54,7 @@ class helper_TransferAgent(object):
         self.transferDB.tables["TransferFileList"],
         info["id"],
         {"status":"finish", 
-          "finish_time": datetime.datetime.now()})
+          "finish_time": datetime.datetime.utcnow()})
     
   def helper_check_request(self):
     """

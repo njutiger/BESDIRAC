@@ -111,7 +111,7 @@ function createTopBar() {
     text: "Show Files' State"},
     "-",
     {handler: function(w, e) {
-
+      createNewRequest();
     },
     text: "Create New Request" },
   ];

@@ -3,6 +3,7 @@
 <%inherit file="/diracPage.mako" />
 
 <%def name="head_tags()">
+${ h.javascript_link( "/javascripts/transfer/reqmgr.js" ) }
 ${ h.javascript_link( "/javascripts/transfer/monitor.js" ) }
 </%def>
 

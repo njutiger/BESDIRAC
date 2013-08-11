@@ -106,6 +106,12 @@ function createRequestStore() {
 function createTopBar() {
   var topbar = [
     {handler: function(wiget, event) {
+      var grid = Ext.getCmp("gMainRequestsList");
+      grid.getStore().reload();
+    },
+    text: "Refresh"},
+    "-",
+    {handler: function(wiget, event) {
       createFileListWindow();
     },
     text: "Show Files' State"},

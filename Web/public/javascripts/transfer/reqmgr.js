@@ -91,4 +91,7 @@ function createNewTransferAction(id) {
   }catch(e){
     alert('Error: ' + e.name + ': ' + e.message);
   }
+  // refresh the request list
+  var grid = Ext.getCmp("gMainRequestsList");
+  grid.getStore().reload();
 }

@@ -57,6 +57,14 @@ function createRequestMonitor() {
   // top bar
   var topbar = createTopBar();
 
+  // paging
+  var bottombar = new Ext.PagingToolbar({
+    pageSize: 20,
+    store: store,
+    displayInfo: true,
+    displayMsg: 'Displaying {0} - {1} of {2}'
+  });
+
   // main
   var grid = new Ext.grid.GridPanel({
     id: 'gMainRequestsList',
@@ -64,7 +72,8 @@ function createRequestMonitor() {
     sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
     columns: columns,
     region: 'center',
-    tbar: topbar
+    tbar: topbar,
+    bbar: bottombar
   });
   return grid;
 }

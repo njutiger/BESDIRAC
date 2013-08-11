@@ -22,6 +22,7 @@ function createMonitorPanel() {
 function createRequestMonitor() {
   // create store
   var store = createRequestStore();
+  store.load({ params: { start: 0, limit: 20} });
   // create columns
   var columns = [
     {header: "ReqID",
@@ -106,9 +107,27 @@ function createRequestStore() {
               url: url,
               method: 'POST'
             }),
-    autoLoad: true
+    autoLoad: false,
+    autoSync: true
   });
-  store.load();
+  store.on({
+      'load':{
+          fn: function(store, records, options){
+              //store is loaded, now you can work with it's records, etc.
+              console.info('req store load, arguments:', arguments);
+              console.info('req Store count = ', store.getCount());
+          },
+          scope:this
+      },
+      'loadexception':{
+          //consult the API for the proxy used for the actual arguments
+          fn: function(obj, options, response, e){
+              console.info('req store loadexception, arguments:', arguments);
+              console.info('req error = ', e);
+          },
+          scope:this
+      }
+  });
   return store;
 }
 

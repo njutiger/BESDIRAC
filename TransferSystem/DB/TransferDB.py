@@ -2,6 +2,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, Time
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.MySQL import _quotedList
 
 # Some basic arguments will use namedtuple 
 from collections import namedtuple
@@ -57,6 +58,53 @@ class TransferDB(DB):
                      maxQueueSize = 10):
     DB.__init__(self, dbname, fullname, maxQueueSize)
 
+
+  """override the original getFields"""
+  def getFields( self, tableName, outFields = None,
+                 condDict = None, offset = None,
+                 limit = False, conn = None,
+                 older = None, newer = None,
+                 timeStamp = None, orderAttribute = None,
+                 greater = None, smaller = None ):
+    """
+      Select "outFields" from "tableName" with condDict
+      N records can match the condition
+      return S_OK( tuple(Field,Value) )
+      if outFields == None all fields in "tableName" are returned
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    table = _quotedList( [tableName] )
+    if not table:
+      error = 'Invalid tableName argument'
+      self.log.warn( 'getFields:', error )
+      return S_ERROR( error )
+
+    quotedOutFields = '*'
+    if outFields:
+      quotedOutFields = _quotedList( outFields )
+      if quotedOutFields == None:
+        error = 'Invalid outFields arguments'
+        self.log.warn( 'getFields:', error )
+        return S_ERROR( error )
+
+    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
+                          ( quotedOutFields, table ) )
+
+    if condDict == None:
+      condDict = {}
+
+    try:
+      condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
+                        offset = offset,
+                        greater = None, smaller = None )
+    except Exception, x:
+      return S_ERROR( x )
+
+    return self._query( 'SELECT %s FROM %s %s' %
+                        ( quotedOutFields, table, condition ), conn, debug = True )
+
   def insert_TransferRequest(self, entry):
     if not isinstance(entry, TransRequestEntry):
       raise TypeError("entry should be TransRequestEntry")
@@ -78,21 +126,21 @@ class TransferDB(DB):
                           )
     return res
 
-  def get_TransferRequestWithLimit(self, condDict=None, orderby=None, limit=None):
+  def get_TransferRequestWithLimit(self, condDict=None, orderby=None, offset=None, limit=None):
     """
     >>> orderby = "id"
     or
     >>> orderby = ["id:DESC", "name:ASC"]
 
-    >>> limit = "5"
-    or 
-    >>> limit = "5,10"
+    >>> offset = 5 # begin
+    >>> limit = 5 # total entries
     """
     res = self.getFields( self.tables["TransferRequest"],
                           outFields = TransRequestEntryWithID._fields,
                           condDict = condDict,
                           orderAttribute = orderby,
                           limit = limit,
+                          offset = offset,
                           )
     return res
 

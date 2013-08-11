@@ -78,10 +78,20 @@ class TransferDB(DB):
                           )
     return res
 
-  def get_TransferRequestWithLimit(self, condDict=None, limit=None):
+  def get_TransferRequestWithLimit(self, condDict=None, orderby=None, limit=None):
+    """
+    >>> orderby = "id"
+    or
+    >>> orderby = ["id:DESC", "name:ASC"]
+
+    >>> limit = "5"
+    or 
+    >>> limit = "5,10"
+    """
     res = self.getFields( self.tables["TransferRequest"],
                           outFields = TransRequestEntryWithID._fields,
                           condDict = condDict,
+                          orderAttribute = orderby,
                           limit = limit,
                           )
     return res

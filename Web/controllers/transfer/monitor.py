@@ -31,6 +31,11 @@ class MonitorController(BaseController):
     limit = result_of_reqs["num"]
     orderby = "id:DESC"
 
+    if request.params.has_key("start"):
+      start = request.params["start"]
+    if request.params.has_key("limit"):
+      limit = request.params["limit"]
+
     res = RPC.statuslimit(cond, orderby, start, limit)
     if not res["OK"]:
       gLogger.error(res)

@@ -5,6 +5,8 @@ from dirac.lib.webBase import defaultRedirect
 import dirac.lib.credentials as credentials
 from dirac.lib.diset import getRPCClient
 
+from DIRAC import gLogger
+
 from BESDIRAC.TransferSystem.DB.TransferDB import TransRequestEntryWithID
 from BESDIRAC.TransferSystem.DB.TransferDB import TransFileListEntryWithID
 
@@ -19,8 +21,19 @@ class MonitorController(BaseController):
     #username = str(credentials.getUsername())
     RPC = getRPCClient("Transfer/TransferRequest")
     cond = {}
-    res = RPC.status(cond)
+    res = RPC.statustotal(cond)
     if not res["OK"]:
+      return result_of_reqs
+    result_of_reqs["num"] = res["Value"]
+
+    # get start/limit
+    start = 0
+    limit = result_of_reqs["num"]
+    orderby = "id:DESC"
+
+    res = RPC.statuslimit(cond, orderby, start, limit)
+    if not res["OK"]:
+      gLogger.error(res)
       return result_of_reqs
     result = res["Value"]
 
@@ -32,7 +45,6 @@ class MonitorController(BaseController):
       return dict(zip(TransRequestEntryWithID._fields, tuple(r.strftime("%Y-%m-%d %H:%M [UTC]") if isinstance(r, datetime) else r for r in d )))
     result = map(quickconv, result)
 
-    result_of_reqs["num"] = len(result)
     result_of_reqs["data"] = result
 
     return result_of_reqs

@@ -78,6 +78,14 @@ class TransferDB(DB):
                           )
     return res
 
+  def get_TransferRequestWithLimit(self, condDict=None, limit=None):
+    res = self.getFields( self.tables["TransferRequest"],
+                          outFields = TransRequestEntryWithID._fields,
+                          condDict = condDict,
+                          limit = limit,
+                          )
+    return res
+
   def insert_PerTransferFile(self, entry):
     if not isinstance(entry, TransFileListEntry):
       raise TypeError("entry should be TransFileListEntry")

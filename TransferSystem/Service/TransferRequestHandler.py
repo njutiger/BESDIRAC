@@ -77,6 +77,13 @@ class TransferRequestHandler(RequestHandler):
     res = gTransferDB.get_TransferRequest(condDict)
     return res
 
+  types_statuslimit = [ dict, [list, str], str ]
+  def export_statuslimit(self, condDict=None, orderby=None, limit=None):
+    """ This is give the status of the request db
+    """
+    res = gTransferDB.get_TransferRequestWithLimit(condDict, orderby, limit)
+    return res
+
   types_show = [ dict ]
   def export_show(self, condDict):
     """ This is for query the file list.

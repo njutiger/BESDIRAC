@@ -29,12 +29,12 @@ class MonitorController(BaseController):
     # get start/limit
     start = 0
     limit = result_of_reqs["num"]
-    orderby = "id:DESC"
+    orderby = ["id:DESC"]
 
     if request.params.has_key("start"):
-      start = request.params["start"]
+      start = int(request.params["start"])
     if request.params.has_key("limit"):
-      limit = request.params["limit"]
+      limit = int(request.params["limit"])
 
     res = RPC.statuslimit(cond, orderby, start, limit)
     if not res["OK"]:

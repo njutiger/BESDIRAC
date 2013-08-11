@@ -41,7 +41,7 @@ function createNewRequest() {
     text: "create",
     minWidth: '70',
     handler: function() {
-      alert("Create A Request");
+      createNewTransferAction(form_id);
     }
   });
 
@@ -69,4 +69,26 @@ function createNewRequest() {
   });
 
   win.show();
+}
+
+function createNewTransferAction(id) {
+  form = Ext.getCmp(id);
+  alert("Form ID: " + id);
+  gMainLayout.container.mask('Please wait ' + id);
+  try{
+    form.form.submit({
+      success: function(form, action) {
+        alert("Submit Success");
+        console.log(action);
+        gMainLayout.container.unmask();
+      },
+      failure: function(form, action) {
+        alert("Submit Failure");
+        console.log(action);
+        gMainLayout.container.unmask();
+      }
+    });
+  }catch(e){
+    alert('Error: ' + e.name + ': ' + e.message);
+  }
 }

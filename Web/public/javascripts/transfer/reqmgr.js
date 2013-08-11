@@ -81,17 +81,20 @@ function createNewTransferAction(id) {
         alert("Submit Success");
         console.log(action);
         gMainLayout.container.unmask();
+        // refresh the request list
+        var grid = Ext.getCmp("gMainRequestsList");
+        grid.getStore().reload();
       },
       failure: function(form, action) {
         alert("Submit Failure");
         console.log(action);
         gMainLayout.container.unmask();
+        // refresh the request list
+        var grid = Ext.getCmp("gMainRequestsList");
+        grid.getStore().reload();
       }
     });
   }catch(e){
     alert('Error: ' + e.name + ': ' + e.message);
   }
-  // refresh the request list
-  var grid = Ext.getCmp("gMainRequestsList");
-  grid.getStore().reload();
 }

@@ -77,6 +77,13 @@ class TransferRequestHandler(RequestHandler):
     res = gTransferDB.get_TransferRequest(condDict)
     return res
 
+  types_statustotal = [ dict ]
+  def export_statustotal(self, condDict=None):
+    """ This is give the status of the request db
+    """
+    res = gTransferDB.get_TransferRequestTotal(condDict)
+    return res
+
   types_statuslimit = [ dict, [list, str], int, int ]
   def export_statuslimit(self, condDict=None, orderby=None, 
                                offset=None, limit=None):

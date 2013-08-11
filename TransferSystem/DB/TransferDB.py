@@ -126,6 +126,12 @@ class TransferDB(DB):
                           )
     return res
 
+
+  def get_TransferRequestTotal(self, condDict = None):
+    res_total = self.countEntries(self.tables["TransferRequest"],
+                                  condDict=condDict)
+    return res_total
+
   def get_TransferRequestWithLimit(self, condDict=None, orderby=None, offset=None, limit=None):
     """
     >>> orderby = "id"

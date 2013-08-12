@@ -5,7 +5,7 @@
 #author:gang
 #############################################
 """
-Regrieve a set of files as a dataset from SE to th current directory
+download a set of files as a dataset from SE to the current directory
 """
 __RCSID__ = "$Id$"
 
@@ -24,12 +24,9 @@ dir = Script.getPositionalArgs()
 if len(dir)!=1:
     Script.showHelp()
 
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-client = FileCatalogClient()
-from DIRAC.Interfaces.API.Dirac import Dirac
-dirac = Dirac()
+from BESDIRAC.Badger.API.Badger import Badger
+badger = Badger()
 exitCode = 0
-
 dir = dir[0]
 lfns = []
 result = client.listDirectory(dir)

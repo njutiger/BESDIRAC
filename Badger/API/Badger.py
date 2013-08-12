@@ -31,7 +31,7 @@ class Badger:
         else:
             self.client = fcClient
     def __getFilenamesByLocaldir(self,localDir):
-        """(zg)get all files under the given dir
+        """(zg) get all files under the given dir
         example:__getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
         result = [/bes3fs/offline/data/663-1/4260/dst/121215/filename1,
                   /bes3fs/offline/data/663-1/4260/dst/121215/filename2,
@@ -343,6 +343,7 @@ class Badger:
             print 'ERROR %s'%(result['Message'])
             return False
           else:
+            #get the truely PFN 
             storageElement = StorageElement(SE)
             res = storageElement.getPfnForLfn( lfn )
             destPfn = res['Value']
@@ -391,13 +392,20 @@ class Badger:
             print "ERROR: Dataset", dataset_name," not found"
             return None
     def downloadFilesByDatasetName(self,dataset_name):
-        """downLoad a set of files form SE.
+        """(zg)downLoad a set of files form SE.
         use getFilesByDatasetName() get a list of lfns and download these files.
 
            Example usage:
            >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
         """
+        dirac = Dirac()
+        fileList = getFilesByDatasetName(dataset_name)
+        result = dirac.getFile(fileList,printOutput = True)
+        if not result['OK']:
+          print 'ERROR %s'%(result['Message'])
+          return False 
 
+        return True
 
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.

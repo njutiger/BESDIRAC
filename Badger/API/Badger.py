@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
+import os,sys,time
 from DIRAC.Core.Base import Script
 Script.initialize()
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC import gLogger,S_OK,S_ERROR
 
+from BESDIRAC.Badger.DataLoader.DFC.readAttributes import DataAll,Others
+from BESDIRAC.Badger.DataLoader.DFC.judgeType import judgeType
 """This is the public API for BADGER, the BESIII Advanced Data ManaGER.
 
    BADGER wraps the DIRAC File Catalog and related DIRAC methods for 
@@ -24,8 +30,42 @@ class Badger:
             self.client = FileCatalogClient(_fcType)
         else:
             self.client = fcClient
+    def __getFilenamesByLocaldir(self,localDir):
+        """(zg)get all files under the given dir
+        example:__getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
+        result = [/bes3fs/offline/data/663-1/4260/dst/121215/filename1,
+                  /bes3fs/offline/data/663-1/4260/dst/121215/filename2,
+                  ...
+                  ] 
+        """
+        fileList = []
+        files = os.listdir(localDir)
+        for f in files:
+          fullPath = localDir + os.sep + f
+          fileList.append(fullPath)
+        return fileList
+    def __getFileAttributes(self,fullPath):
+        """(zg) get all attributes of the given file,return a attribute dict.
+        """
+        if os.path.exists(fullPath):
+          type = judgeType(fullpath)
+          if type=="all":
+            obj = DataAll(fullpath)
+          elif type=="others":
+            obj = Others(fullpath)
+          elif type==None:
+            print "name if %s is not correct"%fullpath
+          attributes = obj.getAttributes()
+        if attributes == "error":
+          print "cannot get attributes of %s"%fullpath
+        else:
+          attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
 
-    
+        return attributes
+
+    def testFunction():
+        pass
+
     def __registerDir(self,dir):
         """Internal function to register a new directory in DFC .
            Returns True for success, False for failure.
@@ -43,10 +83,27 @@ class Badger:
         else:
             print 'Failed to create directory %s:%s'%(dir,result['Message'])
             return False
+    def __registerFileMetadata(self,lfn,attributes):
+        """(zg)Internal function to set metadata values on a given lfn. 
+          Returns True for success, False for failure.
+        """
+        metadataDict = {}
+        metadataDict['dataType'] = attributes['dataType']
+        metadataDict['runL'] = attributes['runL']
+        metadataDict['runH'] = attributes['runH']
+        metadataDict['status'] = attributes['status']
+        metadataDict['description'] = attributes['description']
+        metadataDict['date'] = attributes['date']
+        metadataDict['LFN'] = attributes['LFN']
+        metadataDict['PFN'] = attributes['PFN']
+        metadataDict['eventNum'] = attributes['eventNum']
+        metadataDict['fileSize'] = attributes['fileSize']
         
-        
-
-
+        result = self.client.setMetadata(dir,metadataDict)
+        if not result['OK']:
+          return False
+        else:
+          return True
 
     def __registerDirMetadata(self,dir,metaDict):
         """Internal function to set metadata to a directory
@@ -108,12 +165,13 @@ class Badger:
            Return created directory  for sucess,if this directory has been created, return this existing directory .
 
            Structure of the hierarchical directory:
-           for real data:/bes/File/resonance/boss version/data/eventType/expNum
-           for mc data:/bes/File/resonance/boss version/mc/eventType/expNum/streamId
+           for real data:/bes/File/resonance/boss version/data/eventType/roundId
+           for mc data:/bes/File/resonance/boss version/mc/eventType/roundId/streamId
            The eventType of all real datas is all. 
 
            Example:
-           >>>metaDic = {'dataType': 'dst', 'eventType': 'all', 'streamId': 'stream0','resonance': 'psipp', 'expNum':'exp1','bossVer': '6.6.1'}
+           >>>metaDict = {'dataType': 'dst', 'eventType': 'all', 'streamId': 'stream0','resonance': 'psipp', 'round':'round01','bossVer': '6.6.1'}
+           
            >>>badger.registerHierarchicalDir(metaDic)
            1
         """
@@ -134,61 +192,61 @@ class Badger:
         else:
             dir_data_mc = dir_bossVer + '/mc'
         dir_eventType = dir_data_mc + '/' +metaDict['eventType']
-        dir_expNum = dir_eventType + '/' + metaDict['expNum']
-        dir_streamId = dir_expNum + '/' + metaDict['streamId']
+        dir_roundId = dir_eventType + '/' + metaDict['roundId']
+        dir_streamId = dir_roundId + '/' + metaDict['streamId']
 
-        # if dir_expNum has been created,create_expNum=1 
-        create_expNum = 0
+        # if dir_roundId has been created,create_roundId=1 
+        create_roundId = 0
 
-        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_expNum']
-        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_expNum':[dir_expNum,metaDict['expNum']]}
+        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_roundId']
+        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_roundId':[dir_roundId,metaDict['roundId']]}
 
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
             result = self.__registerSubDirs(dirs_dict,dirs_meta)
             if result:
-                create_expNum = 1
+                create_roundId = 1
         else:
             dir_exists = self.__dirExists(dir_resonance,dir_file)
             if not dir_exists:
                 dirs_dict = dirs_dict[1:]
                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                 if result:
-                    create_expNum = 1
+                    create_roundId = 1
             else:
                 dir_exists = self.__dirExists(dir_bossVer,dir_resonance)
                 if not dir_exists:
                     dirs_dict = dirs_dict[2:]
                     result = self.__registerSubDirs(dirs_dict,dirs_meta)
                     if result:
-                        create_expNum = 1
+                        create_roundId = 1
                 else:
                     dir_exists = self.__dirExists(dir_data_mc,dir_bossVer)
                     if not dir_exists:
                         dirs_dict = dirs_dict[3:]
                         result = self.__registerSubDirs(dirs_dict,dirs_meta)
                         if result:
-                            create_expNum = 1
+                            create_roundId = 1
                     else:
                         dir_exists = self.__dirExists(dir_eventType,dir_data_mc)
                         if not dir_exists:
                             dirs_dict = dirs_dict[4:]
                             result = self.__registerSubDirs(dirs_dict,dirs_meta)
                             if result:
-                                create_expNum = 1
+                                create_roundId = 1
                         else:
-                            dir_exists = self.__dirExists(dir_expNum,dir_eventType)
+                            dir_exists = self.__dirExists(dir_roundId,dir_eventType)
                             if not dir_exists:
                                 dirs_dict = dirs_dict[5:]
                                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                                 if result:
-                                    create_expNum = 1
+                                    create_roundId = 1
                             else:
-                                create_expNum = 1
+                                create_roundId = 1
         
-        if create_expNum:
+        if create_roundId:
             if metaDict['streamId'] != "stream0":
-                dir_exists = self.__dirExists(dir_streamId,dir_expNum)
+                dir_exists = self.__dirExists(dir_streamId,dir_roundId)
                 if not dir_exists:
                     if self.__registerDir(dir_streamId):
                         result = self.__registerDirMetadata(dir_streamId,{'streamId':metaDict['streamId']})
@@ -199,20 +257,21 @@ class Badger:
                 else:
                     creation_OK = 2
             else:
-                result = self.__registerDirMetadata(dir_expNum,lastDirMetaDict)
+                result = self.__registerDirMetadata(dir_roundId,lastDirMetaDict)
                 if result:
                     creation_OK = 1
     
         if (creation_OK==1)|(creation_OK==2):
             if metaDict['streamId'] == "stream0":
-                return dir_expNum
+                return dir_roundId
             else:   
                 return dir_streamId
 
     def registerFileMetadata(self,lfn,metaDict):
+
         """Add file level metadata to an entry
            True for success, False for failure
-
+           (maybe used to registerNewMetadata
            Example:
            >>>lfn = '/bes/File/psipp/6.6.1/data/all/exp1/run_0011414_All_file001_SFO-1'
            >>>entryDict = {'runL':1000,'runH':898898}
@@ -255,6 +314,42 @@ class Badger:
         # file / directory
         # Q: how / where to pass the metadata?
     
+    def uploadAndRegisterFiles(self,localDir,SE='IHEP-USER',guid=None):
+        """(zg)upload a set of files to SE and register it in DFC.
+        user input the directory of localfile.
+        we can treat localDir as a kind of datasetName.
+        """          
+
+        fileList = __getFilenamesByLocaldir(localDir)
+        for fullpath in fileList:
+          #get the attributes of the file
+          fileAttr = __getFileAttributes(fullpath)
+          metaDict = {}
+          metaDict['dataType'] = fileAttr['dataType']
+          metaDict['evnetType'] = fileAttr['evnetType']
+          metaDict['streamId'] = fileAttr['streamId']
+          metaDict['resonance'] = fileAttr['resonance']
+          metaDict['round'] = fileAttr['round']
+          metaDict['bossVer'] = fileAttr['bessVer']
+          #create dir and set dirMetadata to associated dir
+          lastDir = registerHierarchicalDir(metaDict,rootDir='/bes')
+          lfn = lastDir + fileAttr['LFN']
+          fileAttr['LFN'] = lfn
+          #upload and register file. 
+          dirac = Dirac()
+          result = dirac.addFile(lfn,fullpath,SE,guid,printOutput=True)
+          #register file metadata
+          if not reuslt['OK']:
+            print 'ERROR %s'%(result['Message'])
+            return False
+          else:
+            storageElement = StorageElement(SE)
+            res = storageElement.getPfnForLfn( lfn )
+            destPfn = res['Value']
+            fileAttr['PFN'] = destPfn
+            result = __registerFileMetadata(lfn,fileAttr)
+        return True
+            
 
     def registerDataset(self, dataset_name, conditions):
         """Register a new dataset in DFC. Takes dataset name and string with
@@ -295,13 +390,20 @@ class Badger:
         else:
             print "ERROR: Dataset", dataset_name," not found"
             return None
+    def downloadFilesByDatasetName(self,dataset_name):
+        """downLoad a set of files form SE.
+        use getFilesByDatasetName() get a list of lfns and download these files.
+
+           Example usage:
+           >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
+        """
 
 
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.
 
            Example usage:
-           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 expNum=exp1')
+           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 roundId=exp1')
            ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
 
         """
@@ -332,7 +434,7 @@ class Badger:
            >>> result = badger.getDatasetDescription('psipp_661_data_all_exp2')
            >>> print result
            Dataset psipp_661_data_all_exp2 was defined with the following metadata conditions:
-               expNum : exp2
+               roundId : exp2
                bossVer : 6.6.1
                resonance : psipp
         """

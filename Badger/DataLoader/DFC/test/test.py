@@ -81,9 +81,13 @@ def t_getMetadata(client,dir):
             print result
 if __name__ == "__main__":
     #fcType = 'DataManagement/FileCatalogTest'
-    #client = FileCatalogClient()
+    client = FileCatalogClient()
     #dir = '/zhanggang_test/File/4260/6.6.3/data/all/round06/run_0029677_All_file001_SFO-1'
+    dir = '/bes/user/'
     #t_getMetadata(client,dir)
     #client.createDirectory('/zhanggang_test/test1111')
     #listDir(client,dir)
+    result = client.listDirectory(dir)
+    import pprint
+    pprint.pprint(result)
     #client.setMetadata(dir,{'test1':1,'test2':2,'test3':3})

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
 # -*- coding:utf-8 -*-
-# author: linlei
-
+#data 13/07/26
 #for data/all  name of file like run_0023454_All_file014_SFO-2.dst
 #for data/skim & mc, we use new file naming rule,
 #file name like resonance_eventType_streamId_runL_runH_*.dst
@@ -37,29 +35,25 @@ def getExpRes(runids):
     #from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
     client = FileCatalogClient()
     #get all entries under catalog "/BES3/ExpSearch"
-    dir = '/BES3/ExpSearch'
+    dir = '/zhanggang_test/ExpSearch'
     result = client.listDirectory(dir)
     #print "result",result
     #print result
     if result['OK']:
         for i,v in enumerate(result['Value']['Successful'][dir]['SubDirs']):
             result = client.getDirectoryMetadata(v)['Value']
-            #print "result",result
-            runfrm = string.atoi(result['runFrm'])
+            runfrm = string.atoi(result['runFrom'])
             runto = string.atoi(result['runTo'])
-            #print "runfrm",runfrm
-            #print "runto",runto
     
             for runid in runids:
-                #print "runid",runid
                 #check all runid whether between runfrm and runto of each entry 
                 #under catalog "/BES3/ExpSearch"
                 if runfrm<=runid<=runto:
                     #print "true"
-                    #if this runid between runfrm and runto,and expNum isn't in expNumList
+                    #if this runid between runfrm and runto,and round isn't in expNumList
                     #add this expNum to expNumList
-                    if result['expNum'] not in expNumList:
-                        expNumList.append(result['expNum'])
+                    if result['round'] not in expNumList:
+                        expNumList.append(result['round'])
 
                     #resonance of this id isn't in resonance List,add it to resList
                     if result['resonance'] not in resList:
@@ -75,7 +69,7 @@ def getExpRes(runids):
 
         #only including one expNum
         if len(expNumList) == 1:
-            expRes["expNum"] = expNumList[0]
+            expRes["round"] = expNumList[0]
         else:
             #if including several expNums,combine these expNum into mexpN1pN2p...
             sorted(expNumList)
@@ -83,7 +77,7 @@ def getExpRes(runids):
             for expNum in expNumList[1:]:
                 str = str + "p+" + getNum(expNum)
            
-            expRes["expNum"] = str
+            expRes["round"] = str
 
     else:
         print "ExpSearch directory is empty, please run createBesDirDFC first"
@@ -273,10 +267,11 @@ def getCommonInfo(rootfile):
 
 #get bossVer,eventNum,dataType,fileSize,name,eventType,expNum,
 #resonance,runH,runL,status,streamId,description
+#暂时先不转换.dst to .root
 class DataAll(object):
-    def __init__(self,dstfile,rootfile):
+    def __init__(self,dstfile):
         self.dstfile = dstfile
-        self.rootfile = rootfile
+        #self.rootfile = rootfile
 
     
     def getAttributes(self):
@@ -287,13 +282,13 @@ class DataAll(object):
         runIds = []
         
         #change the .dst file to .root file
-        rootfile = changeFormat(self.dstfile,self.rootfile)
+        #rootfile = changeFormat(self.dstfile,self.rootfile)
         
         if getFileSize(self.dstfile)<5000:
             print "Content of this file is null:",self.dstfile
             return "error"
         else:
-            attributes = getCommonInfo(rootfile)
+            attributes = getCommonInfo(self.dstfile)
 
         
             #get filesize by calling getFileSize function
@@ -316,7 +311,7 @@ class DataAll(object):
                 expRes = getExpRes(runIds)
 
                 if expRes != False:
-                    attributes["expNum"] = expRes["expNum"]
+                    attributes["round"] = expRes["round"]
                     attributes["resonance"] = expRes["resonance"]
                 else:
                     print "Can't get expNum and resonance of this file"
@@ -393,7 +388,7 @@ class Others(object):
                         print "Can't get expNum and resonance of this file"
                         return "error"
 
-                    attributes["expNum"] = expRes["expNum"]
+                    attributes["round"] = expRes["round"]
                     attributes["description"] = "null"
 
                     #if resonance in filename is same as resonance that get from ExpSearch
@@ -465,8 +460,12 @@ class Others(object):
 
 if __name__=="__main__":
    client = FileCatalogClient()
-   num = getNum("exp2")
-   print "num:",num
-   runids = [8093,12000]
-   result = getExpRes(runids)
-   print str(result)
+   obj = DataAll("/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029679_All_file002_SFO-2.dst")
+   result = obj.getAttributes()
+   import pprint
+   pprint.pprint(result) 
+   #num = getNum("exp2")
+   #print "num:",num
+   #runids = [8093,12000]
+   #result = getExpRes(runids)
+   #print str(result)

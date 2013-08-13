@@ -65,7 +65,7 @@ class TransferRequestHandler(RequestHandler):
                               srcSE = ep_from,
                               dstSE = ep_to,
                               status = "new",
-                              submit_time = datetime.datetime.now())
+                              submit_time = datetime.datetime.utcnow())
     gLogger.info("create an Entry:", entry)
     res = gTransferDB.insert_TransferRequest(entry)
     return res

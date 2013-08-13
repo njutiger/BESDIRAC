@@ -12,33 +12,26 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch("r","dir","the directory that dataset files located")
+Script.registerSwitch("s","datasetName","the dataset you want to download")
 Script.setUsageMessage('\n'.join([__doc__,
                                 'Usage:',
                                 '%s dir'% Script.scriptName,
                                 'Arguments:'
-                                ' dir: dir is a logical directory in DFC']))
+                                ' datasetName: the dataset you want to download']))
 Script.parseCommandLine(ignoreErrors=True)
-dir = Script.getPositionalArgs()
+datasetName = Script.getPositionalArgs()
 #print dir
-if len(dir)!=1:
+if len(datasetName)!=1:
     Script.showHelp()
 
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 exitCode = 0
-dir = dir[0]
-lfns = []
-result = client.listDirectory(dir)
-if result['OK']:
-  for lfn in result['Value']['Successful'][dir]['Files']:
-    lfns.append(lfn)
-  result = dirac.getFile(lfns,printOutput=True)
-  if not result['OK']:
-    print 'ERROR %s'%(result['Message'])
-    exitCode = 2
+datasetName = datasetName[0]
+result = badger.dowloadFileByDatasetName(datasetName)
+if not result:
+  print 'ERROR %s'%(result['Message'])
+  exitCode = 1
 
-else:
-  exitCode = 1 
 DIRAC.exit(exitCode)
   

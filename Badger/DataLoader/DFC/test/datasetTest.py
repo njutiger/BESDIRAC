@@ -59,7 +59,7 @@ if __name__=="__main__":
   Script.parseCommandLine( ignoreErrors = True )
   client = FileCatalogClient()
   #addDirMetaFields(client)
-  #getAllMetaFileds(client)
+  getAllMetaFileds(client)
   #listDataset(client)
   #registerDataset(client)
   #getFileByDatasetName(client)

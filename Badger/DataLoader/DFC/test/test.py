@@ -56,6 +56,7 @@ def createTestDir(client):
     #print result5
     #print result6
 def addMetadataToFile(client):
+    print client
     lfnList = []
     lfn1 = dir1+'/'+'t_LFN11'
     lfnList.append(lfn1)
@@ -64,11 +65,15 @@ def addMetadataToFile(client):
     lfn3 = dir3+'/'+'t_LFN31'
     lfn3_2 = dir3+'/'+'t_LFN31'
     lfnList.append(lfn3)
+    #lfn = '/bes/File/4260/6.6.3.p01/data/all/round06/run_0029677_All_file001_SFO-2'
+    lfn = '/zhanggang_test/test/test0'
+    dict = {'status': -1, 'description': 'null', 'dataType': 'dst', 'LFN': '/bes/File/4260/6.6.3.p01/data/all/round06/run_0029683_All_file001_SFO-2', 'PFN': 'srm://ccsrm.ihep.ac.cn/dpm/ihep.ac.cn/home/bes/bes/File/4260/6.6.3.p01/data/all/round06/run_0029683_All_file001_SFO-2', 'eventNum': 128466, 'fileSize': 386304986, 'date': '2013-08-13 19:05:19', 'runH': 29683, 'runL': 29683}
+
     
     #result = client.addFile(lfnList)
     #result41 = client.setMetadata(lfn1,{'file1_key':'file1_metadata'})
     #result32 = client.addFile({lfn3_2:{'PFN':'somePath','SE':'bes','Size':10,'Checksum':''}})
-    result33 = client.setMetadata(lfn3_2,{'f1':'m1','f2':'m2'})
+    result33 = client.setMetadata(lfn,dict)
     #print result
     #print result32
     print result33
@@ -80,14 +85,15 @@ def t_getMetadata(client,dir):
             result = client.getDirectoryMetadata(subDir)['Value']
             print result
 if __name__ == "__main__":
-    #fcType = 'DataManagement/FileCatalogTest'
+    ##fcType = 'DataManagement/FileCatalogTest'
     client = FileCatalogClient()
-    #dir = '/zhanggang_test/File/4260/6.6.3/data/all/round06/run_0029677_All_file001_SFO-1'
-    dir = '/bes/user/'
-    #t_getMetadata(client,dir)
-    #client.createDirectory('/zhanggang_test/test1111')
-    #listDir(client,dir)
-    result = client.listDirectory(dir)
-    import pprint
-    pprint.pprint(result)
-    #client.setMetadata(dir,{'test1':1,'test2':2,'test3':3})
+    ##dir = '/zhanggang_test/File/4260/6.6.3/data/all/round06/run_0029677_All_file001_SFO-1'
+    addMetadataToFile(client)
+    #dir = '/bes/user/'
+    ##t_getMetadata(client,dir)
+    ##client.createDirectory('/zhanggang_test/test1111')
+    ##listDir(client,dir)
+    #result = client.listDirectory(dir)
+    #import pprint
+    #pprint.pprint(result)
+    ##client.setMetadata(dir,{'test1':1,'test2':2,'test3':3})

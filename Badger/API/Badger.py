@@ -48,23 +48,25 @@ class Badger:
         """(zg) get all attributes of the given file,return a attribute dict.
         """
         if os.path.exists(fullPath):
-          type = judgeType(fullpath)
+          type = judgeType(fullPath)
           if type=="all":
-            obj = DataAll(fullpath)
+            obj = DataAll(fullPath)
           elif type=="others":
-            obj = Others(fullpath)
+            obj = Others(fullPath)
           elif type==None:
-            print "name if %s is not correct"%fullpath
+            print "name if %s is not correct"%fullPath
+            attributes = "error"
           attributes = obj.getAttributes()
         if attributes == "error":
-          print "cannot get attributes of %s"%fullpath
+          print "cannot get attributes of %s"%fullPath
         else:
           attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
 
         return attributes
 
-    def testFunction():
-        pass
+    def testFunction(self):
+        result = self.__getFileAttributes('/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029677_All_file001_SFO-2.dst') 
+        print result
 
     def __registerDir(self,dir):
         """Internal function to register a new directory in DFC .
@@ -98,8 +100,7 @@ class Badger:
         metadataDict['PFN'] = attributes['PFN']
         metadataDict['eventNum'] = attributes['eventNum']
         metadataDict['fileSize'] = attributes['fileSize']
-        
-        result = self.client.setMetadata(dir,metadataDict)
+        result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
           return False
         else:
@@ -192,14 +193,14 @@ class Badger:
         else:
             dir_data_mc = dir_bossVer + '/mc'
         dir_eventType = dir_data_mc + '/' +metaDict['eventType']
-        dir_roundId = dir_eventType + '/' + metaDict['roundId']
+        dir_roundId = dir_eventType + '/' + metaDict['round']
         dir_streamId = dir_roundId + '/' + metaDict['streamId']
 
         # if dir_roundId has been created,create_roundId=1 
         create_roundId = 0
 
         dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_roundId']
-        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_roundId':[dir_roundId,metaDict['roundId']]}
+        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_roundId':[dir_roundId,metaDict['round']]}
 
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
@@ -320,37 +321,46 @@ class Badger:
         we can treat localDir as a kind of datasetName.
         """          
 
-        fileList = __getFilenamesByLocaldir(localDir)
-        for fullpath in fileList:
+        result_OK = 1
+        errorList = []
+        fileList = self.__getFilenamesByLocaldir(localDir)
+        for fullpath in fileList[10:15]:
           #get the attributes of the file
-          fileAttr = __getFileAttributes(fullpath)
+          fileAttr = self.__getFileAttributes(fullpath)
+          #create dir and set dirMetadata to associated dir
           metaDict = {}
           metaDict['dataType'] = fileAttr['dataType']
-          metaDict['evnetType'] = fileAttr['evnetType']
+          metaDict['eventType'] = fileAttr['eventType']
           metaDict['streamId'] = fileAttr['streamId']
           metaDict['resonance'] = fileAttr['resonance']
           metaDict['round'] = fileAttr['round']
-          metaDict['bossVer'] = fileAttr['bessVer']
-          #create dir and set dirMetadata to associated dir
-          lastDir = registerHierarchicalDir(metaDict,rootDir='/bes')
-          lfn = lastDir + fileAttr['LFN']
+          metaDict['bossVer'] = fileAttr['bossVer']
+          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
+          lfn = lastDir + os.sep+fileAttr['LFN']
           fileAttr['LFN'] = lfn
           #upload and register file. 
           dirac = Dirac()
           result = dirac.addFile(lfn,fullpath,SE,guid,printOutput=True)
           #register file metadata
-          if not reuslt['OK']:
+          if not result['OK']:
             print 'ERROR %s'%(result['Message'])
-            return False
+            #return S_ERROR(result['Message']) 
+            errorList.append(fullpath)
+            result_OK = 0
           else:
             #get the truely PFN 
             storageElement = StorageElement(SE)
             res = storageElement.getPfnForLfn( lfn )
             destPfn = res['Value']
             fileAttr['PFN'] = destPfn
-            result = __registerFileMetadata(lfn,fileAttr)
-        return True
-            
+            result = self.__registerFileMetadata(lfn,fileAttr)
+            if not result:
+              result_OK = 0
+              print "failed to register file metadata"
+        if result_OK:
+          return S_OK()
+        else:
+          return S_ERROR(errorList)
 
     def registerDataset(self, dataset_name, conditions):
         """Register a new dataset in DFC. Takes dataset name and string with
@@ -399,13 +409,13 @@ class Badger:
            >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
         """
         dirac = Dirac()
-        fileList = getFilesByDatasetName(dataset_name)
+        fileList = self.getFilesByDatasetName(dataset_name)
         result = dirac.getFile(fileList,printOutput = True)
         if not result['OK']:
           print 'ERROR %s'%(result['Message'])
-          return False 
+          return S_ERROR(result['Message']) 
 
-        return True
+        return S_OK() 
 
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.

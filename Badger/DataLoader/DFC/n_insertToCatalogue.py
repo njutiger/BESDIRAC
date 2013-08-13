@@ -47,6 +47,7 @@ def _set_metadata(client, attributes, dir):
     metadataDict['eventNum'] = attributes['eventNum']
     metadataDict['fileSize'] = attributes['fileSize']
 
+    print client
     result = client.setMetadata(dir, metadataDict)
     if result['OK']:
         return True

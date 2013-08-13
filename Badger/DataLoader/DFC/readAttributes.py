@@ -7,10 +7,11 @@
 
 import os
 import os.path
-import ROOT
-from ROOT import gROOT
 import string
 import re
+
+def get_module_dir():
+  return os.path.dirname( os.path.abspath(__file__) )
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine( ignoreErrors = True )
@@ -230,39 +231,16 @@ def getRunIdList(jobOptions):
         
         
 #get Boss version, runid, Entry number, JobOptions from root file
-def getCommonInfo(rootfile):
+def getCommonInfo(dstfile):
     
-    commoninfo = {}
-
-    gROOT.ProcessLine('gSystem->Load("libRootEventData.so");')
-    gROOT.ProcessLine('TFile file("%s");'%rootfile)
-    gROOT.ProcessLine('TTree* tree =(TTree*)file.Get("JobInfoTree");')
-    gROOT.ProcessLine('TTree* tree1 =(TTree*)file.Get("Event");')
-    gROOT.ProcessLine('TBranch* branch =(TBranch*)tree->GetBranch("JobInfo");')
-    gROOT.ProcessLine('TBranch* branch1 =(TBranch*)tree1->GetBranch("TEvtHeader");')
-    gROOT.ProcessLine('TJobInfo* jobInfo = new TJobInfo();')
-    gROOT.ProcessLine('TEvtHeader* evtHeader = new TEvtHeader();')
-    gROOT.ProcessLine('branch->SetAddress(&jobInfo);')
-    gROOT.ProcessLine('branch1->SetAddress(&evtHeader);')
-    gROOT.ProcessLine('branch->GetEntry(0);')
-    gROOT.ProcessLine('branch1->GetEntry(0);')
-    gROOT.ProcessLine('Int_t num=tree1.GetEntries()')
+    import subprocess
+    p = subprocess.Popen(["bash", os.path.join(get_module_dir(), "get_info.sh"), dstfile], stdout=subprocess.PIPE)
+    output = p.communicate()[0].strip()
+    pos = output.find("{")
+    if pos >= 0:
+      return eval( output[pos:] )
     
-    #get Boss Version
-    commoninfo["bossVer"] = ROOT.jobInfo.getBossVer() 
-    #get RunId
-    commoninfo["runId"] = abs(ROOT.evtHeader.getRunId())
-    #get all entries
-    commoninfo["eventNum"] = ROOT.num
-    #get TotEvtNo
-    #commoninfo["TotEvtNo"] = list(i for i in ROOT.jobInfo.getTotEvtNo())
-    #get JobOption
-    commoninfo["jobOptions"] = list(i for i in ROOT.jobInfo.getJobOptions())
-
-    #set DataType
-    commoninfo["dataType"]='dst'
-    
-    return commoninfo
+    #return commoninfo
 
 
 #get bossVer,eventNum,dataType,fileSize,name,eventType,expNum,
@@ -298,7 +276,7 @@ class DataAll(object):
             
             #for .dst files of Data/All,their EventType are "all" 
             attributes["eventType"] = "all"
-            attributes["PFN"] = self.dstfile
+            attributes["PFN"] = "empty"
 
             #get runId from filename
             runId = splitLFN(attributes["LFN"],"all")
@@ -368,6 +346,7 @@ class Others(object):
             attributes["fileSize"] = getFileSize(self.dstfile)
             
             attributes["LFN"] = getLFN(self.dstfile)
+            attributes["PFN"] = "empty"
            
             #get resonance,eventType,streamId,runL,runH in filename by calling splitLFN function
             lfnInfo = splitLFN(attributes["LFN"],"others")
@@ -459,9 +438,12 @@ class Others(object):
 
 
 if __name__=="__main__":
+   import time
    client = FileCatalogClient()
+   start = time.time()
    obj = DataAll("/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029679_All_file002_SFO-2.dst")
    result = obj.getAttributes()
+   print time.time()-start
    import pprint
    pprint.pprint(result) 
    #num = getNum("exp2")

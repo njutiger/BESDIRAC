@@ -262,7 +262,7 @@ if __name__ == "__main__":
                             srcSE = "IHEP-USER",
                             dstSE = "IHEPD-USER",
                             status = "new",
-                            submit_time = datetime.datetime.now())
+                            submit_time = datetime.datetime.utcnow())
   res = gDB.insert_TransferRequest(entry)
   trans_id = 1
   if res["OK"]:

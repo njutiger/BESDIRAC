@@ -25,6 +25,14 @@ function createNewRequest() {
       fieldLabel: "DST SE",
       name: 'dst_se',
       allowBlank: false,
+    }, {
+      xtype: 'combo',
+      anchor: '-5',
+      fieldLabel: "Protocol",
+      name: 'protocol',
+      // TODO
+      store: ["DIRACDMS", "DIRACFTS"],
+      allowBlank: false,
     }]
   });
 

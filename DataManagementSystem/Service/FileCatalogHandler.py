@@ -17,7 +17,7 @@ from types import IntType, LongType, DictType, StringTypes, BooleanType, ListTyp
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from BESDIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 from DIRAC.Core.Utilities.List import sortList
 
 # This is a global instance of the FileCatalogDB class

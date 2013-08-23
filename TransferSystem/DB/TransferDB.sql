@@ -17,6 +17,7 @@ create table TransferRequest (
   dataset varchar(255) not null,
   srcSE varchar(255) not null,
   dstSE varchar(255) not null,
+  protocol varchar(255) not null,
   submit_time datetime not null,
   status enum('new', 'transfer', 'finish') not null,
   index(status)

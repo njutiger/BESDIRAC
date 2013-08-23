@@ -58,12 +58,13 @@ class TransferRequestHandler(RequestHandler):
 
     return S_OK()
 
-  types_create = [ str, str, str ]
-  def export_create(self, dataset, ep_from, ep_to):
+  types_create = [ str, str, str, str ]
+  def export_create(self, dataset, ep_from, ep_to, protocol):
     entry = TransRequestEntry(username = self.user, 
                               dataset = dataset,
                               srcSE = ep_from,
                               dstSE = ep_to,
+                              protocol = protocol,
                               status = "new",
                               submit_time = datetime.datetime.utcnow())
     gLogger.info("create an Entry:", entry)

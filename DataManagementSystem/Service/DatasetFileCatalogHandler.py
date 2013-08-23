@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.List import sortList
 # This is a global instance of the FileCatalogDB class
 gFileCatalogDB = None
 
-def initializeFileCatalogHandler( serviceInfo ):
+def initializeDatasetFileCatalogHandler( serviceInfo ):
   """ handler initialisation """
 
   global gFileCatalogDB
@@ -63,7 +63,7 @@ def initializeFileCatalogHandler( serviceInfo ):
   res = gFileCatalogDB.setConfig( databaseConfig )
   return res
 
-class FileCatalogHandler( RequestHandler ):
+class DatasetFileCatalogHandler( RequestHandler ):
   """
   ..class:: FileCatalogHandler
 

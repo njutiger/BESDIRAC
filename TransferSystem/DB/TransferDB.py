@@ -14,6 +14,7 @@ TransRequestEntry = namedtuple('TransRequestEntry',
                                'dataset',
                                'srcSE',
                                'dstSE',
+                               'protocol',
                                'submit_time',
                                'status',
                                ])
@@ -261,6 +262,7 @@ if __name__ == "__main__":
                             dataset = "my-dataset",
                             srcSE = "IHEP-USER",
                             dstSE = "IHEPD-USER",
+                            protocol = "DIRACDMS",
                             status = "new",
                             submit_time = datetime.datetime.utcnow())
   res = gDB.insert_TransferRequest(entry)

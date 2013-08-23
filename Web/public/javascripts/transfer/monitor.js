@@ -45,6 +45,10 @@ function createRequestMonitor() {
      dataIndex: "dstSE",
      sortable: true
     },
+    {header: "Protocol",
+     dataIndex: "protocol",
+     sortable: true
+    },
     {header: "submit time",
      dataIndex: "submit_time",
      sortable: true
@@ -89,6 +93,7 @@ function createRequestStore() {
             'dataset',
             'srcSE',
             'dstSE',
+            'protocol',
             'submit_time',
             'status',
             ]

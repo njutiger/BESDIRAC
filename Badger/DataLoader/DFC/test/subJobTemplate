@@ -1,0 +1,9 @@
+# !/bin/bash -f
+export DISPLAY=202.122.35.215
+source /afs/ihep.ac.cn/users/l/linl/cmthome/6.6.0/setupCVS.sh
+source /afs/ihep.ac.cn/users/l/linl/cmthome/6.6.0/setupCMT.sh
+source /afs/ihep.ac.cn/users/l/linl/cmthome/6.6.0/setup.sh
+source /ihepbatch/bes/linl/workarea/6.6.0/TestRelease/TestRelease-00-00-76/cmt/setup.sh
+export PYTHONPATH=$PYTHONPATH:/panfs/panfs.ihep.ac.cn/home/data/linl
+
+

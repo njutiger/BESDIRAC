@@ -10,8 +10,8 @@
 # /BES3/SearchExp                                                             #
 # /BES3/EventTypeList                                                         #
 ###############################################################################
-from DIRAC.Core.Base import Script
-Script.parseCommandLine( ignoreErrors = True )
+#from DIRAC.Core.Base import Script
+#Script.parseCommandLine( ignoreErrors = True )
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 def _dir_ok(result, dir):
@@ -34,7 +34,7 @@ def _dir_ok(result, dir):
 
 
 def createFileDir(client, resonance, bossVer, type):
-    dir = '/BES3/File'
+    dir = '/zhanggang_test/File'
     result = client.createDirectory(dir)
     if _dir_ok(result, dir):
         for r in resonance:
@@ -59,38 +59,41 @@ def createFileDir(client, resonance, bossVer, type):
         return False
 
 def main(client):
-    resonance=["jpsi","psip","psipp","psi4040","con3650","psippscan"]
-    bossVer=["6.5.5","6.6.1"]
+    resonance=["jpsi","psip","psipp","psi4040","con3650","psippscan","tauscan","phasejpsiscan","rscan","4260"]
+    bossVer=["6.5.5","6.6.1","6.6.0","6.6.3"]
     type=["data","mc"]
 
     # create root directory
-    dir = '/BES3'
+    #dir = '/BES3'
+    #result = client.createDirectory(dir)
+    #if _dir_ok(result, dir):
+    createFileDir(client, resonance, bossVer, type)
+    try:
+        client.addMetadataField('eventType','VARCHAR(30)')
+        #client.addMetadataField('expNum','VARCHAR(10)')
+        client.addMetadataField('roundId','VARCHAR(10)')
+        client.addMetadataField('streamId','VARCHAR(10)')
+        client.addMetadataField('dataType','VARCHAR(10)')
+        client.addMetadataField('bossVer','VARCHAR(10)')
+        client.addMetadataField('runL','int')
+        client.addMetadataField('runH','int')
+        client.addMetadataField('resonance','VARCHAR(30)')
+        client.addMetadataField('status','int')
+        client.addMetadataField('description','VARCHAR(100)')
+        client.addMetadataField('LFN','VARCHAR(100)')
+        client.addMetadataField('PFN','VARCHAR(100)')
+    except ex:
+        print "Error adding metadata fields: ", ex
+
+
+    #dir = '/BES3/ExpSearch'
+    #result = client.createDirectory(dir)
+    #if _dir_ok(result, dir):
+    #    print "Created ExpSearch directory"
+    dir = '/zhanggang_test/EventTypeList'
     result = client.createDirectory(dir)
     if _dir_ok(result, dir):
-        createFileDir(client, resonance, bossVer, type)
-        try:
-            client.addMetadataField('eventType','VARCHAR(30)')
-            client.addMetadataField('expNum','VARCHAR(10)')
-            client.addMetadataField('streamId','VARCHAR(10)')
-            client.addMetadataField('dataType','VARCHAR(10)')
-            client.addMetadataField('bossVer','VARCHAR(10)')
-            client.addMetadataField('runL','int')
-            client.addMetadataField('runH','int')
-            client.addMetadataField('resonance','VARCHAR(30)')
-            client.addMetadataField('status','int')
-            client.addMetadataField('description','VARCHAR(100)')
-        except ex:
-            print "Error adding metadata fields: ", ex
-
-
-        dir = '/BES3/ExpSearch'
-        result = client.createDirectory(dir)
-        if _dir_ok(result, dir):
-            print "Created ExpSearch directory"
-        dir = '/BES3/EventTypeList'
-        result = client.createDirectory(dir)
-        if _dir_ok(result, dir):
-            print "Created EventTypeList directory"
+        print "Created EventTypeList directory"
 
 if __name__ == "__main__":
     client = FileCatalogClient()

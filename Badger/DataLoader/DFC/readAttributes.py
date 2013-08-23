@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-
 # -*- coding:utf-8 -*-
-# author: linlei
-
+#data 13/07/26
 #for data/all  name of file like run_0023454_All_file014_SFO-2.dst
 #for data/skim & mc, we use new file naming rule,
 #file name like resonance_eventType_streamId_runL_runH_*.dst
 
 import os
 import os.path
-import ROOT
-from ROOT import gROOT
 import string
 import re
+
+def get_module_dir():
+  return os.path.dirname( os.path.abspath(__file__) )
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine( ignoreErrors = True )
@@ -37,29 +36,25 @@ def getExpRes(runids):
     #from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
     client = FileCatalogClient()
     #get all entries under catalog "/BES3/ExpSearch"
-    dir = '/BES3/ExpSearch'
+    dir = '/zhanggang_test/ExpSearch'
     result = client.listDirectory(dir)
     #print "result",result
     #print result
     if result['OK']:
         for i,v in enumerate(result['Value']['Successful'][dir]['SubDirs']):
             result = client.getDirectoryMetadata(v)['Value']
-            #print "result",result
-            runfrm = string.atoi(result['runFrm'])
+            runfrm = string.atoi(result['runFrom'])
             runto = string.atoi(result['runTo'])
-            #print "runfrm",runfrm
-            #print "runto",runto
     
             for runid in runids:
-                #print "runid",runid
                 #check all runid whether between runfrm and runto of each entry 
                 #under catalog "/BES3/ExpSearch"
                 if runfrm<=runid<=runto:
                     #print "true"
-                    #if this runid between runfrm and runto,and expNum isn't in expNumList
+                    #if this runid between runfrm and runto,and round isn't in expNumList
                     #add this expNum to expNumList
-                    if result['expNum'] not in expNumList:
-                        expNumList.append(result['expNum'])
+                    if result['round'] not in expNumList:
+                        expNumList.append(result['round'])
 
                     #resonance of this id isn't in resonance List,add it to resList
                     if result['resonance'] not in resList:
@@ -75,7 +70,7 @@ def getExpRes(runids):
 
         #only including one expNum
         if len(expNumList) == 1:
-            expRes["expNum"] = expNumList[0]
+            expRes["round"] = expNumList[0]
         else:
             #if including several expNums,combine these expNum into mexpN1pN2p...
             sorted(expNumList)
@@ -83,7 +78,7 @@ def getExpRes(runids):
             for expNum in expNumList[1:]:
                 str = str + "p+" + getNum(expNum)
            
-            expRes["expNum"] = str
+            expRes["round"] = str
 
     else:
         print "ExpSearch directory is empty, please run createBesDirDFC first"
@@ -236,47 +231,25 @@ def getRunIdList(jobOptions):
         
         
 #get Boss version, runid, Entry number, JobOptions from root file
-def getCommonInfo(rootfile):
+def getCommonInfo(dstfile):
     
-    commoninfo = {}
-
-    gROOT.ProcessLine('gSystem->Load("libRootEventData.so");')
-    gROOT.ProcessLine('TFile file("%s");'%rootfile)
-    gROOT.ProcessLine('TTree* tree =(TTree*)file.Get("JobInfoTree");')
-    gROOT.ProcessLine('TTree* tree1 =(TTree*)file.Get("Event");')
-    gROOT.ProcessLine('TBranch* branch =(TBranch*)tree->GetBranch("JobInfo");')
-    gROOT.ProcessLine('TBranch* branch1 =(TBranch*)tree1->GetBranch("TEvtHeader");')
-    gROOT.ProcessLine('TJobInfo* jobInfo = new TJobInfo();')
-    gROOT.ProcessLine('TEvtHeader* evtHeader = new TEvtHeader();')
-    gROOT.ProcessLine('branch->SetAddress(&jobInfo);')
-    gROOT.ProcessLine('branch1->SetAddress(&evtHeader);')
-    gROOT.ProcessLine('branch->GetEntry(0);')
-    gROOT.ProcessLine('branch1->GetEntry(0);')
-    gROOT.ProcessLine('Int_t num=tree1.GetEntries()')
+    import subprocess
+    p = subprocess.Popen(["bash", os.path.join(get_module_dir(), "get_info.sh"), dstfile], stdout=subprocess.PIPE)
+    output = p.communicate()[0].strip()
+    pos = output.find("{")
+    if pos >= 0:
+      return eval( output[pos:] )
     
-    #get Boss Version
-    commoninfo["bossVer"] = ROOT.jobInfo.getBossVer() 
-    #get RunId
-    commoninfo["runId"] = abs(ROOT.evtHeader.getRunId())
-    #get all entries
-    commoninfo["eventNum"] = ROOT.num
-    #get TotEvtNo
-    #commoninfo["TotEvtNo"] = list(i for i in ROOT.jobInfo.getTotEvtNo())
-    #get JobOption
-    commoninfo["jobOptions"] = list(i for i in ROOT.jobInfo.getJobOptions())
-
-    #set DataType
-    commoninfo["dataType"]='dst'
-    
-    return commoninfo
+    #return commoninfo
 
 
 #get bossVer,eventNum,dataType,fileSize,name,eventType,expNum,
 #resonance,runH,runL,status,streamId,description
+#暂时先不转换.dst to .root
 class DataAll(object):
-    def __init__(self,dstfile,rootfile):
+    def __init__(self,dstfile):
         self.dstfile = dstfile
-        self.rootfile = rootfile
+        #self.rootfile = rootfile
 
     
     def getAttributes(self):
@@ -287,13 +260,13 @@ class DataAll(object):
         runIds = []
         
         #change the .dst file to .root file
-        rootfile = changeFormat(self.dstfile,self.rootfile)
+        #rootfile = changeFormat(self.dstfile,self.rootfile)
         
         if getFileSize(self.dstfile)<5000:
             print "Content of this file is null:",self.dstfile
             return "error"
         else:
-            attributes = getCommonInfo(rootfile)
+            attributes = getCommonInfo(self.dstfile)
 
         
             #get filesize by calling getFileSize function
@@ -303,7 +276,7 @@ class DataAll(object):
             
             #for .dst files of Data/All,their EventType are "all" 
             attributes["eventType"] = "all"
-            attributes["PFN"] = self.dstfile
+            attributes["PFN"] = "empty"
 
             #get runId from filename
             runId = splitLFN(attributes["LFN"],"all")
@@ -316,7 +289,7 @@ class DataAll(object):
                 expRes = getExpRes(runIds)
 
                 if expRes != False:
-                    attributes["expNum"] = expRes["expNum"]
+                    attributes["round"] = expRes["round"]
                     attributes["resonance"] = expRes["resonance"]
                 else:
                     print "Can't get expNum and resonance of this file"
@@ -373,6 +346,7 @@ class Others(object):
             attributes["fileSize"] = getFileSize(self.dstfile)
             
             attributes["LFN"] = getLFN(self.dstfile)
+            attributes["PFN"] = "empty"
            
             #get resonance,eventType,streamId,runL,runH in filename by calling splitLFN function
             lfnInfo = splitLFN(attributes["LFN"],"others")
@@ -393,7 +367,7 @@ class Others(object):
                         print "Can't get expNum and resonance of this file"
                         return "error"
 
-                    attributes["expNum"] = expRes["expNum"]
+                    attributes["round"] = expRes["round"]
                     attributes["description"] = "null"
 
                     #if resonance in filename is same as resonance that get from ExpSearch
@@ -464,9 +438,16 @@ class Others(object):
 
 
 if __name__=="__main__":
+   import time
    client = FileCatalogClient()
-   num = getNum("exp2")
-   print "num:",num
-   runids = [8093,12000]
-   result = getExpRes(runids)
-   print str(result)
+   start = time.time()
+   obj = DataAll("/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029679_All_file002_SFO-2.dst")
+   result = obj.getAttributes()
+   print time.time()-start
+   import pprint
+   pprint.pprint(result) 
+   #num = getNum("exp2")
+   #print "num:",num
+   #runids = [8093,12000]
+   #result = getExpRes(runids)
+   #print str(result)

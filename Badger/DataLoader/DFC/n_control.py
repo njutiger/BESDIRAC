@@ -15,7 +15,7 @@ parser=OptionParser()
 parser.add_option('--frm',dest='linefrm',help='which line will be handled first')
 parser.add_option('--to',dest='lineto',help='which line will be handled at last')
 parser.add_option('--dst',dest='dstfiles',help='a text that contains dst files')
-parser.add_option('--root',dest='rootfile',help='root file')
+#parser.add_option('--root',dest='rootfile',help='root file')
 parser.add_option('--resonance',dest='resonance',help='If you want to check resonance attribute,please input its value')
 parser.add_option('--expNum',dest='expNum',help='If you want to check experiment number attribute,please input its value')
 parser.add_option('--bossVer',dest='bossVer',help='If you want to check boss version attribute,please input its value')
@@ -26,7 +26,7 @@ parser.add_option('--streamId',dest='streamId',help='If you want to check stream
 linefrm = string.atoi(options.linefrm)
 lineto = string.atoi(options.lineto)
 dstfiles = options.dstfiles
-rootfile = options.rootfile
+#rootfile = options.rootfile
 
 #print "linefrm",linefrm
 #print "lineto",lineto
@@ -44,7 +44,7 @@ if options.eventType is not None:
     checkattributes["eventType"] = options.eventType
 if options.streamId is not None:
     checkattributes["streamId"] = options.streamId
-    
+   
 #print "checkattributes:",checkattributes
 #print "rootfile:",rootfile
 
@@ -53,10 +53,10 @@ tmp=sys.argv[0]
 sys.argv=[]
 sys.argv.append(tmp)
  
-from readAttributes import DataAll,Others
-from insertToCatalogue import insert
-from judgeType import judgeType
-from compare import compare
+from n_readAttributes import DataAll,Others
+from n_insertToCatalogue import insert
+from n_judgeType import judgeType
+from n_compare import compare
 
 
 totaltime = 0
@@ -80,9 +80,9 @@ if os.path.exists(dstfiles):
             linenum = linenum+1
 
             if type=='all':
-                obj = DataAll(dstfile,rootfile)
+                obj = DataAll(dstfile)
             elif type=='others':
-                obj = Others(dstfile,rootfile)
+                obj = Others(dstfile)
             elif type==None:
                 print "name of %s is not correct"%dstfile
                 continue
@@ -108,6 +108,7 @@ if os.path.exists(dstfiles):
                 
                 if len(checkattributes)==0:
                     insert(attributes)
+                    print "OK"
                 else:
                     errorlist = compare(attributes,checkattributes)
                     if len(errorlist)!=0:

@@ -15,15 +15,27 @@ __RCSID__ = "$Id$"
 import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 ## from DIRAC
-from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from BESDIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 from DIRAC.Core.Utilities.List import sortList
+
+# getServiceOption
+def getServiceOption( serviceInfo, optionName, defaultValue ):
+  """ Get service option resolving default values from the master service
+  """
+  if optionName[0] == "/":
+    return gConfig.getValue( optionName, defaultValue )
+  for csPath in serviceInfo[ 'csPaths' ]:
+    result = gConfig.getOption( "%s/%s" % ( csPath, optionName, ), defaultValue )
+    if result[ 'OK' ]:
+      return result[ 'Value' ]
+  return defaultValue 
 
 # This is a global instance of the FileCatalogDB class
 gFileCatalogDB = None
 
-def initializeFileCatalogHandler( serviceInfo ):
+def initializeDatasetFileCatalogHandler( serviceInfo ):
   """ handler initialisation """
 
   global gFileCatalogDB
@@ -63,7 +75,7 @@ def initializeFileCatalogHandler( serviceInfo ):
   res = gFileCatalogDB.setConfig( databaseConfig )
   return res
 
-class FileCatalogHandler( RequestHandler ):
+class DatasetFileCatalogHandler( RequestHandler ):
   """
   ..class:: FileCatalogHandler
 
@@ -477,7 +489,7 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.dmeta.getMetadataSet( setName, expandFlag, self.getRemoteCredentials() )
 
-  types_listMetadatasets = []
+  types_listMetadataSets = []
   def export_listMetadataSets(self):
     """ Get the list of metadata sets with their definitions
     """

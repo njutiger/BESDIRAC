@@ -8,7 +8,7 @@ import DIRAC
 from DIRAC import gLogger
 
 class TransferFactory(object):
-  PROTOCOL = ["DIRACFTS"]
+  PROTOCOL = ["DIRACFTS", "DIRACDMS"]
 
   def generate(self, protocol, info):
     gLogger.info("Load Module:")

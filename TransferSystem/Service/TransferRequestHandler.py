@@ -58,14 +58,15 @@ class TransferRequestHandler(RequestHandler):
 
     return S_OK()
 
-  types_create = [ str, str, str ]
-  def export_create(self, dataset, ep_from, ep_to):
+  types_create = [ str, str, str, str ]
+  def export_create(self, dataset, ep_from, ep_to, protocol):
     entry = TransRequestEntry(username = self.user, 
                               dataset = dataset,
                               srcSE = ep_from,
                               dstSE = ep_to,
+                              protocol = protocol,
                               status = "new",
-                              submit_time = datetime.datetime.now())
+                              submit_time = datetime.datetime.utcnow())
     gLogger.info("create an Entry:", entry)
     res = gTransferDB.insert_TransferRequest(entry)
     return res
@@ -75,6 +76,21 @@ class TransferRequestHandler(RequestHandler):
     """ This is give the status of the request db
     """
     res = gTransferDB.get_TransferRequest(condDict)
+    return res
+
+  types_statustotal = [ dict ]
+  def export_statustotal(self, condDict=None):
+    """ This is give the status of the request db
+    """
+    res = gTransferDB.get_TransferRequestTotal(condDict)
+    return res
+
+  types_statuslimit = [ dict, [list, str], [int, long], [int, long] ]
+  def export_statuslimit(self, condDict=None, orderby=None, 
+                               offset=None, limit=None):
+    """ This is give the status of the request db
+    """
+    res = gTransferDB.get_TransferRequestWithLimit(condDict, orderby, offset, limit)
     return res
 
   types_show = [ dict ]

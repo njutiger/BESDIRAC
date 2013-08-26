@@ -30,6 +30,7 @@ class Badger:
             self.client = FileCatalogClient(_fcType)
         else:
             self.client = fcClient
+        self.besclient = FileCatalogClient('DataManagement/DatasetFileCatalog')
     def __getFilenamesByLocaldir(self,localDir):
         """(zg) get all files under the given dir
         example:__getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
@@ -39,10 +40,11 @@ class Badger:
                   ] 
         """
         fileList = []
-        files = os.listdir(localDir)
-        for f in files:
-          fullPath = localDir + os.sep + f
-          fileList.append(fullPath)
+        for rootdir,subdirs,files in os.walk(localDir):
+          for name in files:
+            fullPath = os.path.join(rootdir,name)
+            fileList.append(fullPath)
+
         return fileList
     def __getFileAttributes(self,fullPath):
         """(zg) get all attributes of the given file,return a attribute dict.
@@ -65,8 +67,10 @@ class Badger:
         return attributes
 
     def testFunction(self):
-        result = self.__getFileAttributes('/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029677_All_file001_SFO-2.dst') 
-        print result
+        result = self.__getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
+        for item in result:
+          print item
+        print len(result)
 
     def __registerDir(self,dir):
         """Internal function to register a new directory in DFC .
@@ -400,7 +404,7 @@ class Badger:
             return lfns
         else:
             print "ERROR: Dataset", dataset_name," not found"
-            return None
+            return S_ERROR(result['Message'])
     def downloadFilesByDatasetName(self,dataset_name):
         """(zg)downLoad a set of files form SE.
         use getFilesByDatasetName() get a list of lfns and download these files.
@@ -473,8 +477,16 @@ class Badger:
         return dataset_desc
 
 
-    def listDatasets():
-        pass
+    def listDatasets(self):
+        """(zg)list the exist dataset"""
+        result = self.besclient.listMetadataSets()
+        if not result['OK']:
+          print result['Message']
+          return S_ERROR(result['Message'])
+        else:
+          return result['Value']
+          
+
 
 
     def checkDatasetIntegrity():

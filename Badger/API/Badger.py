@@ -56,12 +56,10 @@ class Badger:
           elif type=="others":
             obj = Others(fullPath)
           elif type==None:
-            print "name if %s is not correct"%fullPath
-            attributes = "error"
+            errorMes= "name if %s is not correct"%fullPath
+            print "cannot get attributes of %s"%fullPath
+            return S_ERROR(errorMes)
           attributes = obj.getAttributes()
-        if attributes == "error":
-          print "cannot get attributes of %s"%fullPath
-        else:
           attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
 
         return attributes
@@ -290,7 +288,27 @@ class Badger:
         else:
             print 'Error:%s'%(result['Message'])
             return S_ERROR(result['Message'])
-    
+    #################################################################################
+    # meta fields operations
+    #
+    def addNewFields(self,fieldName,fieldType,metaType='-d'):
+      """add new fields,if metaType is '-f',add file field,
+        fileType is datatpye in MySQL notation
+      """
+      result = self.client.addMetadataField(fieldName,fieldType,metaType)
+      if not result['OK']:
+        return S_ERROR(result)
+      else:
+        return S_OK()
+
+    def deleteMetaField(self,fieldName):
+      """delete a exist metafield"""
+      result = self.client.deleteMetadataField(fieldName)
+      if not result['OK']:
+        return S_ERROR(result)
+      else:
+        return S_OK()
+
     def getAllFields(self):
         """get all meta fields,include file metafield and dir metafield.
         """
@@ -299,7 +317,8 @@ class Badger:
           return S_ERROR(result['Message'])
         else:
           return result['Value']
-  
+    #####################################################################
+
     def registerFile(self,lfn,dfcAttrDict):
         """Register a new file in the DFC.
         
@@ -335,9 +354,12 @@ class Badger:
         result_OK = 1
         errorList = []
         fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList:
+        for fullpath in fileList[:1]:
           #get the attributes of the file
+          print fullpath
           fileAttr = self.__getFileAttributes(fullpath)
+          print "fileAttr",fileAttr
+          return 0
           #create dir and set dirMetadata to associated dir
           metaDict = {}
           metaDict['dataType'] = fileAttr['dataType']
@@ -347,6 +369,7 @@ class Badger:
           metaDict['round'] = fileAttr['round']
           metaDict['bossVer'] = fileAttr['bossVer']
           lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
+          print "lastDir",lastDir
           lfn = lastDir + os.sep+fileAttr['LFN']
           fileAttr['LFN'] = lfn
           #upload and register file. 
@@ -381,10 +404,10 @@ class Badger:
            conditions for new dataset as arguments.
            datasetname format:  
            "resonance_BossVer_eventtype_roundId_runL_runH_stream0_datatype
-           example:psip_655_all_exp1_8093_9025_stream0_dst
+           example:psip_655_all_round01_8093_9025_stream0_dst
            resonance_BossVer_eventtype_roundId_runL_runH_streamID_datatype
-           example:psip_655_inc_exp1_8093_9025_stream1_dst
-           example:psipp_655_user1_exp1_11414_13988_stream1_dst"
+           example:psip_655_inc_round01_8093_9025_stream1_dst
+           example:psipp_655_user1_round01_11414_13988_stream1_dst"
         """
         pass
         # need to think about how datasets are defined
@@ -427,7 +450,6 @@ class Badger:
             print "ERROR: Dataset", dataset_name," not found"
             return S_ERROR(result)
             
-
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.
 
@@ -470,7 +492,6 @@ class Badger:
         #TODO: keep this as separate method, or just return description with LFNs?
         fc = self.client
         result = fc.getMetadataSet(dataset_name, True)
-        print result
         if result['Value']:
             metadataDict = result['Value']
             # give user a reminder of what this dataset's definition is
@@ -489,8 +510,7 @@ class Badger:
         """list the exist dataset"""
         result = self.besclient.listMetadataSets()
         if not result['OK']:
-          print result['Message']
-          return S_ERROR(result['Message'])
+          return S_ERROR(result)
         else:
           return result['Value']
           

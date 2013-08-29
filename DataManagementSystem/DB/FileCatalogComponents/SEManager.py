@@ -5,9 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Pfn import pfnunparse
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 import threading, time, random
 from types import StringTypes, IntType, LongType
 
@@ -17,7 +16,6 @@ class SEManagerBase:
     self.db = database
     self.lock = threading.Lock()
     self.seUpdatePeriod = 600
-    self.resourcesHelper = Resources()
     self._refreshSEs()
     
   def _refreshSEs( self ):
@@ -172,7 +170,7 @@ class SEManagerDB(SEManagerBase):
       self.db.seDefinitions[seID]['LastUpdate'] = 0.
       
     # We have to refresh the SE definition from the CS
-    result = self.resourcesHelper.getStorageElementOptionsDict( se )
+    result = gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
     if not result['OK']:
       return result
     seDict = result['Value']
@@ -204,4 +202,4 @@ class SEManagerCS(SEManagerBase):
   
   def getSEDefinition(self,se):
     #TODO Think about using a cache for this information
-    return self.resourcesHelper.getStorageElementOptionsDict( se )
+    return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)

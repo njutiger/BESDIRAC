@@ -11,7 +11,8 @@ def judgeType(dstfile):
         #judge whether type of this dst file is "all"
         all = re.compile(r"run_\d+_All_file\d+_SFO-\d+.")
         #judge whether type of this dst file is "others"
-        others = re.compile(r"[A-Za-z]+_[A-Za-z]+\d*_stream\d+_\d+_\d+.*")
+        #others = re.compile(r"[A-Za-z]+_[A-Za-z]+\d*_stream\d+_\d+_\d+.*")
+        others = re.compile(r"\w+_stream\d+_run\d+_file\d+.*")
        
         flag_all = all.search(dstfile)
         flag_others = others.search(dstfile)

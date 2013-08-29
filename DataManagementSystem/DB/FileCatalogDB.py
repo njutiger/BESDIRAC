@@ -8,17 +8,17 @@ __RCSID__ = "$Id$"
 from DIRAC                                                                     import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                                        import DB
 from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata  import DirectoryMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata          import FileMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentDict 
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata          import FileMetadata
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
+from BESDIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentDict 
 
 #############################################################################
 class FileCatalogDB(DB):

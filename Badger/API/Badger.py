@@ -30,8 +30,9 @@ class Badger:
             self.client = FileCatalogClient(_fcType)
         else:
             self.client = fcClient
+        self.besclient = FileCatalogClient('DataManagement/DatasetFileCatalog')
     def __getFilenamesByLocaldir(self,localDir):
-        """(zg) get all files under the given dir
+        """ get all files under the given dir
         example:__getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
         result = [/bes3fs/offline/data/663-1/4260/dst/121215/filename1,
                   /bes3fs/offline/data/663-1/4260/dst/121215/filename2,
@@ -39,13 +40,14 @@ class Badger:
                   ] 
         """
         fileList = []
-        files = os.listdir(localDir)
-        for f in files:
-          fullPath = localDir + os.sep + f
-          fileList.append(fullPath)
+        for rootdir,subdirs,files in os.walk(localDir):
+          for name in files:
+            fullPath = os.path.join(rootdir,name)
+            fileList.append(fullPath)
+
         return fileList
     def __getFileAttributes(self,fullPath):
-        """(zg) get all attributes of the given file,return a attribute dict.
+        """ get all attributes of the given file,return a attribute dict.
         """
         if os.path.exists(fullPath):
           type = judgeType(fullPath)
@@ -54,19 +56,19 @@ class Badger:
           elif type=="others":
             obj = Others(fullPath)
           elif type==None:
-            print "name if %s is not correct"%fullPath
-            attributes = "error"
+            errorMes= "name if %s is not correct"%fullPath
+            print "cannot get attributes of %s"%fullPath
+            return S_ERROR(errorMes)
           attributes = obj.getAttributes()
-        if attributes == "error":
-          print "cannot get attributes of %s"%fullPath
-        else:
           attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
 
         return attributes
 
     def testFunction(self):
-        result = self.__getFileAttributes('/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029677_All_file001_SFO-2.dst') 
-        print result
+        result = self.__getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
+        for item in result:
+          print item
+        print len(result)
 
     def __registerDir(self,dir):
         """Internal function to register a new directory in DFC .
@@ -77,16 +79,16 @@ class Badger:
         if result['OK']:
             if result['Value']['Successful']:
                 if result['Value']['Successful'].has_key(dir):
-                    return True
+                    return S_OK() 
                 elif result['Value']['Failed']:
                     if result['Value']['Failed'].has_key(dir):
                         print 'Failed to create directory %s:%s'%(dir,result['Value']['Failed'][dir])
-                        return False
+                        return S_ERROR() 
         else:
             print 'Failed to create directory %s:%s'%(dir,result['Message'])
-            return False
+            return S_ERROR() 
     def __registerFileMetadata(self,lfn,attributes):
-        """(zg)Internal function to set metadata values on a given lfn. 
+        """Internal function to set metadata values on a given lfn. 
           Returns True for success, False for failure.
         """
         metadataDict = {}
@@ -102,9 +104,9 @@ class Badger:
         metadataDict['fileSize'] = attributes['fileSize']
         result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
-          return False
+          return S_ERROR() 
         else:
-          return True
+          return S_OK() 
 
     def __registerDirMetadata(self,dir,metaDict):
         """Internal function to set metadata to a directory
@@ -113,10 +115,10 @@ class Badger:
         fc = self.client
         result = fc.setMetadata(dir,metaDict)
         if result['OK']:
-            return True
+            return S_OK() 
         else:
             print ("Error for setting metadata %s to %s: %s" %(metaDict,dir,result['Message']))
-            return False
+            return S_ERROR(result['Message']) 
         
     def __dirExists(self,dir,parentDir):
         """ Internal function to check whether 'dir' is the subdirectory of 'parentDir'
@@ -143,9 +145,9 @@ class Badger:
         
         for dir in dirs_dict:
             if (dir != 'dir_file')&(dir !='dir_data_mc' ):
-                if self.__registerDir(dirs_meta[dir][0]):
+                if self.__registerDir(dirs_meta[dir][0])['OK']:
                     result = self.__registerDirMetadata(dirs_meta[dir][0],{dir.split('_')[1]:dirs_meta[dir][1]})
-                    if not result:
+                    if not result['OK']:
                         creation_ok = False
                         break
                 else:
@@ -153,7 +155,7 @@ class Badger:
                     creation_ok = False
                     break
             else:
-                if not self.__registerDir(dirs_meta[dir]):
+                if not self.__registerDir(dirs_meta[dir])['OK']:
                     print 'Failed to create %s'%dir
                     creation_ok = False
                     break
@@ -166,8 +168,8 @@ class Badger:
            Return created directory  for sucess,if this directory has been created, return this existing directory .
 
            Structure of the hierarchical directory:
-           for real data:/bes/File/resonance/boss version/data/eventType/roundId
-           for mc data:/bes/File/resonance/boss version/mc/eventType/roundId/streamId
+           for real data:/bes/File/resonance/boss version/data/eventType/round
+           for mc data:/bes/File/resonance/boss version/mc/eventType/round/streamId
            The eventType of all real datas is all. 
 
            Example:
@@ -193,80 +195,97 @@ class Badger:
         else:
             dir_data_mc = dir_bossVer + '/mc'
         dir_eventType = dir_data_mc + '/' +metaDict['eventType']
-        dir_roundId = dir_eventType + '/' + metaDict['round']
-        dir_streamId = dir_roundId + '/' + metaDict['streamId']
+        dir_round = dir_eventType + '/' + metaDict['round']
+        dir_streamId = dir_round + '/' + metaDict['streamId']
 
-        # if dir_roundId has been created,create_roundId=1 
-        create_roundId = 0
+        # if dir_round has been created,create_round=1 
+        create_round = 0
 
-        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_roundId']
-        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_roundId':[dir_roundId,metaDict['round']]}
+        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_round']
+        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_round':[dir_round,metaDict['round']]}
 
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
             result = self.__registerSubDirs(dirs_dict,dirs_meta)
             if result:
-                create_roundId = 1
+                create_round = 1
         else:
             dir_exists = self.__dirExists(dir_resonance,dir_file)
             if not dir_exists:
                 dirs_dict = dirs_dict[1:]
                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                 if result:
-                    create_roundId = 1
+                    create_round = 1
             else:
                 dir_exists = self.__dirExists(dir_bossVer,dir_resonance)
                 if not dir_exists:
                     dirs_dict = dirs_dict[2:]
                     result = self.__registerSubDirs(dirs_dict,dirs_meta)
                     if result:
-                        create_roundId = 1
+                        create_round = 1
                 else:
                     dir_exists = self.__dirExists(dir_data_mc,dir_bossVer)
                     if not dir_exists:
                         dirs_dict = dirs_dict[3:]
                         result = self.__registerSubDirs(dirs_dict,dirs_meta)
                         if result:
-                            create_roundId = 1
+                            create_round = 1
                     else:
                         dir_exists = self.__dirExists(dir_eventType,dir_data_mc)
                         if not dir_exists:
                             dirs_dict = dirs_dict[4:]
                             result = self.__registerSubDirs(dirs_dict,dirs_meta)
                             if result:
-                                create_roundId = 1
+                                create_round = 1
                         else:
-                            dir_exists = self.__dirExists(dir_roundId,dir_eventType)
+                            dir_exists = self.__dirExists(dir_round,dir_eventType)
                             if not dir_exists:
                                 dirs_dict = dirs_dict[5:]
                                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                                 if result:
-                                    create_roundId = 1
+                                    create_round = 1
                             else:
-                                create_roundId = 1
+                                create_round = 1
         
-        if create_roundId:
+        if create_round:
             if metaDict['streamId'] != "stream0":
-                dir_exists = self.__dirExists(dir_streamId,dir_roundId)
+                dir_exists = self.__dirExists(dir_streamId,dir_round)
                 if not dir_exists:
-                    if self.__registerDir(dir_streamId):
+                    if self.__registerDir(dir_streamId)['OK']:
                         result = self.__registerDirMetadata(dir_streamId,{'streamId':metaDict['streamId']})
-                        if result:
+                        if result['OK']:
                             result = self.__registerDirMetadata(dir_streamId,lastDirMetaDict)
-                            if result:
+                            if result['OK']:
                                 creation_OK = 1
                 else:
                     creation_OK = 2
             else:
-                result = self.__registerDirMetadata(dir_roundId,lastDirMetaDict)
-                if result:
+                result = self.__registerDirMetadata(dir_round,lastDirMetaDict)
+                if result['OK']:
                     creation_OK = 1
     
         if (creation_OK==1)|(creation_OK==2):
             if metaDict['streamId'] == "stream0":
-                return dir_roundId
+                return dir_round
             else:   
                 return dir_streamId
+    def removeDir(self,dir):
+        """remove the dir include files and subdirs
+        """
+        result = self.client.listDirectory(dir)
+        if result['OK']:
+            if not result['Value']['Successful'][dir]['Files'] and not result['Value']['Successful'][dir]['SubDirs']:
+                print 'no file and subDirs in this dir'
+                self.client.removeDirectory(dir)
+                return S_OK()
+            else:
+                if result['Value']['Successful'][dir]['Files']:
+                    for file in result['Value']['Successful'][dir]['Files']:
+                        self.client.removeFile(file)
+                else:
+                    for subdir in result['Value']['Successful'][dir]['SubDirs']:
+                        self.removeDir(subdir)
+                    self.removeDir(dir)
 
     def registerFileMetadata(self,lfn,metaDict):
 
@@ -282,13 +301,41 @@ class Badger:
         fc = self.client
         result = fc.setMetadata(lfn,metaDict)
         if result['OK']:
-            #print 'Successfully added file level metadatas to %s'%(lfn)
-            return True
+            return S_OK() 
         else:
             print 'Error:%s'%(result['Message'])
-            return False
-        
-  
+            return S_ERROR(result['Message'])
+    #################################################################################
+    # meta fields operations
+    #
+    def addNewFields(self,fieldName,fieldType,metaType='-d'):
+      """add new fields,if metaType is '-f',add file field,
+        fileType is datatpye in MySQL notation
+      """
+      result = self.client.addMetadataField(fieldName,fieldType,metaType)
+      if not result['OK']:
+        return S_ERROR(result)
+      else:
+        return S_OK()
+
+    def deleteMetaField(self,fieldName):
+      """delete a exist metafield"""
+      result = self.client.deleteMetadataField(fieldName)
+      if not result['OK']:
+        return S_ERROR(result)
+      else:
+        return S_OK()
+
+    def getAllFields(self):
+        """get all meta fields,include file metafield and dir metafield.
+        """
+        result = self.client.getMetadataFields()
+        if not result['OK']:
+          return S_ERROR(result['Message'])
+        else:
+          return result['Value']
+    #####################################################################
+
     def registerFile(self,lfn,dfcAttrDict):
         """Register a new file in the DFC.
         
@@ -302,21 +349,30 @@ class Badger:
         if result['OK']:
             if result['Value']['Successful']:
                 if result['Value']['Successful'].has_key(lfn):
-                    return True
+                    return S_OK()
             elif result['Value']['Failed']:
                 if result['Value']['Failed'].has_key(lfn):
                     print 'Failed to add this file:',result['Value']['Failed'][lfn]
-                    return False
+                    return S_ERROR()
         else:
             print 'Failed to add this file :',result['Message']
-            return False
+            return S_ERROR()
         # need to register file (inc. creating appropriate directory
         # if it doesn't already exist; and register metadata for that
         # file / directory
         # Q: how / where to pass the metadata?
     
+    def removeFile(self,lfn):
+        """remove file on DFC
+        """
+        result = self.client.removeFile(lfn)
+        if not result['OK']:
+          return S_ERROR(result)
+        else:
+          return S_OK()
+
     def uploadAndRegisterFiles(self,localDir,SE='IHEP-USER',guid=None):
-        """(zg)upload a set of files to SE and register it in DFC.
+        """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
         we can treat localDir as a kind of datasetName.
         """          
@@ -324,8 +380,9 @@ class Badger:
         result_OK = 1
         errorList = []
         fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList[10:15]:
+        for fullpath in fileList[:50]:
           #get the attributes of the file
+          print fullpath
           fileAttr = self.__getFileAttributes(fullpath)
           #create dir and set dirMetadata to associated dir
           metaDict = {}
@@ -335,7 +392,7 @@ class Badger:
           metaDict['resonance'] = fileAttr['resonance']
           metaDict['round'] = fileAttr['round']
           metaDict['bossVer'] = fileAttr['bossVer']
-          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
+          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/zhanggang_test')
           lfn = lastDir + os.sep+fileAttr['LFN']
           fileAttr['LFN'] = lfn
           #upload and register file. 
@@ -354,7 +411,7 @@ class Badger:
             destPfn = res['Value']
             fileAttr['PFN'] = destPfn
             result = self.__registerFileMetadata(lfn,fileAttr)
-            if not result:
+            if not result['OK']:
               result_OK = 0
               print "failed to register file metadata"
         if result_OK:
@@ -362,9 +419,18 @@ class Badger:
         else:
           return S_ERROR(errorList)
 
+    ####################################################################
+    # dataset functions
+    #
     def registerDataset(self, dataset_name, conditions):
         """Register a new dataset in DFC. Takes dataset name and string with
            conditions for new dataset as arguments.
+           datasetname format:  
+           "resonance_BossVer_eventtype_round_runL_runH_stream0_datatype
+           example:psip_655_all_round01_8093_9025_stream0_dst
+           resonance_BossVer_eventtype_round_runL_runH_streamID_datatype
+           example:psip_655_inc_round01_8093_9025_stream1_dst
+           example:psipp_655_user1_round01_11414_13988_stream1_dst"
         """
         pass
         # need to think about how datasets are defined
@@ -389,39 +455,26 @@ class Badger:
            >>> badger.getFilesByDatasetName('psipp_661_data_all_exp2')
            ['/bes/File/psipp/6.6.1/data/all/exp2/file1', .....]
         """
-        #TODO: checking of output, error catching
 
         fc = self.client
+        #sfc = self.besclient
         result = fc.getMetadataSet(dataset_name, True)
         if result['Value']:
             metadataDict = result['Value']
-            lfns = fc.findFilesByMetadata(metadataDict,'/')['Value']
+            result=fc.findFilesByMetadata(metadataDict,'/')
+            lfns = result['Value']
             lfns.sort()
+            dirs = fc.findDirectoriesByMetadata(metadataDict)
             return lfns
         else:
             print "ERROR: Dataset", dataset_name," not found"
-            return None
-    def downloadFilesByDatasetName(self,dataset_name):
-        """(zg)downLoad a set of files form SE.
-        use getFilesByDatasetName() get a list of lfns and download these files.
-
-           Example usage:
-           >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
-        """
-        dirac = Dirac()
-        fileList = self.getFilesByDatasetName(dataset_name)
-        result = dirac.getFile(fileList,printOutput = True)
-        if not result['OK']:
-          print 'ERROR %s'%(result['Message'])
-          return S_ERROR(result['Message']) 
-
-        return S_OK() 
-
+            return S_ERROR(result)
+            
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.
 
            Example usage:
-           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 roundId=exp1')
+           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
            ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
 
         """
@@ -452,7 +505,7 @@ class Badger:
            >>> result = badger.getDatasetDescription('psipp_661_data_all_exp2')
            >>> print result
            Dataset psipp_661_data_all_exp2 was defined with the following metadata conditions:
-               roundId : exp2
+               round : exp2
                bossVer : 6.6.1
                resonance : psipp
         """
@@ -464,17 +517,39 @@ class Badger:
             # give user a reminder of what this dataset's definition is
             dataset_desc = ''
             dataset_desc += \
-                'Dataset %s was defined with the following metadata conditions:\n' \
+                'Dataset %s was defined with the following metadata conditions: \n ' \
                 % dataset_name
             for key in metadataDict:
-                dataset_desc += '%s : %s\n' % (key, metadataDict[key])
+                dataset_desc += '%s : %s \n' % (key, metadataDict[key])
         else:
             dataset_desc = 'Error: dataset %s is not defined.' % dataset_name
         return dataset_desc
 
 
-    def listDatasets():
-        pass
+    def listDatasets(self):
+        """list the exist dataset"""
+        result = self.besclient.listMetadataSets()
+        if not result['OK']:
+          return S_ERROR(result)
+        else:
+          return result['Value']
+          
+
+    def downloadFilesByDatasetName(self,dataset_name):
+        """downLoad a set of files form SE.
+        use getFilesByDatasetName() get a list of lfns and download these files.
+
+           Example usage:
+           >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
+        """
+        dirac = Dirac()
+        fileList = self.getFilesByDatasetName(dataset_name)
+        result = dirac.getFile(fileList,printOutput = True)
+        if not result['OK']:
+          print 'ERROR %s'%(result['Message'])
+          return S_ERROR(result['Message']) 
+        else:
+          return S_OK() 
 
 
     def checkDatasetIntegrity():

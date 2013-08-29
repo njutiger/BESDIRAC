@@ -168,8 +168,8 @@ class Badger:
            Return created directory  for sucess,if this directory has been created, return this existing directory .
 
            Structure of the hierarchical directory:
-           for real data:/bes/File/resonance/boss version/data/eventType/roundId
-           for mc data:/bes/File/resonance/boss version/mc/eventType/roundId/streamId
+           for real data:/bes/File/resonance/boss version/data/eventType/round
+           for mc data:/bes/File/resonance/boss version/mc/eventType/round/streamId
            The eventType of all real datas is all. 
 
            Example:
@@ -195,61 +195,61 @@ class Badger:
         else:
             dir_data_mc = dir_bossVer + '/mc'
         dir_eventType = dir_data_mc + '/' +metaDict['eventType']
-        dir_roundId = dir_eventType + '/' + metaDict['round']
-        dir_streamId = dir_roundId + '/' + metaDict['streamId']
+        dir_round = dir_eventType + '/' + metaDict['round']
+        dir_streamId = dir_round + '/' + metaDict['streamId']
 
-        # if dir_roundId has been created,create_roundId=1 
-        create_roundId = 0
+        # if dir_round has been created,create_round=1 
+        create_round = 0
 
-        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_roundId']
-        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_roundId':[dir_roundId,metaDict['round']]}
+        dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_round']
+        dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_round':[dir_round,metaDict['round']]}
 
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
             result = self.__registerSubDirs(dirs_dict,dirs_meta)
             if result:
-                create_roundId = 1
+                create_round = 1
         else:
             dir_exists = self.__dirExists(dir_resonance,dir_file)
             if not dir_exists:
                 dirs_dict = dirs_dict[1:]
                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                 if result:
-                    create_roundId = 1
+                    create_round = 1
             else:
                 dir_exists = self.__dirExists(dir_bossVer,dir_resonance)
                 if not dir_exists:
                     dirs_dict = dirs_dict[2:]
                     result = self.__registerSubDirs(dirs_dict,dirs_meta)
                     if result:
-                        create_roundId = 1
+                        create_round = 1
                 else:
                     dir_exists = self.__dirExists(dir_data_mc,dir_bossVer)
                     if not dir_exists:
                         dirs_dict = dirs_dict[3:]
                         result = self.__registerSubDirs(dirs_dict,dirs_meta)
                         if result:
-                            create_roundId = 1
+                            create_round = 1
                     else:
                         dir_exists = self.__dirExists(dir_eventType,dir_data_mc)
                         if not dir_exists:
                             dirs_dict = dirs_dict[4:]
                             result = self.__registerSubDirs(dirs_dict,dirs_meta)
                             if result:
-                                create_roundId = 1
+                                create_round = 1
                         else:
-                            dir_exists = self.__dirExists(dir_roundId,dir_eventType)
+                            dir_exists = self.__dirExists(dir_round,dir_eventType)
                             if not dir_exists:
                                 dirs_dict = dirs_dict[5:]
                                 result = self.__registerSubDirs(dirs_dict,dirs_meta)
                                 if result:
-                                    create_roundId = 1
+                                    create_round = 1
                             else:
-                                create_roundId = 1
+                                create_round = 1
         
-        if create_roundId:
+        if create_round:
             if metaDict['streamId'] != "stream0":
-                dir_exists = self.__dirExists(dir_streamId,dir_roundId)
+                dir_exists = self.__dirExists(dir_streamId,dir_round)
                 if not dir_exists:
                     if self.__registerDir(dir_streamId)['OK']:
                         result = self.__registerDirMetadata(dir_streamId,{'streamId':metaDict['streamId']})
@@ -260,15 +260,32 @@ class Badger:
                 else:
                     creation_OK = 2
             else:
-                result = self.__registerDirMetadata(dir_roundId,lastDirMetaDict)
+                result = self.__registerDirMetadata(dir_round,lastDirMetaDict)
                 if result['OK']:
                     creation_OK = 1
     
         if (creation_OK==1)|(creation_OK==2):
             if metaDict['streamId'] == "stream0":
-                return dir_roundId
+                return dir_round
             else:   
                 return dir_streamId
+    def removeDir(self,dir):
+        """remove the dir include files and subdirs
+        """
+        result = self.client.listDirectory(dir)
+        if result['OK']:
+            if not result['Value']['Successful'][dir]['Files'] and not result['Value']['Successful'][dir]['SubDirs']:
+                print 'no file and subDirs in this dir'
+                self.client.removeDirectory(dir)
+                return S_OK()
+            else:
+                if result['Value']['Successful'][dir]['Files']:
+                    for file in result['Value']['Successful'][dir]['Files']:
+                        self.client.removeFile(file)
+                else:
+                    for subdir in result['Value']['Successful'][dir]['SubDirs']:
+                        self.removeDir(subdir)
+                    self.removeDir(dir)
 
     def registerFileMetadata(self,lfn,metaDict):
 
@@ -345,6 +362,15 @@ class Badger:
         # file / directory
         # Q: how / where to pass the metadata?
     
+    def removeFile(self,lfn):
+        """remove file on DFC
+        """
+        result = self.client.removeFile(lfn)
+        if not result['OK']:
+          return S_ERROR(result)
+        else:
+          return S_OK()
+
     def uploadAndRegisterFiles(self,localDir,SE='IHEP-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
@@ -354,12 +380,10 @@ class Badger:
         result_OK = 1
         errorList = []
         fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList[:1]:
+        for fullpath in fileList[:50]:
           #get the attributes of the file
           print fullpath
           fileAttr = self.__getFileAttributes(fullpath)
-          print "fileAttr",fileAttr
-          return 0
           #create dir and set dirMetadata to associated dir
           metaDict = {}
           metaDict['dataType'] = fileAttr['dataType']
@@ -368,8 +392,7 @@ class Badger:
           metaDict['resonance'] = fileAttr['resonance']
           metaDict['round'] = fileAttr['round']
           metaDict['bossVer'] = fileAttr['bossVer']
-          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
-          print "lastDir",lastDir
+          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/zhanggang_test')
           lfn = lastDir + os.sep+fileAttr['LFN']
           fileAttr['LFN'] = lfn
           #upload and register file. 
@@ -403,9 +426,9 @@ class Badger:
         """Register a new dataset in DFC. Takes dataset name and string with
            conditions for new dataset as arguments.
            datasetname format:  
-           "resonance_BossVer_eventtype_roundId_runL_runH_stream0_datatype
+           "resonance_BossVer_eventtype_round_runL_runH_stream0_datatype
            example:psip_655_all_round01_8093_9025_stream0_dst
-           resonance_BossVer_eventtype_roundId_runL_runH_streamID_datatype
+           resonance_BossVer_eventtype_round_runL_runH_streamID_datatype
            example:psip_655_inc_round01_8093_9025_stream1_dst
            example:psipp_655_user1_round01_11414_13988_stream1_dst"
         """
@@ -439,12 +462,9 @@ class Badger:
         if result['Value']:
             metadataDict = result['Value']
             result=fc.findFilesByMetadata(metadataDict,'/')
-            print result
             lfns = result['Value']
             lfns.sort()
-            print "lfns ",lfns
             dirs = fc.findDirectoriesByMetadata(metadataDict)
-            print dirs
             return lfns
         else:
             print "ERROR: Dataset", dataset_name," not found"
@@ -454,7 +474,7 @@ class Badger:
         """Return a list of LFNs satisfying given query conditions.
 
            Example usage:
-           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 roundId=exp1')
+           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
            ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
 
         """
@@ -485,7 +505,7 @@ class Badger:
            >>> result = badger.getDatasetDescription('psipp_661_data_all_exp2')
            >>> print result
            Dataset psipp_661_data_all_exp2 was defined with the following metadata conditions:
-               roundId : exp2
+               round : exp2
                bossVer : 6.6.1
                resonance : psipp
         """

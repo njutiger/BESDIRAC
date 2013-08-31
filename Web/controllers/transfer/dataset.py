@@ -42,7 +42,7 @@ class DatasetController(BaseController):
       return result_of_reqs
     result = res["Value"]
 
-    result_of_reqs["data"] = dict(zip(DatasetEntryWithID._fields, result))
+    result_of_reqs["data"] = [dict(zip(DatasetEntryWithID._fields, r)) for r in result]
 
     return result_of_reqs
 

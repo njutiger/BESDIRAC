@@ -13,4 +13,5 @@ Script.parseCommandLine( ignoreErrors = True )
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 rpc = RPCClient("DataManagement/DatasetFileCatalog")
-print rpc.listMetadataSets()
+import pprint
+pprint.pprint(rpc.listMetadataSets())

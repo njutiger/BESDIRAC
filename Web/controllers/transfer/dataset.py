@@ -8,7 +8,7 @@ from dirac.lib.diset import getRPCClient
 from DIRAC import gLogger
 
 from BESDIRAC.TransferSystem.DB.TransferDB import DatasetEntryWithID
-
+from BESDIRAC.TransferSystem.DB.TransferDB import FilesInDatasetEntryWithID
 class DatasetController(BaseController):
 
   def index(self):
@@ -46,3 +46,23 @@ class DatasetController(BaseController):
 
     return result_of_reqs
 
+  @jsonify
+  def ls(self):
+    result_of_files = {'num': 0, 'data': []}
+    if not request.params.has_key("dataset"):
+      return result_of_files
+    try:
+      dataset = str(request.params["dataset"])
+    except ValueError:
+      return result_of_files
+
+    RPC = getRPCClient("Transfer/Dataset")
+    res = RPC.list(dataset)
+    if not res["OK"]:
+      return result_of_files
+    result = res["Value"]
+
+    result_of_files["num"] = len(result)
+    result_of_files["data"] = [dict(zip(FilesInDatasetEntryWithID._fields, r)) for r in result]
+
+    return result_of_files

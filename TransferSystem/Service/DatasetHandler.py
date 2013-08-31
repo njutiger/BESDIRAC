@@ -51,3 +51,10 @@ class DatasetHandler(RequestHandler):
 
     res = gTransferDB.get_Dataset(condDict)
     return res
+
+  types_show = [ dict, [list, str], [int, long], [int, long] ]
+  def export_show(self, condDict=None, orderby=None,
+                        start=None, limit=None):
+    """ show the datasets """
+    res = gTransferDB.show_Datasets(condDict, orderby, start, limit)
+    return res

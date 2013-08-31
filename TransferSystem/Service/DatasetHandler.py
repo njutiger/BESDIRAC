@@ -58,3 +58,8 @@ class DatasetHandler(RequestHandler):
     """ show the datasets """
     res = gTransferDB.show_Datasets(condDict, orderby, start, limit)
     return res
+
+  types_showtotal = [ dict ]
+  def export_showtotal(self, condDict):
+    res = gTransferDB.showtotal_Datasets(condDict)
+    return res

@@ -19,6 +19,15 @@ condDict = {}
 orderby = []
 start = 0
 limit = 50
+
+res = transferRequest.showtotal(condDict)
+
+if not res["OK"]:
+  gLogger.error(res)
+  DIRAC.exit(-1)
+
+print "Total:", res["Value"]
+
 res = transferRequest.show(condDict, orderby, start, limit)
 
 if not res["OK"]:

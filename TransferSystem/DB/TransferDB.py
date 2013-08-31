@@ -238,6 +238,11 @@ class TransferDB(DB):
                           offset = start)
     return res
 
+  def showtotal_Datasets(self, condDict=None):
+    res_total = self.countEntries(self.tables["Dataset"],
+                                  condDict=condDict)
+    return res_total
+
   def helper_insert_Dataset_table(self, entry):
     if not isinstance(entry, DatasetEntry):
       raise TypeError("entry should be DatasetEntry")

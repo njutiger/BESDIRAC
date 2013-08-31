@@ -113,3 +113,122 @@ function createDatasetsStore() {
   return store;
 
 }
+
+function createFileListWindow() {
+  var fl_id = Ext.id()
+  // TODO
+  // Get the Request ID
+  var grid = Ext.getCmp("gMainDatasetsList");
+  var selected = grid.getSelections();
+  console.info('selected ', selected);
+
+  if(selected.length != 1) {
+    // Make sure we just select one row 
+    return;
+  } 
+  dataset = selected[0].data.name;
+
+  alert(dataset);
+
+  // Get the files in the dataset
+  var store = createFileListStore();
+  var columns = [
+    {header:'id',
+     dataIndex:'id',
+     sortable: true
+    },
+    {header:'LFN',
+     dataIndex:'LFN',
+     sortable: true
+    },
+    {header:'dataset_id',
+     dataIndex:'dataset_id',
+     sortable: true
+    }
+  ];
+
+  var grid = new Ext.grid.GridPanel({
+    id: fl_id,
+    store: store,
+    columns: columns,
+    layout: "fit",
+    height:400,
+    autoHeight: true,
+    region: 'center',
+    selModel: new Ext.grid.RowSelectionModel({singleSelect : true}),
+    //tbar: topbar,
+    viewConfig: {
+      forceFit: true
+    }
+  });
+  grid.on({
+    render: {
+      //scope: this,
+      fn: function() {
+        //alert("Load Data Req ID: " + req_id);
+        grid.getStore().load({params:{dataset: dataset}});
+      }
+    }
+  });
+
+  var win = new Ext.Window({
+    closable: true,
+    width: 600,
+    height: 400,
+    border: true,
+    autoHeight: true,
+    title: "Files Monitor",
+    items: [grid],
+    layout: "fit",
+  });
+
+  win.show();
+  //grid.reconfigure(store);
+  return win;
+}
+
+function createFileListStore() {
+  var reader = new Ext.data.JsonReader({
+    root: 'data',
+    totalProperty: 'num',
+    id: 'id',
+    
+  },[
+      {name:"id"},
+      {name:"LFN"},
+      {name:"dataset_id"}
+    ]);
+
+  var setup = gPageDescription.selectedSetup;
+  var group = gPageDescription.userData.group;
+  var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
+  url = url + '/transfer/dataset/ls';
+  var store = new Ext.data.Store({
+    reader: reader,
+    proxy: new Ext.data.HttpProxy({
+              url: url,
+              method: 'POST',
+            }),
+    autoLoad: false,
+    autoSync: true
+  });
+  store.on({
+      'load':{
+          fn: function(store, records, options){
+              //store is loaded, now you can work with it's records, etc.
+              console.info('store load, arguments:', arguments);
+              console.info('Store count = ', store.getCount());
+          },
+          scope:this
+      },
+      'loadexception':{
+          //consult the API for the proxy used for the actual arguments
+          fn: function(obj, options, response, e){
+              console.info('store loadexception, arguments:', arguments);
+              console.info('error = ', e);
+          },
+          scope:this
+      }
+  });
+  return store;
+}

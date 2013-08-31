@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+#-*- coding:utf-8 -*-
 
 """
 List the Files in the Dataset (in DFC)
 """
+
+import os
+os.environ['TERM'] = 'linux'
 
 import DIRAC
 from DIRAC.Core.Base import Script

@@ -5,7 +5,6 @@ from DIRAC.Core.Base import Script
 Script.initialize()
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC import gLogger,S_OK,S_ERROR
@@ -98,8 +97,6 @@ class Badger:
         metadataDict['status'] = attributes['status']
         metadataDict['description'] = attributes['description']
         metadataDict['date'] = attributes['date']
-        metadataDict['LFN'] = attributes['LFN']
-        metadataDict['PFN'] = attributes['PFN']
         metadataDict['eventNum'] = attributes['eventNum']
         metadataDict['fileSize'] = attributes['fileSize']
         result = self.client.setMetadata(lfn,metadataDict)
@@ -405,11 +402,6 @@ class Badger:
             errorList.append(fullpath)
             result_OK = 0
           else:
-            #get the truely PFN 
-            storageElement = StorageElement(SE)
-            res = storageElement.getPfnForLfn( lfn )
-            destPfn = res['Value']
-            fileAttr['PFN'] = destPfn
             result = self.__registerFileMetadata(lfn,fileAttr)
             if not result['OK']:
               result_OK = 0

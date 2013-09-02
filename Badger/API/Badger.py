@@ -43,7 +43,7 @@ class Badger:
           for name in files:
             fullPath = os.path.join(rootdir,name)
             fileList.append(fullPath)
-
+        fileList.sort()
         return fileList
     def __getFileAttributes(self,fullPath):
         """ get all attributes of the given file,return a attribute dict.
@@ -64,10 +64,12 @@ class Badger:
         return attributes
 
     def testFunction(self):
-        result = self.__getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
-        for item in result:
-          print item
-        print len(result)
+        #result = self.__getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
+        #result = result[:100]
+        #for item in result:
+        #  print item
+        result = self.__getFileAttributes('/besfs2/offline/data/664-1/jpsi/dst/090613/run_0009952_All_file019_SFO-2.dst')
+        print result
 
     def __registerDir(self,dir):
         """Internal function to register a new directory in DFC .
@@ -91,7 +93,7 @@ class Badger:
           Returns True for success, False for failure.
         """
         metadataDict = {}
-        metadataDict['dataType'] = attributes['dataType']
+        #metadataDict['dataType'] = attributes['dataType']
         metadataDict['runL'] = attributes['runL']
         metadataDict['runH'] = attributes['runH']
         metadataDict['status'] = attributes['status']
@@ -377,7 +379,7 @@ class Badger:
         result_OK = 1
         errorList = []
         fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList[:50]:
+        for fullpath in fileList[:400]:
           #get the attributes of the file
           print fullpath
           fileAttr = self.__getFileAttributes(fullpath)
@@ -389,7 +391,7 @@ class Badger:
           metaDict['resonance'] = fileAttr['resonance']
           metaDict['round'] = fileAttr['round']
           metaDict['bossVer'] = fileAttr['bossVer']
-          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/zhanggang_test')
+          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
           lfn = lastDir + os.sep+fileAttr['LFN']
           fileAttr['LFN'] = lfn
           #upload and register file. 

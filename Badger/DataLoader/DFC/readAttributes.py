@@ -128,7 +128,8 @@ def getRunIdList(jobOptions):
 def getCommonInfo(dstfile):
     
     import subprocess
-    p = subprocess.Popen(["bash", os.path.join(get_module_dir(), "get_info.sh"), dstfile], stdout=subprocess.PIPE)
+    p = subprocess.Popen(["bash", os.path.join(get_module_dir(), "get_info.sh"), dstfile], stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
     output = p.communicate()[0].strip()
     pos = output.find("{")
     if pos >= 0:
@@ -154,7 +155,6 @@ class DataAll(object):
             attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
             attributes["eventType"] = "all"
-            attributes["PFN"] = "empty"
             attributes["round"] = "round02" 
             attributes["resonance"] = "jpsi"
 
@@ -201,7 +201,6 @@ class Others(object):
             attributes = getCommonInfo(self.dstfile)
             attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
-            attributes["PFN"] = ""
             attributes["round"] = "round02"
             attributes["eventType"] = "inclusive"
             attributes["status"] = -1

@@ -9,6 +9,7 @@ upload a set of file to SE and register them in DFC.
 """
 __RCSID__ = "$Id$"
 
+import time
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -28,8 +29,10 @@ from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 localdir = dir[0]
 exitCode = 0
+start = time.time()
 result = badger.uploadAndRegisterFiles(localdir)
-if not result:
+total = time.time()-start
+if not result['OK']:
   print 'ERROR %s'%(result['Message'])
   exitCode = 2
 DIRAC.exit(exitCode)

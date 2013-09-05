@@ -455,7 +455,7 @@ class Badger:
         if result['Value']:
             metadataDict = result['Value']
             result=fc.findFilesByMetadata(metadataDict,'/')
-            lfns = result['Value']
+            lfns = result['Value'][:10]
             lfns.sort()
             dirs = fc.findDirectoriesByMetadata(metadataDict)
             return lfns
@@ -538,6 +538,7 @@ class Badger:
         dirac = Dirac()
         fileList = self.getFilesByDatasetName(dataset_name)
         result = dirac.getFile(fileList,printOutput = True)
+
         if not result['OK']:
           print 'ERROR %s'%(result['Message'])
           return S_ERROR(result['Message']) 

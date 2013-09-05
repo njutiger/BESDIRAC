@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch("s","datasetName","the dataset you want to download")
+Script.registerSwitch("m","datasetName","the dataset you want to download")
 Script.setUsageMessage('\n'.join([__doc__,
                                 'Usage:',
                                 '%s dir'% Script.scriptName,

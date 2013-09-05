@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 #############################################
 #$HeadURL:$
 #data:2013/08/07
@@ -30,7 +30,7 @@ badger = Badger()
 exitCode = 0
 datasetName = datasetName[0]
 start = time.time()
-result = badger.dowloadFileByDatasetName(datasetName)
+result = badger.downloadFilesByDatasetName(datasetName)
 total = time.time()-start
 if not result:
   print 'ERROR %s'%(result['Message'])

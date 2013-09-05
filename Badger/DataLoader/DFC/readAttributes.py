@@ -151,7 +151,6 @@ class DataAll(object):
             return "error"
         else:
             attributes = getCommonInfo(self.dstfile)
-        
             attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
             attributes["eventType"] = "all"

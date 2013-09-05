@@ -457,7 +457,6 @@ class Badger:
             result=fc.findFilesByMetadata(metadataDict,'/')
             lfns = result['Value'][:10]
             lfns.sort()
-            dirs = fc.findDirectoriesByMetadata(metadataDict)
             return lfns
         else:
             print "ERROR: Dataset", dataset_name," not found"

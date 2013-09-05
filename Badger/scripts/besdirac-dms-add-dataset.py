@@ -32,7 +32,6 @@ exitCode = 0
 start = time.time()
 result = badger.uploadAndRegisterFiles(localdir)
 total = time.time()-start
-print total
 if not result['OK']:
   print 'ERROR %s'%(result['Message'])
   exitCode = 2

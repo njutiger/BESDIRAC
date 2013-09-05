@@ -370,7 +370,7 @@ class Badger:
         else:
           return S_OK()
 
-    def uploadAndRegisterFiles(self,localDir,SE='IHEP-USER',guid=None):
+    def uploadAndRegisterFiles(self,localDir,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
         we can treat localDir as a kind of datasetName.
@@ -379,7 +379,7 @@ class Badger:
         result_OK = 1
         errorList = []
         fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList[:400]:
+        for fullpath in fileList[:100]:
           #get the attributes of the file
           fileAttr = self.__getFileAttributes(fullpath)
           #create dir and set dirMetadata to associated dir
@@ -455,7 +455,7 @@ class Badger:
         if result['Value']:
             metadataDict = result['Value']
             result=fc.findFilesByMetadata(metadataDict,'/')
-            lfns = result['Value'][:10]
+            lfns = result['Value']
             lfns.sort()
             return lfns
         else:

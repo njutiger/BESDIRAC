@@ -381,7 +381,6 @@ class Badger:
         fileList = self.__getFilenamesByLocaldir(localDir)
         for fullpath in fileList[:400]:
           #get the attributes of the file
-          print fullpath
           fileAttr = self.__getFileAttributes(fullpath)
           #create dir and set dirMetadata to associated dir
           metaDict = {}

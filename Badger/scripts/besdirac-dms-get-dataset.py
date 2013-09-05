@@ -24,11 +24,15 @@ datasetName = Script.getPositionalArgs()
 if len(datasetName)!=1:
     Script.showHelp()
 
+import time
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 exitCode = 0
 datasetName = datasetName[0]
+start = time.time()
 result = badger.dowloadFileByDatasetName(datasetName)
+total = time.time()-start
+print total
 if not result:
   print 'ERROR %s'%(result['Message'])
   exitCode = 1

@@ -30,9 +30,9 @@ class Badger:
         else:
             self.client = fcClient
         self.besclient = FileCatalogClient('DataManagement/DatasetFileCatalog')
-    def __getFilenamesByLocaldir(self,localDir):
+    def getFilenamesByLocaldir(self,localDir):
         """ get all files under the given dir
-        example:__getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
+        example:getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
         result = [/bes3fs/offline/data/663-1/4260/dst/121215/filename1,
                   /bes3fs/offline/data/663-1/4260/dst/121215/filename2,
                   ...
@@ -64,7 +64,7 @@ class Badger:
         return attributes
 
     def testFunction(self):
-        #result = self.__getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
+        #result = self.getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
         #result = result[:100]
         #for item in result:
         #  print item
@@ -370,7 +370,7 @@ class Badger:
         else:
           return S_OK()
 
-    def uploadAndRegisterFiles(self,localDir,SE='IHEPD-USER',guid=None):
+    def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
         we can treat localDir as a kind of datasetName.
@@ -378,8 +378,8 @@ class Badger:
 
         result_OK = 1
         errorList = []
-        fileList = self.__getFilenamesByLocaldir(localDir)
-        for fullpath in fileList[:100]:
+        #fileList = self.getFilenamesByLocaldir(localDir)
+        for fullpath in fileList:
           #get the attributes of the file
           fileAttr = self.__getFileAttributes(fullpath)
           #create dir and set dirMetadata to associated dir

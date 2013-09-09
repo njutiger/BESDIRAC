@@ -21,5 +21,14 @@ client = FileCatalogClient()
 #totaltime=time.time()-start
 #print totaltime
 #badger.uploadAndRegisterFiles('/besfs2/offline/data/664-1/jpsi/dst')
-badger.testFunction()
+#badger.testFunction()
 #badger.removeDir('/bes/File/jpsi/6.6.4')
+
+
+con = ['dataType=rtraw','bossVer=664','resonance=jpsi','eventType=inc2','expNum=round05','streamId=stream001']
+pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream001_rtraw',con))
+pprint.pprint(badger.listDatasets())
+#pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw'))
+#pprint.pprint(badger.getDatasetDescription('jpsi_6.6.4_all_round02_stream0_dst'))
+
+

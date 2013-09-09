@@ -527,20 +527,23 @@ class Badger:
           return result['Value']
           
 
-    def downloadFilesByDatasetName(self,dataset_name):
+    def downloadFilesByDatasetName(self,fileList):
         """downLoad a set of files form SE.
         use getFilesByDatasetName() get a list of lfns and download these files.
 
            Example usage:
            >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
         """
+        errorList=[]
+        resOK=1
         dirac = Dirac()
-        fileList = self.getFilesByDatasetName(dataset_name)
-        result = dirac.getFile(fileList,printOutput = True)
-
-        if not result['OK']:
-          print 'ERROR %s'%(result['Message'])
-          return S_ERROR(result['Message']) 
+        #fileList = self.getFilesByDatasetName(dataset_name)
+        for lfn in fileList:
+          result = dirac.getFile(lfn,printOutput = True)
+          if not result['OK']:
+            errorList.append(lfn)
+        if errorList:
+          return S_ERROR(errorList) 
         else:
           return S_OK() 
 

@@ -57,8 +57,7 @@ class MultiWorker(object):
         if f is None:
           return
 
-
-        t = threading.Thread( target=worker.Do, args=(f,) )
+        t = threading.Thread( target=self.worker.Do, args=(f,) )
         self.pool.append(t)
         t.start()
 

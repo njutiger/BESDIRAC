@@ -33,7 +33,7 @@ start = time.time()
 class DownloadWorker(IWorker):
   """ """
   def __init__(self, datasetName):
-    self.m_list = badger.getFilesByDatasetName(datasetName)
+    self.m_list = badger.getFilesByDatasetName(datasetName)[4230:]
   def get_file_list(self):
     return self.m_list
   def Do(self, item):
@@ -41,8 +41,10 @@ class DownloadWorker(IWorker):
 
 
 dw = DownloadWorker(datasetName)
-mw = MultiWorker(dw,10)
+mw = MultiWorker(dw)
 mw.main()
 total=time.time()-start
 print total
+exitCode = 1
+DIRAC.exit(exitCode)
 

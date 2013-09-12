@@ -4,4 +4,5 @@ from dirac.controllers.systems.accountingPlots import AccountingplotsController
 
 class AcctController(AccountingplotsController):
 
-  pass
+  def trans(self):
+    return self.__showPlotPage( "Transfer", "/transfer/acct.mako" )

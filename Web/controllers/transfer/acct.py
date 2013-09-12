@@ -2,6 +2,6 @@
 
 from dirac.controllers.systems.accountingPlots import AccountingplotsController
 
-class Acct(AccountingplotsController):
+class AcctController(AccountingplotsController):
 
   pass

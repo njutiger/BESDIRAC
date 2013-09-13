@@ -8,8 +8,7 @@ class DataTransferPlotter( BaseReporter ):
 
   def _reportDataTransfered( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
-                     reportRequest[ 'groupingFields' ][1] + [ 'TransferSize'
-                                   ]
+                     reportRequest[ 'groupingFields' ][1] + [ 'TransferSize' ]
                    )
     retVal = self._getSummaryData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],

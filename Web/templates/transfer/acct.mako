@@ -6,14 +6,14 @@
 ${ h.javascript_link( "/javascripts/dencodelight.js" ) }
 ${ h.javascript_link( "/javascripts/systems/accounting/accountingBase.js" ) }
 ${ h.javascript_link( "/javascripts/systems/accounting/plotPageBase.js" ) }
-${ h.javascript_link( "/javascripts/systems/accounting/dataOperationPlotPage.js" ) }
+${ h.javascript_link( "/javascripts/transfer/acct.js" ) }
 </%def>
 
 <%def name="body()">
 <script type="text/javascript">
   var plotsList = ${c.plotsList};
   var queryOptions = ${c.selectionValues};
-  initDataOpPlots( plotsList, queryOptions );
+  initAcctPlots( plotsList, queryOptions );
 </script>
 </%def>
 

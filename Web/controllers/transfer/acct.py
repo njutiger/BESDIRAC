@@ -59,22 +59,7 @@ class AcctController( BaseController ):
     return data
 
   def index( self ):
-    # Return a rendered template
-    #   return render('/some/template.mako')
-    # or, Return a response
-    return defaultRedirect()
-
-  def trans( self ):
     return self.__showPlotPage( "DataTransfer", "/transfer/acct.mako" )
-
-  def plotPage( self ):
-    try:
-      typeName = str( request.params[ 'typeName' ] )
-    except:
-      c.errorMessage = "Oops. missing type"
-      return render( "/error.mako" )
-
-    return self.__showPlotPage( typeName , "/systems/accounting/%s.mako" % typeName )
 
   def __showPlotPage( self, typeName, templateFile ):
     #Get unique key values

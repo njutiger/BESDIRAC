@@ -217,6 +217,23 @@ class helper_TransferAgent(object):
                               worker.info["id"],
                               {"error": reason})
 
+  def check_worker_status(self, worker):
+    """check whether the file transfer is kill(in DB)"""
+    res = self.transferDB.getFields(self.transferDB.tables["TransferFileList"],
+                                    outFields = ["status"],
+                                    condDict = {"id":worker.info["id"]})
+    if not res["OK"]:
+      gLogger.error(res)
+      return
+
+    if len(res["Value"] != 1):
+      gLogger.error[res]
+      return 
+
+    status = res["Value"][0][0]
+    if status == "kill":
+      worker.proc.kill()
+
 if __name__ == "__main__":
   from DIRAC.Core.Base import Script
   Script.parseCommandLine( ignoreErrors = True )

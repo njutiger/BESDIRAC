@@ -61,3 +61,36 @@ class DataTransferPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
+  # Generate Transfer Data Accumulate
+  def _reportDataSizeBin( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'TransferSize'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
+
+  def _plotDataSizeBin( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Transfered data by %s' % reportRequest[ 'grouping' ] ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ],
+                 'sort_labels' : 'last_value' }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )

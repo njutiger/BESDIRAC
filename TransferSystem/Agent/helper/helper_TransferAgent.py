@@ -232,6 +232,7 @@ class helper_TransferAgent(object):
 
     status = res["Value"][0][0]
     if status == "kill":
+      gLogger.info("check worker should be killed: ", status)
       worker.proc.kill()
 
 if __name__ == "__main__":

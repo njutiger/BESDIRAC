@@ -93,6 +93,7 @@ class helper_TransferAgent(object):
     acct_dt.setValuesFromDict(d)
 
     acct_dt.commit()
+    gLogger.info("Submit Accounting Data")
     
   def helper_check_request(self):
     """

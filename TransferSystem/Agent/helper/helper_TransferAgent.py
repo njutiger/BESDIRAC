@@ -3,17 +3,22 @@
 import datetime
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from BESDIRAC.TransferSystem.DB.TransferDB import TransRequestEntryWithID
 from BESDIRAC.TransferSystem.DB.TransferDB import TransFileListEntryWithID
 
 from BESDIRAC.TransferSystem.Agent.helper.TransferFactory import gTransferFactory
 
+from BESDIRAC.AccountingSystem.Client.Types.DataTransfer import DataTransfer
+
 class helper_TransferAgent(object):
 
   def __init__(self, transferAgent, gTransferDB):
     self.transferAgent =transferAgent
     self.transferDB = gTransferDB
+    gLogger.info("Creating File Catalog")
+    self.fileCatalog = FileCatalog()
 
   def helper_add_transfer(self, result):
     if not result:
@@ -44,6 +49,25 @@ class helper_TransferAgent(object):
         result.id,
         {"status":"transfer", 
           "start_time":datetime.datetime.utcnow()})
+    # Add Accounting:
+    d = {}
+    d["User"] = req.username
+    d["Source"] = req.srcSE
+    d["Destination"] = req.dstSE
+    d["Protocol"] = req.protocol
+    d["FinalStatus"] = "OK"
+    d["TransferSize"] = 0 # TODO
+    r = self.fileCatalog.getFileSize(result.LFN)
+    if r["OK"]:
+      if r["Value"]["Successful"]:
+        d["TransferSize"] = r["Value"]["Successful"][result.LFN]
+    d["TransferTime"] = 1 # 1s 
+    d["TransferOK"] = 1
+    acct_dt = DataTransfer()
+    acct_dt.setValuesFromDict(d)
+    acct_dt.setNowAsStartAndEndTime()
+    # save it 
+    worker.acct_dt = acct_dt
 
     return True
 

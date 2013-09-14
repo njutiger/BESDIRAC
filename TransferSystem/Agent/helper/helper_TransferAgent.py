@@ -79,6 +79,17 @@ class helper_TransferAgent(object):
         info["id"],
         {"status":"finish", 
           "finish_time": datetime.datetime.utcnow()})
+    # Accounting
+    acct_dt = worker.acct_dt
+    acct_dt.setEndTime()
+    # TODO
+    d["FinalStatus"] = "OK"
+    td = acct_dt.endTime-acct_dt.startTime
+    td_s = (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    d["TransferTime"] = td_s # 1s 
+    d["TransferOK"] = 1
+
+    acct_dt.commit()
     
   def helper_check_request(self):
     """

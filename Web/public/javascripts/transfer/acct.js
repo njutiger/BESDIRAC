@@ -33,7 +33,7 @@ function renderPage( plotsList, selectionData ){
   selWidgets.push( createMultiselect( "Destination", "Destination site", selectionData.Destination ) );
   selWidgets.push( createMultiselect( "Protocol", "Protocol", selectionData.Protocol ) );
   selWidgets.push( createMultiselect( "FinalStatus", "Final transfer status", selectionData.FinalStatus ) );
-  selWidgets.push( createHidden( "typeName", "DataOperation" ) );
+  selWidgets.push( createHidden( "typeName", "DataTransfer" ) );
   appendToLeftPanel( createPanel( "Selection conditions", selWidgets ) );
 
   // part 5

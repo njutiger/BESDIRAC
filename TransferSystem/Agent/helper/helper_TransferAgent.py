@@ -226,7 +226,10 @@ class helper_TransferAgent(object):
       gLogger.error(res)
       return
 
-    if len(res["Value"] != 1):
+    if not res[Value]:
+      return
+
+    if len(res["Value"]) != 1:
       gLogger.error[res]
       return 
 

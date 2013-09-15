@@ -181,6 +181,50 @@ class TransferDB(DB):
                            )
     return res
 
+  def delete_TransferFileList(self, condDict = None):
+    """ currently, condDict should be
+        {
+          "id": 154
+        }
+    """
+    if condDict is None:
+      return S_ERROR("No File ID")
+    if not condDict.has_key("id"):
+      return S_ERROR("The dict need a key called 'id'")
+    if not str(condDict["id"]).isdigit():
+      return S_ERROR("The type of dict['id'] should be int")
+    fileid = int(str(condDict["id"]))
+
+    # check fileid status
+    # if it is finish, we don't kill it any more
+    res = self.getFields( self.tables["TransferFileList"], 
+                          outFields=["status"], 
+                          condDict={"id":fileid})
+    #print res
+    if not res["OK"]:
+      gLogger.error(res)
+      return res
+
+    if not res["Value"]:
+      return res
+
+    # TODO XXX
+    if len(res["Value"]) != 1:
+      gLogger.error(res)
+      return res
+
+    # TODO
+    status = res["Value"][0][0]
+    if status == "finish":
+      return S_ERROR("It is finished. Can't Kill.")
+    toUpdate = {"status": "kill"}
+    res = self.updateFields(
+                              self.tables["TransferFileList"],
+                              updateDict = toUpdate,
+                              condDict = {"id":fileid},
+                              )
+    return res
+
   def insert_Dataset(self, dataset, user, filelist):
     # two step:
     # insert into Dataset table.

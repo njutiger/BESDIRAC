@@ -264,7 +264,7 @@ class TransferDB(DB):
 
     # TODO
     # create a new Transfer File
-    entry = entry._replace(status = "new")
+    entry = entry._replace(status = "new", error="")
     res = self.insert_PerTransferFile(entry)
     if not res["OK"]:
       gLogger.error(res)

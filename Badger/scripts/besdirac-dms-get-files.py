@@ -5,13 +5,12 @@
 #author:gang
 #############################################
 """
-download a set of files as a dataset from SE to the current directory
+download a list of files from SE to the current directory
 """
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
 Script.registerSwitch("m","datasetName","the dataset you want to download")
 Script.setUsageMessage('\n'.join([__doc__,
                                 'Usage:',
@@ -19,22 +18,21 @@ Script.setUsageMessage('\n'.join([__doc__,
                                 'Arguments:'
                                 ' datasetName: the dataset you want to download']))
 Script.parseCommandLine(ignoreErrors=True)
-datasetName = Script.getPositionalArgs()
-#print dir
-if len(datasetName)!=1:
-    Script.showHelp()
 
 import time
+from DIRAC.Interfaces.API.Dirac import Dirac
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
-exitCode = 0
-datasetName = datasetName[0]
+fileList=[
+   "/bes/File/jpsi/664/mc/inc2/round05/stream001/664_jpsi_inc2_stream001_run27684_file0007.rtraw",
+   "/bes/File/jpsi/664/mc/inc2/round05/stream001/664_jpsi_inc2_stream001_run27685_file0001.rtraw",
+   "/bes/File/jpsi/664/mc/inc2/round05/stream001/664_jpsi_inc2_stream001_run27745_file0003.rtraw",
+   "/bes/File/jpsi/664/mc/inc2/round05/stream001/664_jpsi_inc2_stream001_run28004_file0007.rtraw",
+   "/bes/File/jpsi/664/mc/inc2/round05/stream001/664_jpsi_inc2_stream001_run28004_file0006.rtraw",
+   ]
 start = time.time()
-result = badger.downloadFilesByDatasetName(datasetName)
+badger.downloadFilesByDatasetName(fileList)
 total = time.time()-start
-if not result:
-  print 'ERROR %s'%(result['Message'])
-  exitCode = 1
-
+exitCode=0
 DIRAC.exit(exitCode)
   

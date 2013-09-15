@@ -530,22 +530,22 @@ class Badger:
     def downloadFilesByDatasetName(self,fileList):
         """downLoad a set of files form SE.
         use getFilesByDatasetName() get a list of lfns and download these files.
+        fileList get from function getFilesByDatesetName()
 
            Example usage:
-           >>>badger.downloadFilesByDatasetName('psipp_661_data_all_exp2')i
+           >>>badger.downloadFilesByDatasetName(fileList)
         """
-        errorList=[]
-        resOK=1
+        errorDict = {}
         dirac = Dirac()
         #fileList = self.getFilesByDatasetName(dataset_name)
         for lfn in fileList:
           result = dirac.getFile(lfn,printOutput = True)
           if not result['OK']:
-            errorList.append(lfn)
-        if errorList:
-          return S_ERROR(errorList) 
+            errorDict[lfn] = result['Message']
+        if errorDict:
+          return S_ERROR(errorDict) 
         else:
-          return S_OK() 
+          return S_OK("All file download successfully.") 
 
 
     def checkDatasetIntegrity():

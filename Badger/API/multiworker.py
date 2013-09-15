@@ -14,14 +14,14 @@ class IWorker(object):
   def Do(self, item):
     raise NotImplementedError
 
-class UploadWorker(IWorker):
-
-  def get_file_list(self):
-    return map(str,range(10))
-
-  def Do(self, item):
-    time.sleep(random.randint(0,9))
-    print item
+#class UploadWorker(IWorker):
+#
+#  def get_file_list(self):
+#    return map(str,range(10))
+#
+#  def Do(self, item):
+#    time.sleep(random.randint(0,9))
+#    print item
 
 class MultiWorker(object):
 
@@ -29,7 +29,7 @@ class MultiWorker(object):
     self.max_pool_size = pool_size
     self.pool = []
     self.worker = worker
-    self.it = iter(worker.get_file_list())
+    self.it = iter(self.worker.get_file_list())
 
   def check_pool(self):
     return self.max_pool_size - len(self.pool)
@@ -68,12 +68,5 @@ class MultiWorker(object):
 if __name__ == "__main__":
 
   worker = UploadWorker()
-  #print worker.get_file_list()
-  #print worker.Do("1")
-
   mw = MultiWorker(worker)
-  #for i in range(11):
-  #  print mw.check_pool()
-  #  print mw.get_file()
-
   mw.main()

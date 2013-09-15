@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import time
 import pprint
 import DIRAC
@@ -12,7 +13,7 @@ client = FileCatalogClient()
 #condition1 = ['resonance=jpsi','bossVer=6.6.4','eventType=inclusive','dataType=dst','round=round02','streamId=stream001']
 #condition = ['resonance=jpsi','bossVer=6.6.4','eventType=all','dataType=dst','round=round02','streamId=stream0']
 #pprint.pprint(badger.registerDataset('jpsi_6.6.4_all_round02_stream0_dst',condition))
-pprint.pprint(badger.listDatasets())
+#pprint.pprint(badger.listDatasets())
 #pprint.pprint(badger.getFilesByDatasetName('jpsi_6.6.4_all_round02_stream0_dst'))
 #pprint.pprint(badger.getDatasetDescription('jpsi_6.6.4_all_round02_stream0_dst'))
 #badger.removeDir("/zhanggang_test/File/jpsi/6.6.4")
@@ -28,7 +29,13 @@ pprint.pprint(badger.listDatasets())
 #con = ['dataType=rtraw','bossVer=664','resonance=jpsi','eventType=inc2','expNum=round05','streamId=stream001']
 #pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream001_rtraw',con))
 #pprint.pprint(badger.listDatasets())
-pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw'))
+#pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw'))
+result = badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw')
+#hfileList = [ os.path.basename(item) for item in result]
+print len(result)
+#pprint.pprint(fileList)
+#for item in fileList:
+#  print item
 #pprint.pprint(badger.getDatasetDescription('jpsi_6.6.4_all_round02_stream0_dst'))
 
 

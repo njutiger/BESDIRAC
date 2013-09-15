@@ -527,7 +527,7 @@ class Badger:
           return result['Value']
           
 
-    def downloadFilesByDatasetName(self,fileList):
+    def downloadFilesByDatasetName(self,fileList,destDir=''):
         """downLoad a set of files form SE.
         use getFilesByDatasetName() get a list of lfns and download these files.
         fileList get from function getFilesByDatesetName()
@@ -539,11 +539,14 @@ class Badger:
         dirac = Dirac()
         #fileList = self.getFilesByDatasetName(dataset_name)
         for lfn in fileList:
-          result = dirac.getFile(lfn,printOutput = True)
+          result = dirac.getFile(lfn,destDir,printOutput = True)
           if not result['OK']:
             errorDict[lfn] = result['Message']
+            #print "ZZZ",errorDict
         if errorDict:
-          return S_ERROR(errorDict) 
+          serr = S_ERROR()
+          serr["errorDict"] = errorDict
+          return serr
         else:
           return S_OK("All file download successfully.") 
 

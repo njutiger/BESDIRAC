@@ -26,13 +26,13 @@ client = FileCatalogClient()
 #badger.removeDir('/bes/File/jpsi/6.6.4')
 
 
-#con = ['dataType=rtraw','bossVer=664','resonance=jpsi','eventType=inc2','expNum=round05','streamId=stream001']
-#pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream001_rtraw',con))
+#con = ['dataType=rtraw','bossVer=664','resonance=jpsi','eventType=inc2','expNum=round05','streamId=stream004']
+#pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream004_rtraw',con))
 #pprint.pprint(badger.listDatasets())
-#pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw'))
-result = badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw')
+pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream003_rtraw'))
+#result = badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream001_rtraw')
 #hfileList = [ os.path.basename(item) for item in result]
-print len(result)
+#print len(result)
 #pprint.pprint(fileList)
 #for item in fileList:
 #  print item

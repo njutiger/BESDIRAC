@@ -106,6 +106,7 @@ class TransferRequestHandler(RequestHandler):
          (new, transfer) --> kill
     """ 
     res = gTransferDB.delete_TransferFileList(condDict)
+    return res
 
   types_retransfer = [ dict ]
   def export_retransfer(self, condDict):
@@ -113,3 +114,4 @@ class TransferRequestHandler(RequestHandler):
          (kill, finish) --> new
     """ 
     res = gTransferDB.retransfer_TransferFileList(condDict)
+    return res

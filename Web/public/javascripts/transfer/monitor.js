@@ -339,7 +339,23 @@ function createFileListTopBar(fl_id) {
         fileTransferKill(file_id, grid);
       },
       text: "Kill"
-    }
+    },
+    // 4. Retransfer 
+    {
+      handler: function(w,t) {
+        var grid = Ext.getCmp(fl_id);
+        var selected = grid.getSelections();
+        if(selected.length != 1) {
+          // set not exist
+          file_id = -1;
+        } else {
+          file_id = selected[0].id;
+        }
+        // RPC Call
+        fileTransferRetransfer(file_id, grid);
+      },
+      text: "Retransfer"
+    },
   ];
   return topbar;
 }
@@ -351,6 +367,27 @@ function fileTransferKill(fileid, grid) {
   var group = gPageDescription.userData.group;
   var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
   url = url + '/transfer/reqmgr/delete';
+
+  Ext.Ajax.request({
+    method:'POST',
+    params:{id:fileid},
+    url: url,
+    success: function(response){
+      grid.getStore().reload();
+    },
+    failure: function(response){
+      grid.getStore().reload();
+    }
+  });
+}
+
+function fileTransferRetransfer(fileid, grid) {
+  alert("Will Retransfer "+fileid);
+
+  var setup = gPageDescription.selectedSetup;
+  var group = gPageDescription.userData.group;
+  var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
+  url = url + '/transfer/reqmgr/retransfer';
 
   Ext.Ajax.request({
     method:'POST',

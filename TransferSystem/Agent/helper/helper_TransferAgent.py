@@ -108,9 +108,11 @@ class helper_TransferAgent(object):
     reqlist = map(TransRequestEntryWithID._make, res["Value"])
     for req in reqlist:
       res = self.transferDB._query(
-          'select count(*) from %(table)s where trans_req_id = %(id)d and status != "finish"' % {
+          'select count(*) from %(table)s where trans_req_id = %(id)d and status not in %(status_list)s' % {
              "table": self.transferDB.tables["TransferFileList"], 
-             "id": req.id}
+             "id": req.id,
+             "status_list": '("finish", "kill")' # XXX finish or kill means this request is ok.
+             }
           )
       if not res["OK"]:
         # TODO

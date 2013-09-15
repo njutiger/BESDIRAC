@@ -32,6 +32,10 @@ class ReqmgrController(BaseController):
 
   @jsonify
   def delete(self):
+    """
+      This is to delete the file tranfer in one request.
+      We don't support delete the whole request now.
+    """
     if not request.params.has_key("id"):
       return S_ERROR("Lack File ID")
     try:

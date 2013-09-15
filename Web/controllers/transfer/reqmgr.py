@@ -32,4 +32,11 @@ class ReqmgrController(BaseController):
 
   @jsonify
   def delete(self):
-    pass
+    if not request.params.has_key("id"):
+      return S_ERROR("Lack File ID")
+    try:
+      fileid = int(request.params["dataset"].encode("utf-8"))
+    except Exception as e:
+      return S_ERROR(str(e))
+    RPC = getRPCClient("Transfer/TransferRequest")
+    return RPC.delete({"id":fileid})

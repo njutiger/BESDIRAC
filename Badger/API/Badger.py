@@ -369,6 +369,14 @@ class Badger:
           return S_ERROR(result)
         else:
           return S_OK()
+    def getPFN(self,lfn):
+        """get replicas by lfn"""
+        result = self.client.getReplicas(lfn)
+        #print result
+        if not result['OK']:
+          return S_ERROR(result)
+        else:
+          return S_OK(result['Value']['Successful'][lfn]['IHEPD-USER'])
 
     def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.

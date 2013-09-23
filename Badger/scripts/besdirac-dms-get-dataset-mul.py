@@ -30,7 +30,7 @@ if len(args) > 1:
 
 from BESDIRAC.Badger.API.Badger import Badger
 from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
-badger = Badger()
+#badger = Badger()
 print "start downloading dataset %s..."%datasetName
 start = time.time()
 class DownloadWorker(IWorker):
@@ -39,10 +39,12 @@ class DownloadWorker(IWorker):
 
   errorDict = {}
   def __init__(self, datasetName):
-    self.m_list = badger.getFilesByDatasetName(datasetName)
+    self.badger = Badger()
+    self.m_list = self.badger.getFilesByDatasetName(datasetName)[0:]
   def get_file_list(self):
     return self.m_list
   def Do(self, item):
+    badger = Badger()
     result = badger.downloadFilesByDatasetName([item],destDir)
     if not result['OK']:
       #print result['Message'],type(result['Message'])
@@ -51,7 +53,7 @@ class DownloadWorker(IWorker):
 
 
 dw = DownloadWorker(datasetName)
-mw = MultiWorker(dw,1)
+mw = MultiWorker(dw,10)
 mw.main()
 total=time.time()-start
 print "Finished,total time is %s"%total

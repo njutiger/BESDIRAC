@@ -3,17 +3,22 @@
 import datetime
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from BESDIRAC.TransferSystem.DB.TransferDB import TransRequestEntryWithID
 from BESDIRAC.TransferSystem.DB.TransferDB import TransFileListEntryWithID
 
 from BESDIRAC.TransferSystem.Agent.helper.TransferFactory import gTransferFactory
 
+from BESDIRAC.AccountingSystem.Client.Types.DataTransfer import DataTransfer
+
 class helper_TransferAgent(object):
 
   def __init__(self, transferAgent, gTransferDB):
     self.transferAgent =transferAgent
     self.transferDB = gTransferDB
+    gLogger.info("Creating File Catalog")
+    self.fileCatalog = FileCatalog()
 
   def helper_add_transfer(self, result):
     if not result:
@@ -44,6 +49,25 @@ class helper_TransferAgent(object):
         result.id,
         {"status":"transfer", 
           "start_time":datetime.datetime.utcnow()})
+    # Add Accounting:
+    d = {}
+    d["User"] = req.username
+    d["Source"] = req.srcSE
+    d["Destination"] = req.dstSE
+    d["Protocol"] = req.protocol
+    d["FinalStatus"] = "OK"
+    d["TransferSize"] = 0 # TODO
+    r = self.fileCatalog.getFileSize(result.LFN)
+    if r["OK"]:
+      if r["Value"]["Successful"]:
+        d["TransferSize"] = r["Value"]["Successful"][result.LFN]
+    d["TransferTime"] = 1 # 1s 
+    d["TransferOK"] = 1
+    acct_dt = DataTransfer()
+    acct_dt.setValuesFromDict(d)
+    acct_dt.setNowAsStartAndEndTime()
+    # save it 
+    worker.acct_dt = acct_dt
 
     return True
 
@@ -55,6 +79,21 @@ class helper_TransferAgent(object):
         info["id"],
         {"status":"finish", 
           "finish_time": datetime.datetime.utcnow()})
+    # Accounting
+    acct_dt = worker.acct_dt
+    acct_dt.setEndTime()
+    # TODO
+    d = {}
+    d["FinalStatus"] = "OK"
+    td = acct_dt.endTime-acct_dt.startTime
+    td_s = (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    d["TransferTime"] = td_s # 1s 
+    d["TransferOK"] = 1
+
+    acct_dt.setValuesFromDict(d)
+
+    acct_dt.commit()
+    gLogger.info("Submit Accounting Data")
     
   def helper_check_request(self):
     """
@@ -69,9 +108,11 @@ class helper_TransferAgent(object):
     reqlist = map(TransRequestEntryWithID._make, res["Value"])
     for req in reqlist:
       res = self.transferDB._query(
-          'select count(*) from %(table)s where trans_req_id = %(id)d and status != "finish"' % {
+          'select count(*) from %(table)s where trans_req_id = %(id)d and status not in %(status_list)s' % {
              "table": self.transferDB.tables["TransferFileList"], 
-             "id": req.id}
+             "id": req.id,
+             "status_list": '("finish", "kill")' # XXX finish or kill means this request is ok.
+             }
           )
       if not res["OK"]:
         # TODO
@@ -177,6 +218,27 @@ class helper_TransferAgent(object):
     self.helper_status_update(self.transferDB.tables["TransferFileList"],
                               worker.info["id"],
                               {"error": reason})
+
+  def check_worker_status(self, worker):
+    """check whether the file transfer is kill(in DB)"""
+    res = self.transferDB.getFields(self.transferDB.tables["TransferFileList"],
+                                    outFields = ["status"],
+                                    condDict = {"id":worker.info["id"]})
+    if not res["OK"]:
+      gLogger.error(res)
+      return
+
+    if not res["Value"]:
+      return
+
+    if len(res["Value"]) != 1:
+      gLogger.error[res]
+      return 
+
+    status = res["Value"][0][0]
+    if status == "kill":
+      gLogger.info("check worker should be killed: ", status)
+      worker.proc.kill()
 
 if __name__ == "__main__":
   from DIRAC.Core.Base import Script

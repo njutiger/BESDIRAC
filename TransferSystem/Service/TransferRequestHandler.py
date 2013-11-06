@@ -99,3 +99,19 @@ class TransferRequestHandler(RequestHandler):
     """
     res = gTransferDB.get_TransferFileList(condDict)
     return res
+
+  types_delete = [ dict ]
+  def export_delete(self, condDict):
+    """ This will make the status to kill
+         (new, transfer) --> kill
+    """ 
+    res = gTransferDB.delete_TransferFileList(condDict)
+    return res
+
+  types_retransfer = [ dict ]
+  def export_retransfer(self, condDict):
+    """ This will make the status to new
+         (kill, finish) --> new
+    """ 
+    res = gTransferDB.retransfer_TransferFileList(condDict)
+    return res

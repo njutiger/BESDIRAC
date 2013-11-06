@@ -31,6 +31,8 @@ class TransferAgent(AgentModule):
 
     # Handle the existed transfer worker
     for worker in self.transfer_worker[:]:
+      # check worker status
+      self.helper.check_worker_status(worker)
       # worker is TransferWorker
       retcode = worker.get_retcode()
       if retcode is not None:

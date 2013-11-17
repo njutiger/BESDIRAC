@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # -*- coding:utf-8 -*-
 #data 13/07/26
 #for data/all  name of file like run_0023454_All_file014_SFO-2.dst

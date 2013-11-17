@@ -32,7 +32,7 @@ class UploadWorker(IWorker):
   def __init__(self, localdir):
     self.m_list = badger.getFilenamesByLocaldir(localdir)
   def get_file_list(self):
-    return m_list
+    return self.m_list
   def Do(self, item):
     badger.uploadAndRegisterFiles([item])
 

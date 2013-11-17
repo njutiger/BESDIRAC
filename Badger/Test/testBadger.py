@@ -10,11 +10,13 @@ from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 client = FileCatalogClient()
 #condition1 = ['resonance=jpsi','bossVer=6.6.4','eventType=inclusive','dataType=dst','round=round02','streamId=stream001']
-condition = ['resonance=jpsi','bossVer=664','eventType=inc2','dataType=rtraw','expNum=round05','streamId=stream008']
-pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream008_rtraw_1',condition))
+#condition = ['resonance=jpsi','bossVer=664','eventType=inc2','dataType=rtraw','expNum=round05','streamId=stream009']
+#pprint.pprint(badger.registerDataset('jpsi_664_inc2_round05_stream009_rtraw',condition))
 #pprint.pprint(badger.listDatasets())
-pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream008_rtraw_1'))
-#for lfn in badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream007_rtraw'):
+#pprint.pprint(badger.getDatasetDescription("jpsi_664_inc2_round05_stream004_rtraw"))
+#badger.getFilesByDatasetName("jpsi_664_inc2_round05_stream004_rtraw")
+#pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream009_rtraw'))
+#for lfn in badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream009_rtraw'):
 #  print os.path.basename(lfn) 
 #pprint.pprint(badger.getDatasetDescription('jpsi_6.6.4_all_round02_stream0_dst'))
 #badger.removeDir("/zhanggang_test/File/jpsi/6.6.4")
@@ -26,3 +28,4 @@ pprint.pprint(badger.getFilesByDatasetName('jpsi_664_inc2_round05_stream008_rtra
 #badger.testFunction()
 #badger.removeDir('/bes/File/jpsi/6.6.4')
 
+pprint(badger.testFunction())

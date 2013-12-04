@@ -60,6 +60,8 @@ class Badger:
             return S_ERROR(errorMes)
           attributes = obj.getAttributes()
           attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
+        else:
+          attributes = {}
 
         return attributes
 
@@ -285,6 +287,27 @@ class Badger:
                     for subdir in result['Value']['Successful'][dir]['SubDirs']:
                         self.removeDir(subdir)
                     self.removeDir(dir)
+
+    def listDir(self,dir):
+        """list the files under the given DFC dir"""
+        fileList = []
+        result = self.client.listDirectory(dir)
+        if result['OK']:
+          if result['Value']['Successful'][dir]['Files']:
+            fileList = result['Value']['Successful'][dir]['Files'].keys()
+        else:
+          print "no files under this dir"
+        return fileList 
+
+    def getSize(self,lfns):
+        """get the size of the given lfn"""
+        result = self.client.getFileSize(lfns)
+        if result['OK']:
+          if result['Value']['Successful']:
+            retVal= result['Value']['Successful']
+        else:
+          retVal = {} 
+        return retVal 
 
     def registerFileMetadata(self,lfn,metaDict):
 

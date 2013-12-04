@@ -13,7 +13,7 @@ import time
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch("r","dir","the directory that dataset files located")
+Script.registerSwitch("r","filename","the fullpath of a file")
 Script.setUsageMessage('\n'.join([__doc__,
                                 'Usage:',
                                 '%s dir'% Script.scriptName,
@@ -27,12 +27,14 @@ if len(dir)!=1:
 
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
-localdir = dir[0]
+#localdir = dir[0]
+fileName = dir[0]
 exitCode = 0
 start = time.time()
 print "start upload..."
-fileList = badger.getFilenamesByLocaldir(localdir)
-print "%s files need to upload..."%len(fileList)
+#fileList = badger.getFilenamesByLocaldir(localdir)
+fileList = [fileName]
+print fileList
 result = badger.uploadAndRegisterFiles(fileList)
 total = time.time()-start
 print "finish,total time is %s"%total

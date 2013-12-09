@@ -29,7 +29,14 @@ class Badger:
             self.client = FileCatalogClient(_fcType)
         else:
             self.client = fcClient
-        self.besclient = FileCatalogClient('DataManagement/DatasetFileCatalog')
+        #self.besclient = FileCatalogClient('DataManagement/DatasetFileCatalog')
+    def __createQuery(metaSelections):
+        """
+        need the function then,need not import
+        from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
+        TODO...
+        """
+        pass
     def getFilenamesByLocaldir(self,localDir):
         """ get all files under the given dir
         example:getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
@@ -270,13 +277,15 @@ class Badger:
                 return dir_round
             else:   
                 return dir_streamId
+##########################################################################################
+    #dir options
     def removeDir(self,dir):
         """remove the dir include files and subdirs
         """
         result = self.client.listDirectory(dir)
         if result['OK']:
             if not result['Value']['Successful'][dir]['Files'] and not result['Value']['Successful'][dir]['SubDirs']:
-                print 'no file and subDirs in this dir'
+                #print 'no file and subDirs in this dir'
                 self.client.removeDirectory(dir)
                 return S_OK()
             else:
@@ -299,34 +308,7 @@ class Badger:
           print "no files under this dir"
         return fileList 
 
-    def getSize(self,lfns):
-        """get the size of the given lfn"""
-        result = self.client.getFileSize(lfns)
-        if result['OK']:
-          if result['Value']['Successful']:
-            retVal= result['Value']['Successful']
-        else:
-          retVal = {} 
-        return retVal 
 
-    def registerFileMetadata(self,lfn,metaDict):
-
-        """Add file level metadata to an entry
-           True for success, False for failure
-           (maybe used to registerNewMetadata
-           Example:
-           >>>lfn = '/bes/File/psipp/6.6.1/data/all/exp1/run_0011414_All_file001_SFO-1'
-           >>>entryDict = {'runL':1000,'runH':898898}
-           >>>badger.registerFileMetadata(lfn,entryDict)
-           True
-        """
-        fc = self.client
-        result = fc.setMetadata(lfn,metaDict)
-        if result['OK']:
-            return S_OK() 
-        else:
-            print 'Error:%s'%(result['Message'])
-            return S_ERROR(result['Message'])
     #################################################################################
     # meta fields operations
     #
@@ -356,8 +338,27 @@ class Badger:
           return S_ERROR(result['Message'])
         else:
           return result['Value']
-    #####################################################################
 
+    def registerFileMetadata(self,lfn,metaDict):
+
+        """Add file level metadata to an entry
+           True for success, False for failure
+           (maybe used to registerNewMetadata
+           Example:
+           >>>lfn = '/bes/File/psipp/6.6.1/data/all/exp1/run_0011414_All_file001_SFO-1'
+           >>>entryDict = {'runL':1000,'runH':898898}
+           >>>badger.registerFileMetadata(lfn,entryDict)
+           True
+        """
+        fc = self.client
+        result = fc.setMetadata(lfn,metaDict)
+        if result['OK']:
+            return S_OK() 
+        else:
+            print 'Error:%s'%(result['Message'])
+            return S_ERROR(result['Message'])
+    #####################################################################
+    # File Options
     def registerFile(self,lfn,dfcAttrDict):
         """Register a new file in the DFC.
         
@@ -392,6 +393,7 @@ class Badger:
           return S_ERROR(result)
         else:
           return S_OK()
+
     def getPFN(self,lfn):
         """get replicas by lfn"""
         result = self.client.getReplicas(lfn)
@@ -400,6 +402,16 @@ class Badger:
           return S_ERROR(result)
         else:
           return S_OK(result['Value']['Successful'][lfn]['IHEPD-USER'])
+
+    def getSize(self,lfns):
+        """get the size of the given lfn"""
+        result = self.client.getFileSize(lfns)
+        if result['OK']:
+          if result['Value']['Successful']:
+            retVal= result['Value']['Successful']
+        else:
+          retVal = {} 
+        return retVal 
 
     def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
@@ -446,33 +458,89 @@ class Badger:
     ####################################################################
     # dataset functions
     #
-    def registerDataset(self, dataset_name, conditions):
+    def registerDataset(self, datasetName,path,conditions):
         """Register a new dataset in DFC. Takes dataset name and string with
            conditions for new dataset as arguments.
            datasetname format:  
-           "resonance_BossVer_eventtype_round_runL_runH_stream0_datatype
-           example:psip_655_all_round01_8093_9025_stream0_dst
+           resonance_BossVer_eventtype_round_runL_runH_stream0_datatype
            resonance_BossVer_eventtype_round_runL_runH_streamID_datatype
-           example:psip_655_inc_round01_8093_9025_stream1_dst
-           example:psipp_655_user1_round01_11414_13988_stream1_dst"
+           type(conditions) is str,like "resonance=jpsi bossVer=6.5.5 round=exp1"
         """
-        pass
-        # need to think about how datasets are defined
-        # format for passing the dataset conditions?
-        
         fc = self.client
-        setDict = {}
-        for cond in conditions:
-            key, value = cond.split('=')
-            setDict[key] = value
-        result = fc.addMetadataSet(dataset_name, setDict)
+        cli = FileCatalogClientCLI(fc)
+        metadataDict = cli._FileCatalogClientCLI__createQuery(conditions)
+        metadataDict['Path'] = path 
+        result = fc.addDataset(datasetName, metadataDict)
         if not result['OK']:
             print ("Error: %s" % result['Message'])
         else:
-            print "Added dataset %s with conditions %s" % (dataset_name, conditions)
+            print "Added dataset %s with conditions %s" % (datasetName, conditions)
         
+    def getDatasetDescription(self, datasetName):
+        """Return a string containing a description of metadata with which 
+           the given dataset was defined.
+           Example usage:
+           >>> result = badger.getDatasetDescription('psipp_661_data_all_exp2')
+        """
+        result = self.client.getDatasetParameters(datasetName)
+        if not result['OK']:
+          print "ERROR: failed to get status of dataset:", result['Message']
+        else:
+          parDict = result['Value']
+        for par,value in parDict.items():
+          print par.rjust(20),':',value 
 
-    def getFilesByDatasetName(self, dataset_name):
+    def removeDataset(self,datasetName):
+        """remove a dataset
+        """
+        result = self.client.removeDataset(datasetName)
+        if not result['OK']:
+          print "ERROR: failed to remove dataset:", result['Message']
+        else:
+          print "Successfully removed dataset", datasetName
+
+    def checkDataset(self,datasetName):
+        """ check if the dataset parameters are still valid
+        """
+        result = self.client.checkDataset( datasetName )
+        if not result['OK']:
+          print "ERROR: failed to check dataset:", result['Message']
+        else:
+          changeDict = result['Value']
+          if not changeDict:
+            print "Dataset is not changed"
+          else:
+            print "Dataset changed:"
+            for par in changeDict:
+              print "   ",par,': ',changeDict[par][0],'->',changeDict[par][1]
+    def updateDataset(self,datasetName):
+          """ Update the given dataset parameters
+          """
+          result = self.client.updateDataset( datasetName )
+          if not result['OK']:
+            print "ERROR: failed to update dataset:", result['Message']
+          else:
+            print "Successfully updated dataset", datasetName            
+
+    def freezeDataset(self,datasetName):
+        """ Freeze the given dataset
+        """
+        result = self.client.freezeDataset( datasetName )
+        if not result['OK']:
+          print "ERROR: failed to freeze dataset:", result['Message']
+        else:
+          print "Successfully frozen dataset", datasetName      
+
+    def releaseDataset(self,datasetName):
+        """ Release the given dataset
+        """
+        result = self.client.releaseDataset( datasetName )
+        if not result['OK']:
+          print "ERROR: failed to release dataset:", result['Message']
+        else:
+          print "Successfully released dataset", datasetName    
+
+    def getFilesByDatasetName(self, datasetName):
         """Return a list of LFNs in the given dataset.
            
            Example usage:
@@ -481,24 +549,13 @@ class Badger:
         """
 
         fc = self.client
-        #fc = self.besclient
-        #result = fc.getMetadataSet(dataset_name, True)
-        #if result['Value']:
-        #    metadataDict = result['Value']
-        #    result=fc.findFilesByMetadata(metadataDict,'/')
-        #    lfns = result['Value']
-        #    lfns.sort()
-        #    return lfns
-        #else:
-        #    print "ERROR: Dataset", dataset_name," not found"
-        #    return S_ERROR(result)
-        result = fc.getDatasetFiles(dataset_name)
+        result = fc.getDatasetFiles(datasetName)
         if result['OK']:
           lfns = result['Value']
           lfns.sort()
           return lfns
         else:
-          print "ERROR: Dataset", dataset_name," not found"
+          print "ERROR: Dataset", datasetName," not found"
           return S_ERROR(result)
             
     def getFilesByMetadataQuery(self, query):
@@ -526,45 +583,20 @@ class Badger:
         else:
             print "ERROR: No files found which match query conditions."
             return None
-  
-
-    def getDatasetDescription(self, dataset_name):
-        """Return a string containing a description of metadata with which 
-           the given dataset was defined.
-           
-           Example usage:
-           >>> result = badger.getDatasetDescription('psipp_661_data_all_exp2')
-           >>> print result
-           Dataset psipp_661_data_all_exp2 was defined with the following metadata conditions:
-               round : exp2
-               bossVer : 6.6.1
-               resonance : psipp
-        """
-        #TODO: keep this as separate method, or just return description with LFNs?
-        fc = self.client
-        result = fc.getMetadataSet(dataset_name, True)
-        if result['Value']:
-            metadataDict = result['Value']
-            # give user a reminder of what this dataset's definition is
-            dataset_desc = ''
-            dataset_desc += \
-                'Dataset %s was defined with the following metadata conditions: \n ' \
-                % dataset_name
-            for key in metadataDict:
-                dataset_desc += '%s : %s \n' % (key, metadataDict[key])
-        else:
-            dataset_desc = 'Error: dataset %s is not defined.' % dataset_name
-        return dataset_desc
-
 
     def listDatasets(self):
         """list the exist dataset"""
-        result = self.besclient.listMetadataSets()
+        datasetName = ''
+        result = self.client.getDatasets( datasetName )
         if not result['OK']:
-          return S_ERROR(result)
-        else:
-          return result['Value']
-          
+          print "ERROR:failed to get datasets"
+          return
+        
+        datasetDict = result['Value']
+        for dName in datasetDict.keys():
+          return dName
+          print dName
+
 
     def downloadFilesByFilelist(self,fileList,destDir=''):
         """downLoad a set of files form SE.

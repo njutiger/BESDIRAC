@@ -1,43 +1,54 @@
 #!/usr/bin/env python
-#############################################
-#$HeadURL:$
-#data:2013/08/07
-#author:gang
-#############################################
+# author: zhanggang
 """
-upload a set of file to SE and register them in DFC.
+besdirac-dms-add-dataset
+  Multi-thread upload a set of file to SE and register them in DFC.
+  Usage:
+    besdirac-dms-add-dataset <Localdir>
+    Argument:
+      Localdir: the location of files that you want to upload to SE.
+    Example:
+      script /afs/ihep.ac.cn/users/z/zhanggang/
 """
 __RCSID__ = "$Id$"
 
 import time
-import DIRAC
+from DIRAC import S_OK, S_ERROR, gLogger,exit
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch("r","dir","the directory that dataset files located")
-Script.setUsageMessage('\n'.join([__doc__,
-                                'Usage:',
-                                '%s dir'% Script.scriptName,
-                                'Arguments:'
-                                ' dir: dir is a logical directory in DFC']))
-Script.parseCommandLine(ignoreErrors=True)
+Script.setUsageMessage(__doc__)
 dir = Script.getPositionalArgs()
-#print dir
-if len(dir)!=1:
-    Script.showHelp()
+
+if len(dir) == 0:
+  exit(-1)
 
 from BESDIRAC.Badger.API.Badger import Badger
+from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
+
 badger = Badger()
 localdir = dir[0]
-exitCode = 0
-start = time.time()
-print "start upload..."
-fileList = badger.getFilenamesByLocaldir(localdir)
-print "%s files need to upload..."%len(fileList)
-result = badger.uploadAndRegisterFiles(fileList)
-total = time.time()-start
-print "finish,total time is %s"%total
-if not result['OK']:
-  print 'ERROR %s'%(result['Message'])
-  exitCode = 2
-DIRAC.exit(exitCode)
-  
+startTime = time.time()
+print "startTime",startTime
+class UploadWorker(IWorker):
+  """ 
+  """
+  self.errorDict = {}
+  def __init__(self, localdir):
+    self.m_list = badger.getFilenamesByLocaldir(localdir)
+  def get_file_list(self):
+    #print self.m_list
+    return self.m_list
+  def Do(self, item):
+    badger.uploadAndRegisterFiles([item])
+    if not result['OK']:
+      self.errorDict.update(result['Message'])
+      print self.errorDict
+
+uw = UploadWorker(localdir)
+mw = MultiWorker(uw)
+mw.main()
+endTime = time.time()-startTime
+print "endTime",endTime
+
+exit(1)

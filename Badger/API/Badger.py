@@ -481,23 +481,31 @@ class Badger:
         """
 
         fc = self.client
-        #sfc = self.besclient
-        result = fc.getMetadataSet(dataset_name, True)
-        if result['Value']:
-            metadataDict = result['Value']
-            result=fc.findFilesByMetadata(metadataDict,'/')
-            lfns = result['Value']
-            lfns.sort()
-            return lfns
+        #fc = self.besclient
+        #result = fc.getMetadataSet(dataset_name, True)
+        #if result['Value']:
+        #    metadataDict = result['Value']
+        #    result=fc.findFilesByMetadata(metadataDict,'/')
+        #    lfns = result['Value']
+        #    lfns.sort()
+        #    return lfns
+        #else:
+        #    print "ERROR: Dataset", dataset_name," not found"
+        #    return S_ERROR(result)
+        result = fc.getDatasetFiles(dataset_name)
+        if result['OK']:
+          lfns = result['Value']
+          lfns.sort()
+          return lfns
         else:
-            print "ERROR: Dataset", dataset_name," not found"
-            return S_ERROR(result)
+          print "ERROR: Dataset", dataset_name," not found"
+          return S_ERROR(result)
             
     def getFilesByMetadataQuery(self, query):
         """Return a list of LFNs satisfying given query conditions.
 
            Example usage:
-           >>> badger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
+           >>> brunH_GT_29756adger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
            ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
 
         """
@@ -558,13 +566,13 @@ class Badger:
           return result['Value']
           
 
-    def downloadFilesByDatasetName(self,fileList,destDir=''):
+    def downloadFilesByFilelist(self,fileList,destDir=''):
         """downLoad a set of files form SE.
-        use getFilesByDatasetName() get a list of lfns and download these files.
+        use getFilesByFilelist() get a list of lfns and download these files.
         fileList get from function getFilesByDatesetName()
 
            Example usage:
-           >>>badger.downloadFilesByDatasetName(fileList)
+           >>>badger.downloadFilesByFilelist(fileList)
         """
         errorDict = {}
         dirac = Dirac()

@@ -41,10 +41,10 @@ def freeze(dn):
 
 
 if __name__=="__main__":
-  #list()
+  list()
   #jget("runL_GTE_29758")
   #byName("runL_GTE_29758")
-  freeze("runL_GTE_29758")
-  release("runL_GTE_29758")
+  #freeze("runL_GTE_29758")
+  #release("runL_GTE_29758")
   #kkadd("runL_GTE_29758",'/zhanggang_test',"runL>=29757")
 

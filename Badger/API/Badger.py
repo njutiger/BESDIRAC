@@ -594,7 +594,6 @@ class Badger:
         
         datasetDict = result['Value']
         for dName in datasetDict.keys():
-          return dName
           print dName
 
 

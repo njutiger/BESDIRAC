@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # author: zhanggang
 """
-besdirac-dms-add-dataset
+besdirac-dms-add-files
   Multi-thread upload a set of file to SE and register them in DFC.
   Usage:
-    besdirac-dms-add-dataset <Localdir>
+    besdirac-dms-add-files <Localdir>
     Argument:
       Localdir: the location of files that you want to upload to SE.
     Example:
@@ -21,6 +21,7 @@ Script.setUsageMessage(__doc__)
 dir = Script.getPositionalArgs()
 
 if len(dir) == 0:
+  Script.showHelp()
   exit(-1)
 
 from BESDIRAC.Badger.API.Badger import Badger

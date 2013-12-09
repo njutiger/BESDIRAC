@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #mtime:2013/12/09
 """
-besdirac-dms-get-dataset
+besdirac-dms-get-files
   This script get a set of files from SE to localdir.
 
   Usage:
-    besdirac-dms-get-dataset [-n|-f|-m] <Arguments>
+    besdirac-dms-get-files [-n|-f|-m] <Arguments>
     Arguments:
       datasetName: a dataset that contain a set of files.
       DFCDir: The logical dir in DFC. Download files under this dir.

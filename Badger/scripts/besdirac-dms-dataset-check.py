@@ -21,4 +21,4 @@ datasetName = args[0]
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 badger.checkDataset(datasetName)
-exit(1)
+exit(0)

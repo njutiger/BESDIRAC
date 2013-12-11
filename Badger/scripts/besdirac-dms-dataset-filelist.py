@@ -23,4 +23,4 @@ from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 result = badger.getFilesByDatasetName(datasetName)
 pprint.pprint(result)
-exit(1)
+exit(0)

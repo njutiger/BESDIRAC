@@ -15,6 +15,6 @@ Script.setUsageMessage(__doc__)
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 badger.listDatasets()
-exitCode = 1
+exitCode = 0
 DIRAC.exit(exitCode)
 

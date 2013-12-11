@@ -30,6 +30,6 @@ strArg = args[2]
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 badger.registerDataset(datasetName,path,strArg)
-exit(1)
+exit(0)
 
 

@@ -304,6 +304,7 @@ class Badger:
         if result['OK']:
           if result['Value']['Successful'][dir]['Files']:
             fileList = result['Value']['Successful'][dir]['Files'].keys()
+            fileList.sort()
         else:
           print "no files under this dir"
         return fileList 
@@ -612,13 +613,12 @@ class Badger:
           result = dirac.getFile(lfn,destDir,printOutput = True)
           if not result['OK']:
             errorDict[lfn] = result['Message']
-            #print "ZZZ",errorDict
         if errorDict:
           serr = S_ERROR()
           serr["errorDict"] = errorDict
           return serr
         else:
-          return S_OK("All file download successfully.") 
+          return S_OK("File download successfully.") 
 
 
     def checkDatasetIntegrity():

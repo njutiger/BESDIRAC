@@ -610,7 +610,7 @@ class Badger:
         dirac = Dirac()
         #fileList = self.getFilesByDatasetName(dataset_name)
         for lfn in fileList:
-          result = dirac.getFile(lfn,destDir,printOutput = True)
+          result = dirac.getFile(lfn,destDir,printOutput = False)
           if not result['OK']:
             errorDict[lfn] = result['Message']
         if errorDict:

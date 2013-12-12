@@ -31,7 +31,7 @@ create table TransferFileList (
   trans_req_id int not null,
   start_time datetime,
   finish_time datetime,
-  status enum('new', 'transfer', 'finish') not null,
+  status enum('new', 'transfer', 'finish', 'kill') not null,
   error varchar(65535),
   index(status),
   foreign key (trans_req_id) references TransferRequest (id)

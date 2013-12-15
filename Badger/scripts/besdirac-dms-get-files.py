@@ -82,12 +82,12 @@ class DownloadWorker(IWorker):
     self.badger = Badger()
     if queryFlag:
       self.db,self.dbName = getDB(setQuery,self.badger.getFilesByMetadataQuery)
-      print self.db,self.dbName
+      #print self.db,self.dbName
     elif setNameFlag:
       self.db,self.dbName = getDB(setName,self.badger.getFilesByDatasetName)
-      print self.db,self.dbName
+      #print self.db,self.dbName
     elif dfcDirFlag:
-      self.db,self.dbName = getDB(dfcDir,self.badger.listDir) 
+      #self.db,self.dbName = getDB(dfcDir,self.badger.listDir) 
       print self.db,self.dbName
 
   def get_file_list(self):

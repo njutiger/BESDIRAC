@@ -2,7 +2,9 @@
 # -*- coding:utf-8 -*-
 # author: zhanggang
 '''checksum,compare the size of LFN files and Local files 
-example python % /dfc/  /localdir/
+   Usage :
+    besdirac-dms-check-files <dfcDir> <localDir>
+    Example: besdirac-dms-check-files /dir1  /dir2
 '''
 import os.path
 import pprint
@@ -10,6 +12,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
 from BESDIRAC.Badger.API.Badger import Badger
 

@@ -87,8 +87,8 @@ class DownloadWorker(IWorker):
       self.db,self.dbName = getDB(setName,self.badger.getFilesByDatasetName)
       #print self.db,self.dbName
     elif dfcDirFlag:
-      #self.db,self.dbName = getDB(dfcDir,self.badger.listDir) 
-      print self.db,self.dbName
+      self.db,self.dbName = getDB(dfcDir,self.badger.listDir) 
+      #print self.db,self.dbName
 
   def get_file_list(self):
     #return self.m_list

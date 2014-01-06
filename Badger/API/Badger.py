@@ -106,10 +106,10 @@ class Badger:
         metadataDict['runL'] = attributes['runL']
         metadataDict['runH'] = attributes['runH']
         metadataDict['status'] = attributes['status']
-        metadataDict['description'] = attributes['description']
-        metadataDict['date'] = attributes['date']
+        #metadataDict['description'] = attributes['description']
+        #metadataDict['date'] = attributes['date']
         metadataDict['eventNum'] = attributes['eventNum']
-        metadataDict['fileSize'] = attributes['fileSize']
+        #metadataDict['fileSize'] = attributes['fileSize']
         result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
           return S_ERROR() 
@@ -414,6 +414,32 @@ class Badger:
           retVal = {} 
         return retVal 
 
+    def getFilesByMetadataQuery(self, query):
+        """Return a list of LFNs satisfying given query conditions.
+
+           Example usage:
+           >>> brunH_GT_29756adger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
+           ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
+
+        """
+        #TODO: checking of output, error catching
+
+
+        fc = self.client
+        #TODO: calling the FileCatalog CLI object and its private method
+        # is not a good way of doing this! but use it to allow construction of
+        # the query meantime, until createQuery is made a public method
+        cli = FileCatalogClientCLI(fc)
+        metadataDict = cli._FileCatalogClientCLI__createQuery(query)
+        result = fc.findFilesByMetadata(metadataDict,'/')
+        if result['OK']:
+            lfns = fc.findFilesByMetadata(metadataDict,'/')['Value']
+            lfns.sort()
+            return lfns
+        else:
+            print "ERROR: No files found which match query conditions."
+            return None
+
     def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
@@ -456,6 +482,28 @@ class Badger:
         else:
           return S_ERROR(errorList)
 
+    def downloadFilesByFilelist(self,fileList,destDir=''):
+        """downLoad a set of files form SE.
+        use getFilesByFilelist() get a list of lfns and download these files.
+        fileList get from function getFilesByDatesetName()
+
+           Example usage:
+           >>>badger.downloadFilesByFilelist(fileList)
+        """
+        errorDict = {}
+        dirac = Dirac()
+        #fileList = self.getFilesByDatasetName(dataset_name)
+        for lfn in fileList:
+          result = dirac.getFile(lfn,destDir,printOutput = False)
+          if not result['OK']:
+            errorDict[lfn] = result['Message']
+        if errorDict:
+          serr = S_ERROR()
+          serr["errorDict"] = errorDict
+          return serr
+        else:
+          return S_OK("File download successfully.") 
+
     ####################################################################
     # dataset functions
     #
@@ -465,7 +513,7 @@ class Badger:
            datasetname format:  
            resonance_BossVer_eventtype_round_runL_runH_stream0_datatype
            resonance_BossVer_eventtype_round_runL_runH_streamID_datatype
-           type(conditions) is str,like "resonance=jpsi bossVer=6.5.5 round=exp1"
+           type(conditions) is str,like "resonance=jpsi bossVer=655 round=round1"
         """
         fc = self.client
         cli = FileCatalogClientCLI(fc)
@@ -559,31 +607,6 @@ class Badger:
           print "ERROR: Dataset", datasetName," not found"
           return S_ERROR(result)
             
-    def getFilesByMetadataQuery(self, query):
-        """Return a list of LFNs satisfying given query conditions.
-
-           Example usage:
-           >>> brunH_GT_29756adger.getFilesByMetadataQuery('resonance=jpsi bossVer=6.5.5 round=exp1')
-           ['/bes/File/jpsi/6.5.5/data/all/exp1/file1', .....]
-
-        """
-        #TODO: checking of output, error catching
-
-
-        fc = self.client
-        #TODO: calling the FileCatalog CLI object and its private method
-        # is not a good way of doing this! but use it to allow construction of
-        # the query meantime, until createQuery is made a public method
-        cli = FileCatalogClientCLI(fc)
-        metadataDict = cli._FileCatalogClientCLI__createQuery(query)
-        result = fc.findFilesByMetadata(metadataDict,'/')
-        if result['OK']:
-            lfns = fc.findFilesByMetadata(metadataDict,'/')['Value']
-            lfns.sort()
-            return lfns
-        else:
-            print "ERROR: No files found which match query conditions."
-            return None
 
     def listDatasets(self):
         """list the exist dataset"""
@@ -598,27 +621,6 @@ class Badger:
           print dName
 
 
-    def downloadFilesByFilelist(self,fileList,destDir=''):
-        """downLoad a set of files form SE.
-        use getFilesByFilelist() get a list of lfns and download these files.
-        fileList get from function getFilesByDatesetName()
-
-           Example usage:
-           >>>badger.downloadFilesByFilelist(fileList)
-        """
-        errorDict = {}
-        dirac = Dirac()
-        #fileList = self.getFilesByDatasetName(dataset_name)
-        for lfn in fileList:
-          result = dirac.getFile(lfn,destDir,printOutput = False)
-          if not result['OK']:
-            errorDict[lfn] = result['Message']
-        if errorDict:
-          serr = S_ERROR()
-          serr["errorDict"] = errorDict
-          return serr
-        else:
-          return S_OK("File download successfully.") 
 
 
     def checkDatasetIntegrity():

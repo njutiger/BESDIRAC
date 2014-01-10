@@ -65,6 +65,7 @@ def getDB(name,function):
     db = anydbm.open(dbname,'c')
     for file in fileList:
       db[file] = '0'
+      db.sync()
   else:
     db = anydbm.open(dbname,'c')
   return (db,dbname)

@@ -41,7 +41,8 @@ def freeze(dn):
 
 
 if __name__=="__main__":
-  list()
+  #list()
+  badger.removeDir("/zhanggang_test/File")
   #jget("runL_GTE_29758")
   #byName("runL_GTE_29758")
   #freeze("runL_GTE_29758")

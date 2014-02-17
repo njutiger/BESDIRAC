@@ -151,7 +151,7 @@ class DataAll(object):
             return "error"
         else:
             attributes = getCommonInfo(self.dstfile)
-            attributes["fileSize"] = getFileSize(self.dstfile)
+            #attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
             attributes["eventType"] = "all"
             attributes["round"] = "round02" 
@@ -177,7 +177,7 @@ class DataAll(object):
             attributes["streamId"] = 'stream0' 
             attributes["description"] = 'null'
             del attributes["runId"]
-            del attributes["jobOptions"]
+            attributes["jobOptions"] = ""
             return attributes
 
 #get resonance,runL,runH,streamId,LFN from file name
@@ -198,7 +198,7 @@ class Others(object):
         else:
             #get bossVer,datatype,eventNum,runId(equal runL,runH)
             attributes = getCommonInfo(self.dstfile)
-            attributes["fileSize"] = getFileSize(self.dstfile)
+            #attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
             attributes["round"] = "round02"
             attributes["eventType"] = "inclusive"
@@ -229,9 +229,10 @@ class Others(object):
                     attributes["runL"] = runL 
                     attributes["runH"] = runH
                     attributes["description"] = result["description"]
+                    
             
             del attributes["runId"]
-            del attributes["jobOptions"]
+            attributes["jobOptions"] = ""
             return attributes
 
 

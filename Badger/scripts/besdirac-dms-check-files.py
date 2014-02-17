@@ -18,13 +18,13 @@ from BESDIRAC.Badger.API.Badger import Badger
 
 badger = Badger()
 dirs = Script.getPositionalArgs()
-dir = dirs[0]
+dfcdir = dirs[0]
 localDir = dirs[1]
 
-lfns = badger.listDir(dir)
+lfns = badger.listDir(dfcdir)
 lfnDict = badger.getSize(lfns)
-
 localFiles = badger.getFilenamesByLocaldir(localDir)
+#print len(lfns),len(localFiles)
 localDict = {}
 for file in localFiles:
   localDict[file] = os.path.getsize(file)
@@ -42,6 +42,7 @@ for item in lfnDict.keys():
       pass
   else:
     omitList.append(item)
+    filesOK = False
 if partList:
   print "these file has not transfer completely"
   print partList

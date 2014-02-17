@@ -64,9 +64,12 @@ class Badger:
           elif type==None:
             errorMes= "name if %s is not correct"%fullPath
             print "cannot get attributes of %s"%fullPath
-            return S_ERROR(errorMes)
+            attributes = {}
+            return attributes
+            #raise TypeError(errorMes)
           attributes = obj.getAttributes()
-          attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
+          #attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
+          attributes["count"] = 0
         else:
           attributes = {}
 
@@ -102,14 +105,11 @@ class Badger:
           Returns True for success, False for failure.
         """
         metadataDict = {}
-        #metadataDict['dataType'] = attributes['dataType']
         metadataDict['runL'] = attributes['runL']
         metadataDict['runH'] = attributes['runH']
         metadataDict['status'] = attributes['status']
-        #metadataDict['description'] = attributes['description']
-        #metadataDict['date'] = attributes['date']
         metadataDict['eventNum'] = attributes['eventNum']
-        #metadataDict['fileSize'] = attributes['fileSize']
+        metadataDict['count'] = attributes['count']
         result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
           return S_ERROR() 
@@ -211,7 +211,6 @@ class Badger:
 
         dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_round']
         dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_round':[dir_round,metaDict['round']]}
-
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
             result = self.__registerSubDirs(dirs_dict,dirs_meta)
@@ -452,17 +451,17 @@ class Badger:
         for fullpath in fileList:
           #get the attributes of the file
           fileAttr = self.__getFileAttributes(fullpath)
+          if len(fileAttr) ==0:
+            print "failed to get file attributes"
+            return S_ERROR("failed to get file attributes")
           #create dir and set dirMetadata to associated dir
-          metaDict = {}
-          metaDict['dataType'] = fileAttr['dataType']
-          metaDict['eventType'] = fileAttr['eventType']
-          metaDict['streamId'] = fileAttr['streamId']
-          metaDict['resonance'] = fileAttr['resonance']
-          metaDict['round'] = fileAttr['round']
-          metaDict['bossVer'] = fileAttr['bossVer']
-          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
+          lastDirMetaDict = {}
+          lastDirMetaDict["description"] = fileAttr["description"]
+          lastDirMetaDict["jobOptions"] = fileAttr["jobOptions"]
+          lastDir = self.registerHierarchicalDir(fileAttr,rootDir='/zhanggang_test')
+          self.__registerDirMetadata(lastDir,lastDirMetaDict)
+
           lfn = lastDir + os.sep+fileAttr['LFN']
-          fileAttr['LFN'] = lfn
           #upload and register file. 
           dirac = Dirac()
           result = dirac.addFile(lfn,fullpath,SE,guid,printOutput=True)

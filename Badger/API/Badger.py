@@ -325,6 +325,15 @@ class Badger:
           print "no files under this dir"
         return fileList 
 
+    def getDirMetaVal(self,dir):
+      """list the registed metadata value of the given dir"""
+      result = self.client.getDirectoryMetadata(dir)
+      if result['OK']:
+        return result['Value']
+      else:
+        print "Failed to get meta Value of the directory"
+        return {}
+
 
     #################################################################################
     # meta fields operations
@@ -401,7 +410,27 @@ class Badger:
         # if it doesn't already exist; and register metadata for that
         # file / directory
         # Q: how / where to pass the metadata?
+
+    def getFileMetaVal(self,lfn):
+      """get the File Meta Value of given file
+
+      """
+      result = self.client.getFileUserMetadata(lfn)
+      if result['OK']:
+        return result['Value']
+      else:
+        print "Failed to get meta Value of this file"
+        return {}
     
+    def calcCount(self,fileList,plus=True):
+      """calculate the value of metadata 'count',when a file contain in a dataset
+      count+1,when del a dataset,then all file in this dataset count -1
+      default plus=True,means count+1,if count-1,set plus=False 
+      """
+      for file in [fileList]:
+        count = self.getFileMetaVal(file)['count']
+        print count
+
     def removeFile(self,lfn):
         """remove file on DFC
         """

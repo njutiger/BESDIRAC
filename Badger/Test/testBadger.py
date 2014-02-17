@@ -43,6 +43,9 @@ def freeze(dn):
 
 def getPrefix():
   return badger.getDatasetNamePrefix()
+
+def getMetaValue(dir):
+   return badger.getFileMetaVal(dir)
 if __name__=="__main__":
   #list()
   #badger.removeDir("/zhanggang_test/File")
@@ -51,7 +54,9 @@ if __name__=="__main__":
   #result = getProxyInfo(False,False)
   #pprint.pprint(result['Value']['group'])
   #print result
-  print getPrefix()
+  #oprint getPrefix()
+  result = badger.calcCount('/zhanggang_test/File/jpsi/6.6.3.p01/data/all/round02/run_0029677_All_file001_SFO-1')
+  pprint.pprint(result)
 
   
 

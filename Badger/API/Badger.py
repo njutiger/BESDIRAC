@@ -426,10 +426,26 @@ class Badger:
       """calculate the value of metadata 'count',when a file contain in a dataset
       count+1,when del a dataset,then all file in this dataset count -1
       default plus=True,means count+1,if count-1,set plus=False 
+      return the value of count, count = -1 means error.
+      NOTE:this function should only be called when create or delete a dataset.
       """
       for file in [fileList]:
-        count = self.getFileMetaVal(file)['count']
-        print count
+        result =  self.getFileMetaVal(file)
+        if len(result)!=0:
+          count = result['count']
+          if plus:
+            count +=1
+          else:
+            if count>0:
+              count -=1
+          countDict = {'count':count}
+          print countDict
+          self.registerFileMetadata(file,countDict)
+        else:
+          count = -1
+          return count 
+          
+      return count
 
     def removeFile(self,lfn):
         """remove file on DFC

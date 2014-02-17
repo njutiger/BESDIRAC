@@ -55,8 +55,9 @@ if __name__=="__main__":
   #pprint.pprint(result['Value']['group'])
   #print result
   #oprint getPrefix()
-  result = badger.calcCount('/zhanggang_test/File/jpsi/6.6.3.p01/data/all/round02/run_0029677_All_file001_SFO-1')
+  result = badger.calcCount('/bes/user/z/zhanggang/dst1.txt')
   pprint.pprint(result)
+
 
   
 

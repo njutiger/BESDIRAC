@@ -422,14 +422,17 @@ class Badger:
         print "Failed to get meta Value of this file"
         return {}
     
-    def calcCount(self,fileList,plus=True):
+    def reCalcCount(self,fileList,plus=True):
       """calculate the value of metadata 'count',when a file contain in a dataset
       count+1,when del a dataset,then all file in this dataset count -1
       default plus=True,means count+1,if count-1,set plus=False 
       return the value of count, count = -1 means error.
       NOTE:this function should only be called when create or delete a dataset.
       """
-      for file in [fileList]:
+      countDict = {}
+      if type(fileList)!=type([]):
+        fileList = [fileList]
+      for file in fileList:
         result =  self.getFileMetaVal(file)
         if len(result)!=0:
           count = result['count']
@@ -438,14 +441,14 @@ class Badger:
           else:
             if count>0:
               count -=1
-          countDict = {'count':count}
-          print countDict
-          self.registerFileMetadata(file,countDict)
+          cDict = {'count':count}
+          self.registerFileMetadata(file,cDict)
+          countDict[file] = count
         else:
-          count = -1
-          return count 
-          
-      return count
+          print "Failed reCalculate value of count of file %s"%file
+          countDict[file] = -1 
+
+      return countDict
 
     def removeFile(self,lfn):
         """remove file on DFC

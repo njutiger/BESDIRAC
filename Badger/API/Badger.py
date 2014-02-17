@@ -586,8 +586,10 @@ class Badger:
         result = fc.addDataset(datasetName, metadataDict)
         if not result['OK']:
             print ("Error: %s" % result['Message'])
+            return S_ERROR()
         else:
             print "Added dataset %s with conditions %s" % (datasetName, conditions)
+            return S_OK()
         
     def getDatasetDescription(self, datasetName):
         """Return a string containing a description of metadata with which 
@@ -666,7 +668,7 @@ class Badger:
         if result['OK']:
           lfns = result['Value']
           lfns.sort()
-          return lfns
+          return S_OK(lfns)
         else:
           print "ERROR: Dataset", datasetName," not found"
           return S_ERROR(result)

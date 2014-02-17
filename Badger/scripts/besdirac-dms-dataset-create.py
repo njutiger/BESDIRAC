@@ -36,10 +36,12 @@ prefix = badger.getDatasetNamePrefix()
 datasetName = prefix+datasetName
 
 #print datasetName
-badger.registerDataset(datasetName,path,strArg)
-
-fileList = badger.getFilesByDatasetName(datasetName)
-result = badger.reCalcCount(fileList)
+result = badger.registerDataset(datasetName,path,strArg)
+if result['OK']:
+  resVal = badger.getFilesByDatasetName(datasetName)
+  if resVal['OK']:
+    fileList = resVal['Value']
+    badger.reCalcCount(fileList)
 #print result
 
 exit(0)

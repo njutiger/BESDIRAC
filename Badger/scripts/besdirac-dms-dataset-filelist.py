@@ -22,5 +22,7 @@ datasetName = args[0]
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
 result = badger.getFilesByDatasetName(datasetName)
-pprint.pprint(result)
+if result['OK']:
+  fileList = result['Value']
+pprint.pprint(fileList)
 exit(0)

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 #mtime:2013/12/09
 """
-besdirac-dms-dataset-remove
+besdirac-dms-dataset-delete
   remove a dataset from DB
   Usage:
-    besdirac-dms-dataset-remove <datasetname>
+    besdirac-dms-dataset-delete <datasetname>
 """
 
 __RCSID__ = "$Id$"
@@ -20,5 +20,18 @@ datasetName = args[0]
 
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
-badger.removeDataset(datasetName)
+
+result = badger.getFilesByDatasetName(datasetName)
+if result['OK']:
+  fileList = result['Value'] 
+  fileCountDict = badger.reCalcCount(fileList,False)
+  badger.removeDataset(datasetName)
+
+  for file in fileCountDict:
+    if fileCountDict[file] == 0:
+      result = badger.removeFile(file)
+      if not result['OK']:
+        print "Failed remove file %s"%file
+
+
 exit(0)

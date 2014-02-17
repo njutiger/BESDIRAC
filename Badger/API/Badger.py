@@ -5,6 +5,7 @@ from DIRAC.Core.Base import Script
 Script.initialize()
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC import gLogger,S_OK,S_ERROR
@@ -37,6 +38,22 @@ class Badger:
         TODO...
         """
         pass
+
+    def getDatasetNamePrefix(self):
+        """descide the prefix of a datasetName"""
+        prefix = ''
+        result = getProxyInfo(False,False)
+        if result['OK']:
+          userGroup = result['Value']['group']
+          if userGroup=='bes_user':
+            prefix = 'User_'
+          elif userGroup=='production':
+            prefix = 'Proc_'
+          return prefix
+        else:
+          return prefix
+
+        
     def getFilenamesByLocaldir(self,localDir):
         """ get all files under the given dir
         example:getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")

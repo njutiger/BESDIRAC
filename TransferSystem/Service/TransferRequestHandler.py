@@ -58,8 +58,18 @@ class TransferRequestHandler(RequestHandler):
 
     return S_OK()
 
+  def check_create_permission(self):
+    credDict = self.getRemoteCredentials()
+    if credDict["group"] in ["data_transfer"]:
+      return True
+    return False
+    
   types_create = [ str, str, str, str ]
   def export_create(self, dataset, ep_from, ep_to, protocol):
+    # check whether the user can create a request
+
+    if not self.check_create_permission():
+      return S_ERROR("The user can't create transfer request")
     entry = TransRequestEntry(username = self.user, 
                               dataset = dataset,
                               srcSE = ep_from,

@@ -5,6 +5,8 @@ import DIRAC
 import os
 from DIRAC.Core.Base import Script
 Script.parseCommandLine(ignoreErrors=True)
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 #from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 args = Script.getPositionalArgs()
 strArgs = ' '.join(args)
@@ -39,9 +41,26 @@ def freeze(dn):
   result = badger.freezeDataset(dn)
   pprint.pprint(result)
 
+def getPrefix():
+  return badger.getDatasetNamePrefix()
 
+def getMetaValue(dir):
+   return badger.getFileMetaVal(dir)
 if __name__=="__main__":
-  list()
+  #list()
+  #badger.removeDir("/zhanggang_test/File")
+  #result =  gProxyManager.getUserProxiesInfo()
+  #print result
+  #result = getProxyInfo(False,False)
+  #pprint.pprint(result['Value']['group'])
+  #print result
+  #oprint getPrefix()
+  result = badger.calcCount('/bes/user/z/zhanggang/dst1.txt')
+  pprint.pprint(result)
+
+
+  
+
   #jget("runL_GTE_29758")
   #byName("runL_GTE_29758")
   #freeze("runL_GTE_29758")

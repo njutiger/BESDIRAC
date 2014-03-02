@@ -5,15 +5,11 @@ besdirac-dms-get-files
   This script get a set of files from SE to localdir.
 
   Usage:
-    besdirac-dms-get-files [-n|-f|-m] <Arguments>
+    besdirac-dms-dataset-get datasetName 
     Arguments:
       datasetName: a dataset that contain a set of files.
-      DFCDir: The logical dir in DFC. Download files under this dir.
-      metequery: a set of query condition and download eligible files. It must be a string like "a=1 b=2"
     Examples:
-      script -n name1
-      script -r /zhanggang_test 
-      script -m "runL>1111 runH<2345 bossVer=6.6.4" 
+      besdirac-dms-dataset-get User_XXX_XXX 
 """
 __RCSID__ = "$Id$"
 
@@ -23,34 +19,15 @@ import time
 from DIRAC import S_OK, S_ERROR, gLogger, exit
 from DIRAC.Core.Base import Script
 
-switches = [
-    ("n:","datasetName=","a dataset that contain a set of files."),
-    ("r:","DFCDir=","The logical dir in DFC."),
-    ("m:","metequery=","a set of query condition"),
-            ]
 
-for switch in switches:
-  Script.registerSwitch(*switch)
 Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
 
-args = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 if not args:
   Script.showHelp()
   exit(1)
-setNameFlag = False
-dfcDirFlag = False
-queryFlag = False
-for switch in args:
-  if switch[0].lower() == "n" or switch[0].lower() == "datasetName":
-    setNameFlag = True
-    setName = switch[1]
-  elif switch[0].lower() == "r" or switch[0].lower() == "DFCDir":
-    dfcDirFlag = True
-    dfcDir = switch[1]
-  elif switch[0].lower() == "m" or switch[0].lower() == "metequery":
-    queryFlag = True
-    setQuery = switch[1]
+setName = args[0]
 
 from BESDIRAC.Badger.API.Badger import Badger
 from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
@@ -59,15 +36,15 @@ def getDB(name,function):
   """return a db instance,the db contain the file list.
   default value is 0,means the file is not transfer yet,if 2,means OK.
   """
-  dbname = "db"+name[-4:]
+  dbname = "db_"+name[-4:]
   if not os.path.exists(dbname):
     result = function(name)
     if result['OK']:
-      fileList = result['Value']
+      fileList = result['Value'] 
       db = anydbm.open(dbname,'c')
       for file in fileList:
-        db[file] = '0'
-        db.sync()
+       db[file] = '0'
+       db.sync()
   else:
     db = anydbm.open(dbname,'c')
   return (db,dbname)
@@ -83,15 +60,8 @@ class DownloadWorker(IWorker):
 
   def __init__(self):
     self.badger = Badger()
-    if queryFlag:
-      self.db,self.dbName = getDB(setQuery,self.badger.getFilesByMetadataQuery)
-      #print self.db,self.dbName
-    elif setNameFlag:
-      self.db,self.dbName = getDB(setName,self.badger.getFilesByDatasetName)
-      #print self.db,self.dbName
-    elif dfcDirFlag:
-      self.db,self.dbName = getDB(dfcDir,self.badger.listDir) 
-      #print self.db,self.dbName
+    self.db,self.dbName = getDB(setName,self.badger.getFilesByDatasetName)
+    print self.db,self.dbName
 
   def get_file_list(self):
     #return self.m_list

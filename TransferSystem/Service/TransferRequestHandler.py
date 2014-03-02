@@ -118,6 +118,11 @@ class TransferRequestHandler(RequestHandler):
     res = gTransferDB.delete_TransferFileList(condDict)
     return res
 
+  types_delete_files_in_req = [ dict ]
+  def export_delete_files_in_req(self, condDict):
+    res = gTransferDB.delete_TransferFileListByReq(condDict)
+    return res
+
   types_retransfer = [ dict ]
   def export_retransfer(self, condDict):
     """ This will make the status to new

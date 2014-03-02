@@ -181,6 +181,30 @@ class TransferDB(DB):
                            )
     return res
 
+  def delete_TransferFileListByReq(self, condDict = None):
+    """
+    condDict = {"trans_req_id": int(transid)}
+    """
+    # get the file list in req.
+    res = self.getFields( self.tables["TransferFileList"], 
+                           outFields = TransFileListEntryWithID._fields,
+                           condDict = condDict,
+                           )
+    if not res["OK"]:
+      gLogger.error(res)
+      return res
+
+    if not res["Value"]:
+      gLogger.error(res)
+      return res
+
+    # remove these.
+
+    for rawentry in res["Value"]:
+      entry = TransFileListEntryWithID._make(rawentry)
+      self.delete_TransferFileList( {"id":entry.id})
+    return S_OK()
+
   def delete_TransferFileList(self, condDict = None):
     """ currently, condDict should be
         {

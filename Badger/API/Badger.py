@@ -113,10 +113,12 @@ class Badger:
                 elif result['Value']['Failed']:
                     if result['Value']['Failed'].has_key(dir):
                         print 'Failed to create directory %s:%s'%(dir,result['Value']['Failed'][dir])
-                        return S_ERROR() 
+                        return S_ERROR(result) 
+            else:
+              return S_ERROR(result)
         else:
             print 'Failed to create directory %s:%s'%(dir,result['Message'])
-            return S_ERROR() 
+            return S_ERROR(result) 
     def __registerFileMetadata(self,lfn,attributes):
         """Internal function to set metadata values on a given lfn. 
           Returns True for success, False for failure.
@@ -504,6 +506,7 @@ class Badger:
             print "ERROR: No files found which match query conditions."
             return None
 
+
     def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
@@ -517,15 +520,17 @@ class Badger:
           #get the attributes of the file
           fileAttr = self.__getFileAttributes(fullpath)
           if len(fileAttr) ==0:
-            print "failed to get file attributes"
+            print "failed to get file %s attributes"%fullpath
             return S_ERROR("failed to get file attributes")
           #create dir and set dirMetadata to associated dir
-          lastDirMetaDict = {}
-          lastDirMetaDict["description"] = fileAttr["description"]
-          lastDirMetaDict["jobOptions"] = fileAttr["jobOptions"]
-          lastDir = self.registerHierarchicalDir(fileAttr,rootDir='/zhanggang_test')
-          self.__registerDirMetadata(lastDir,lastDirMetaDict)
-
+          
+          lastDir = self.registerHierarchicalDir(fileAttr,rootDir='/bes')
+          dirMeta = self.getDirMetaVal(lastDir)
+          if not (dirMeta.has_key("jobOptions") or dirMeta.has_key("description")):
+            lastDirMetaDict = {}
+            lastDirMetaDict['jobOptions'] = fileAttr['jobOptions']
+            lastDirMetaDict['description'] = fileAttr['description']
+            self.__registerDirMetadata(lastDir,lastDirMetaDict)
           lfn = lastDir + os.sep+fileAttr['LFN']
           #upload and register file. 
           dirac = Dirac()

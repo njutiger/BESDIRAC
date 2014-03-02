@@ -177,7 +177,7 @@ class DataAll(object):
             attributes["streamId"] = 'stream0' 
             attributes["description"] = 'null'
             del attributes["runId"]
-            attributes["jobOptions"] = ""
+            #attributes["jobOptions"] = ""
             return attributes
 
 #get resonance,runL,runH,streamId,LFN from file name
@@ -232,7 +232,7 @@ class Others(object):
                     
             
             del attributes["runId"]
-            attributes["jobOptions"] = ""
+            #attributes["jobOptions"] = ""
             return attributes
 
 

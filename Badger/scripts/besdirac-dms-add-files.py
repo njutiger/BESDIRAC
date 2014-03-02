@@ -33,9 +33,10 @@ def getDB(name,function):
   """return a db instance,the db contain the file list.
   default value is 0,means the file is not transfer yet,if 2,means OK.
   """
-  dbname = "db"+name[-4:]
+  dbname = "db_"+name[1]+str(name[-3:])
   if not os.path.exists(dbname):
     fileList = function(name)
+    #print fileList
     db = anydbm.open(dbname,'c')
     for file in fileList:
       db[file] = '0'
@@ -82,7 +83,7 @@ class UploadWorker(IWorker):
       os.remove(self.dbName)
 
 uw = UploadWorker(localdir)
-mw = MultiWorker(uw)
+mw = MultiWorker(uw,5)
 mw.main()
 endTime = time.time()-startTime
 uw.Clear()

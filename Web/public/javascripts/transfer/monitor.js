@@ -205,7 +205,7 @@ function createFileListWindow() {
         return 'OK'
       } 
      },
-     sortable: false
+     sortable: true
     }
   ];
 
@@ -217,14 +217,16 @@ function createFileListWindow() {
     store: store,
     columns: columns,
     layout: "fit",
+    width: 600,
     height:400,
-    autoHeight: true,
+    //autoHeight: true,
     region: 'center',
     selModel: new Ext.grid.RowSelectionModel({singleSelect : true}),
     tbar: topbar,
     viewConfig: {
       forceFit: true
-    }
+    },
+    autoScroll: true,
   });
   grid.on({
     render: {
@@ -241,10 +243,11 @@ function createFileListWindow() {
     width: 600,
     height: 400,
     border: true,
-    autoHeight: true,
+    //autoHeight: true,
     title: "Files Monitor",
     items: [grid],
     layout: "fit",
+    autoScroll: true,
   });
 
   win.show();

@@ -13,7 +13,9 @@ class DIRACDMSTransferWorker(ITransferWorker):
                   "dirac-dms-replicate-lfn",
                   LFN,
                   #srcSE,
-                  dstSE]
+                  dstSE,
+                  "-c",
+                  "/scratch/tmp/x509up_u58002"]
     return cmd_list
 
   def handle_exit(self, returncode):

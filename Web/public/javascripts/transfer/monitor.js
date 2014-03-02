@@ -153,6 +153,11 @@ function createTopBar() {
       createNewRequest();
     },
     text: "Create New Request" },
+    {handler: function(w, e) {
+      reqTransferKill();
+    },
+    text: "Kill Request"
+    },
   ];
   return topbar;
 }
@@ -374,6 +379,38 @@ function fileTransferKill(fileid, grid) {
   Ext.Ajax.request({
     method:'POST',
     params:{id:fileid},
+    url: url,
+    success: function(response){
+      grid.getStore().reload();
+    },
+    failure: function(response){
+      grid.getStore().reload();
+    }
+  });
+}
+
+function reqTransferKill() {
+
+  // Get the Request ID
+  var grid = Ext.getCmp("gMainRequestsList");
+  var selected = grid.getSelections();
+  if(selected.length != 1) {
+    // set not exist
+    req_id = -1;
+  } else {
+    req_id = selected[0].id;
+  }
+
+  alert("Will Kill "+req_id);
+
+  var setup = gPageDescription.selectedSetup;
+  var group = gPageDescription.userData.group;
+  var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
+  url = url + '/transfer/reqmgr/deletereq';
+
+  Ext.Ajax.request({
+    method:'POST',
+    params:{trans_req_id:req_id},
     url: url,
     success: function(response){
       grid.getStore().reload();

@@ -31,6 +31,20 @@ class ReqmgrController(BaseController):
     pass
 
   @jsonify
+  def deletereq(self):
+    """
+      This is to delete the file tranfers in one request.
+    """
+    if not request.params.has_key("trans_req_id"):
+      return S_ERROR("Lack Request ID")
+    try:
+      fileid = int(request.params["trans_req_id"].encode("utf-8"))
+    except Exception as e:
+      return S_ERROR(str(e))
+    RPC = getRPCClient("Transfer/TransferRequest")
+    return RPC.delete_files_in_req({"trans_req_id":fileid})
+
+  @jsonify
   def delete(self):
     """
       This is to delete the file tranfer in one request.

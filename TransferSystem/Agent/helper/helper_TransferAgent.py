@@ -39,7 +39,8 @@ class helper_TransferAgent(object):
     info = {"id": result.id,
             "LFN": result.LFN,
             "srcSE": req.srcSE,
-            "dstSE": req.dstSE}
+            "dstSE": req.dstSE,
+            "retransfer": -1}
     # Add the Transfer
     worker = gTransferFactory.generate(req.protocol, info)
     self.transferAgent.transfer_worker.append(worker)

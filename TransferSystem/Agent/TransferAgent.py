@@ -50,7 +50,7 @@ class TransferAgent(AgentModule):
           if worker.info["retransfer"] < self.MAX_RETRY:
             # retransfer
             gLogger.info("Try to Retransfer (%d) "% worker.info["retransfer"])
-            worker.create_popen()
+            worker.create_popen(worker.info)
             continue
           self.helper.helper_error_report(worker, result)
 

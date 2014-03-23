@@ -5,6 +5,7 @@ from DIRAC.Core.Base import Script
 Script.initialize()
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC import gLogger,S_OK,S_ERROR
@@ -37,6 +38,22 @@ class Badger:
         TODO...
         """
         pass
+
+    def getDatasetNamePrefix(self):
+        """descide the prefix of a datasetName"""
+        prefix = ''
+        result = getProxyInfo(False,False)
+        if result['OK']:
+          userGroup = result['Value']['group']
+          if userGroup=='bes_user':
+            prefix = 'User_'
+          elif userGroup=='production':
+            prefix = 'Proc_'
+          return prefix
+        else:
+          return prefix
+
+        
     def getFilenamesByLocaldir(self,localDir):
         """ get all files under the given dir
         example:getFilenamesByLocaldir("/bes3fs/offline/data/663-1/4260/dst/121215/")
@@ -64,9 +81,12 @@ class Badger:
           elif type==None:
             errorMes= "name if %s is not correct"%fullPath
             print "cannot get attributes of %s"%fullPath
-            return S_ERROR(errorMes)
+            attributes = {}
+            return attributes
+            #raise TypeError(errorMes)
           attributes = obj.getAttributes()
-          attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
+          #attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
+          attributes["count"] = 0
         else:
           attributes = {}
 
@@ -93,23 +113,22 @@ class Badger:
                 elif result['Value']['Failed']:
                     if result['Value']['Failed'].has_key(dir):
                         print 'Failed to create directory %s:%s'%(dir,result['Value']['Failed'][dir])
-                        return S_ERROR() 
+                        return S_ERROR(result) 
+            else:
+              return S_ERROR(result)
         else:
             print 'Failed to create directory %s:%s'%(dir,result['Message'])
-            return S_ERROR() 
+            return S_ERROR(result) 
     def __registerFileMetadata(self,lfn,attributes):
         """Internal function to set metadata values on a given lfn. 
           Returns True for success, False for failure.
         """
         metadataDict = {}
-        #metadataDict['dataType'] = attributes['dataType']
         metadataDict['runL'] = attributes['runL']
         metadataDict['runH'] = attributes['runH']
         metadataDict['status'] = attributes['status']
-        #metadataDict['description'] = attributes['description']
-        #metadataDict['date'] = attributes['date']
         metadataDict['eventNum'] = attributes['eventNum']
-        #metadataDict['fileSize'] = attributes['fileSize']
+        metadataDict['count'] = attributes['count']
         result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
           return S_ERROR() 
@@ -211,7 +230,6 @@ class Badger:
 
         dirs_dict = ['dir_file','dir_resonance','dir_bossVer','dir_data_mc','dir_eventType','dir_round']
         dirs_meta = {'dir_file':dir_file,'dir_data_mc':dir_data_mc,'dir_resonance':[dir_resonance,metaDict['resonance']],'dir_bossVer':[dir_bossVer,metaDict['bossVer']],'dir_eventType':[dir_eventType,metaDict['eventType']],'dir_round':[dir_round,metaDict['round']]}
-
         dir_exists = self.__dirExists(dir_file,rootDir)
         if not dir_exists:
             result = self.__registerSubDirs(dirs_dict,dirs_meta)
@@ -309,6 +327,15 @@ class Badger:
           print "no files under this dir"
         return fileList 
 
+    def getDirMetaVal(self,dir):
+      """list the registed metadata value of the given dir"""
+      result = self.client.getDirectoryMetadata(dir)
+      if result['OK']:
+        return result['Value']
+      else:
+        print "Failed to get meta Value of the directory"
+        return {}
+
 
     #################################################################################
     # meta fields operations
@@ -385,7 +412,46 @@ class Badger:
         # if it doesn't already exist; and register metadata for that
         # file / directory
         # Q: how / where to pass the metadata?
+
+    def getFileMetaVal(self,lfn):
+      """get the File Meta Value of given file
+
+      """
+      result = self.client.getFileUserMetadata(lfn)
+      if result['OK']:
+        return result['Value']
+      else:
+        print "Failed to get meta Value of this file"
+        return {}
     
+    def reCalcCount(self,fileList,plus=True):
+      """calculate the value of metadata 'count',when a file contain in a dataset
+      count+1,when del a dataset,then all file in this dataset count -1
+      default plus=True,means count+1,if count-1,set plus=False 
+      return the value of count, count = -1 means error.
+      NOTE:this function should only be called when create or delete a dataset.
+      """
+      countDict = {}
+      if type(fileList)!=type([]):
+        fileList = [fileList]
+      for file in fileList:
+        result =  self.getFileMetaVal(file)
+        if len(result)!=0:
+          count = result['count']
+          if plus:
+            count +=1
+          else:
+            if count>0:
+              count -=1
+          cDict = {'count':count}
+          self.registerFileMetadata(file,cDict)
+          countDict[file] = count
+        else:
+          print "Failed reCalculate value of count of file %s"%file
+          countDict[file] = -1 
+
+      return countDict
+
     def removeFile(self,lfn):
         """remove file on DFC
         """
@@ -440,6 +506,7 @@ class Badger:
             print "ERROR: No files found which match query conditions."
             return None
 
+
     def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
@@ -452,17 +519,19 @@ class Badger:
         for fullpath in fileList:
           #get the attributes of the file
           fileAttr = self.__getFileAttributes(fullpath)
+          if len(fileAttr) ==0:
+            print "failed to get file %s attributes"%fullpath
+            return S_ERROR("failed to get file attributes")
           #create dir and set dirMetadata to associated dir
-          metaDict = {}
-          metaDict['dataType'] = fileAttr['dataType']
-          metaDict['eventType'] = fileAttr['eventType']
-          metaDict['streamId'] = fileAttr['streamId']
-          metaDict['resonance'] = fileAttr['resonance']
-          metaDict['round'] = fileAttr['round']
-          metaDict['bossVer'] = fileAttr['bossVer']
-          lastDir = self.registerHierarchicalDir(metaDict,rootDir='/bes')
+          
+          lastDir = self.registerHierarchicalDir(fileAttr,rootDir='/bes')
+          dirMeta = self.getDirMetaVal(lastDir)
+          if not (dirMeta.has_key("jobOptions") or dirMeta.has_key("description")):
+            lastDirMetaDict = {}
+            lastDirMetaDict['jobOptions'] = fileAttr['jobOptions']
+            lastDirMetaDict['description'] = fileAttr['description']
+            self.__registerDirMetadata(lastDir,lastDirMetaDict)
           lfn = lastDir + os.sep+fileAttr['LFN']
-          fileAttr['LFN'] = lfn
           #upload and register file. 
           dirac = Dirac()
           result = dirac.addFile(lfn,fullpath,SE,guid,printOutput=True)
@@ -522,8 +591,10 @@ class Badger:
         result = fc.addDataset(datasetName, metadataDict)
         if not result['OK']:
             print ("Error: %s" % result['Message'])
+            return S_ERROR()
         else:
             print "Added dataset %s with conditions %s" % (datasetName, conditions)
+            return S_OK()
         
     def getDatasetDescription(self, datasetName):
         """Return a string containing a description of metadata with which 
@@ -602,7 +673,7 @@ class Badger:
         if result['OK']:
           lfns = result['Value']
           lfns.sort()
-          return lfns
+          return S_OK(lfns)
         else:
           print "ERROR: Dataset", datasetName," not found"
           return S_ERROR(result)

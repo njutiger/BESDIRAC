@@ -40,7 +40,8 @@ class helper_TransferAgent(object):
             "LFN": result.LFN,
             "srcSE": req.srcSE,
             "dstSE": req.dstSE,
-            "retransfer": -1}
+            "retransfer": -1,
+            "error": ""}
     # Add the Transfer
     worker = gTransferFactory.generate(req.protocol, info)
     self.transferAgent.transfer_worker.append(worker)
@@ -64,6 +65,7 @@ class helper_TransferAgent(object):
         d["TransferSize"] = r["Value"]["Successful"][result.LFN]
     d["TransferTime"] = 1 # 1s 
     d["TransferOK"] = 1
+    d["TransferTotal"] = 1
     acct_dt = DataTransfer()
     acct_dt.setValuesFromDict(d)
     acct_dt.setNowAsStartAndEndTime()
@@ -85,11 +87,15 @@ class helper_TransferAgent(object):
     acct_dt.setEndTime()
     # TODO
     d = {}
-    d["FinalStatus"] = "OK"
     td = acct_dt.endTime-acct_dt.startTime
     td_s = (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
     d["TransferTime"] = td_s # 1s 
-    d["TransferOK"] = 1
+    if info["error"]:
+      d["FinalStatus"] = "FAILED"
+      d["TransferOK"] = 0
+    else:  
+      d["FinalStatus"] = "OK"
+      d["TransferOK"] = 1
 
     acct_dt.setValuesFromDict(d)
 

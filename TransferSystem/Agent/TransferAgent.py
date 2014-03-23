@@ -53,6 +53,7 @@ class TransferAgent(AgentModule):
             worker.create_popen(worker.info)
             continue
           self.helper.helper_error_report(worker, result)
+          worker.info["error"] = result
 
         self.transfer_worker.remove(worker)
         self.helper.helper_remove_transfer(worker)

@@ -94,3 +94,54 @@ class DataTransferPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
+
+  # Quality
+  def _reportQuality( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'TransferOK', 'TransferOK'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                { 'checkNone' : True,
+                                  'convertToGranularity' : 'sum',
+                                  'calculateProportionalGauges' : False,
+                                  'consolidationFunction' : self._efficiencyConsolidation } )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    if len( dataDict ) > 1:
+      #Get the total for the plot
+      selectFields = ( "'Total', %s, %s, SUM(%s),SUM(%s)",
+                       [ 'startTime', 'bucketLength',
+                         'TransferOK', 'TransferOK'
+                       ]
+                     )
+      retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                  reportRequest[ 'endTime' ],
+                                  selectFields,
+                                  reportRequest[ 'condDict' ],
+                                  reportRequest[ 'groupingFields' ],
+                                  { 'checkNone' : True,
+                                    'convertToGranularity' : 'sum',
+                                    'calculateProportionalGauges' : False,
+                                    'consolidationFunction' : self._efficiencyConsolidation } )
+      if not retVal[ 'OK' ]:
+        return retVal
+      totalDict = retVal[ 'Value' ][0]
+      self.stripDataField( totalDict, 0 )
+      for key in totalDict:
+        dataDict[ key ] = totalDict[ key ]
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotQuality( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Transfer quality by %s' % reportRequest[ 'grouping' ] ,
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ] }
+    return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )

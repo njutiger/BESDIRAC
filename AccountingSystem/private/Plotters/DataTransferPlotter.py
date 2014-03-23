@@ -99,7 +99,7 @@ class DataTransferPlotter( BaseReporter ):
   def _reportQuality( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
-                                    'TransferOK', 'TransferOK'
+                                    'TransferOK', 'TransferTotal'
                                    ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -119,7 +119,7 @@ class DataTransferPlotter( BaseReporter ):
       #Get the total for the plot
       selectFields = ( "'Total', %s, %s, SUM(%s),SUM(%s)",
                        [ 'startTime', 'bucketLength',
-                         'TransferOK', 'TransferOK'
+                         'TransferOK', 'TransferTotal'
                        ]
                      )
       retVal = self._getTimedData( reportRequest[ 'startTime' ],

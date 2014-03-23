@@ -17,6 +17,7 @@ class DataTransfer(BaseAccountingType):
                                         ( 'TransferSize', 'BIGINT UNSIGNED' ),
                                         ( 'TransferTime', 'FLOAT' ),
                                         ( 'TransferOK', 'INT UNSIGNED' ),
+                                        ( 'TransferTotal', 'INT UNSIGNED' )
                                       ]
 
     self.checkType()

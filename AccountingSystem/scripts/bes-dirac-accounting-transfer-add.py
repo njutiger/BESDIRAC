@@ -23,12 +23,13 @@ d = {}
 d["User"] = "lintao"
 d["Source"] = "IHEPD-USER"
 d["Destination"] = "JINR-USER"
-d["Protocol"] = "TS-DMS"
+d["Protocol"] = "DIRACDMS"
 d["FinalStatus"] = "OK"
 
 d["TransferSize"] = 800 * 2**20 # 800 MB
 d["TransferTime"] = 10 * 60 # 10min
 d["TransferOK"] = 1
+d["TransferTotal"] = 1
 
 res = dt.setValuesFromDict(d)
 print res

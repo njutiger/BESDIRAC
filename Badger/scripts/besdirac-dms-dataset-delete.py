@@ -3,6 +3,7 @@
 """
 besdirac-dms-dataset-delete
   remove a dataset from DB
+  filelist in a dataset will remove from all SE.
   Usage:
     besdirac-dms-dataset-delete <datasetname>
 """
@@ -20,8 +21,11 @@ datasetName = args[0]
 
 from BESDIRAC.Badger.API.Badger import Badger
 badger = Badger()
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+rm = ReplicaManager()
 
 result = badger.getFilesByDatasetName(datasetName)
+
 if result['OK']:
   fileList = result['Value'] 
   fileCountDict = badger.reCalcCount(fileList,False)
@@ -29,7 +33,7 @@ if result['OK']:
 
   for file in fileCountDict:
     if fileCountDict[file] == 0:
-      result = badger.removeFile(file)
+      result = rm.removeFile(file)
       if not result['OK']:
         print "Failed remove file %s"%file
 

@@ -69,6 +69,7 @@ class Badger:
             fileList.append(fullPath)
         fileList.sort()
         return fileList
+
     def __getFileAttributes(self,fullPath):
         """ get all attributes of the given file,return a attribute dict.
         """
@@ -86,17 +87,12 @@ class Badger:
             #raise TypeError(errorMes)
           attributes = obj.getAttributes()
           #attributes['date'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())
-          attributes["count"] = 0
         else:
           attributes = {}
 
         return attributes
 
     def testFunction(self):
-        #result = self.getFilenamesByLocaldir('/besfs2/offline/data/664-1/jpsi/dst')
-        #result = result[:100]
-        #for item in result:
-        #  print item
         result = self.__getFileAttributes('/besfs2/offline/data/664-1/jpsi/dst/090613/run_0009952_All_file019_SFO-2.dst')
         print result
 
@@ -127,7 +123,7 @@ class Badger:
         metadataDict['runL'] = attributes['runL']
         metadataDict['runH'] = attributes['runH']
         metadataDict['status'] = attributes['status']
-        metadataDict['eventNum'] = attributes['eventNum']
+        metadataDict['eventNumber'] = attributes['eventNumber']
         metadataDict['count'] = attributes['count']
         result = self.client.setMetadata(lfn,metadataDict)
         if not result['OK']:
@@ -144,8 +140,8 @@ class Badger:
         if result['OK']:
             return S_OK() 
         else:
-            print ("Error for setting metadata %s to %s: %s" %(metaDict,dir,result['Message']))
-            return S_ERROR(result['Message']) 
+            message = "Error for setting metadata %s to %s: %s"%(metaDict,dir,result['Message'])
+            return S_ERROR('Message') 
         
     def __dirExists(self,dir,parentDir):
         """ Internal function to check whether 'dir' is the subdirectory of 'parentDir'
@@ -506,10 +502,11 @@ class Badger:
             print "ERROR: No files found which match query conditions."
             return None
 
-
-    def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None):
+    def uploadAndRegisterFiles(self,fileList,SE='IHEPD-USER',guid=None,ePoint=''):
         """upload a set of files to SE and register it in DFC.
         user input the directory of localfile.
+        argument:
+          ePoint is the energy point,for scan data
         we can treat localDir as a kind of datasetName.
         """          
 
@@ -523,15 +520,19 @@ class Badger:
             print "failed to get file %s attributes"%fullpath
             return S_ERROR("failed to get file attributes")
           #create dir and set dirMetadata to associated dir
-          
           lastDir = self.registerHierarchicalDir(fileAttr,rootDir='/bes')
           dirMeta = self.getDirMetaVal(lastDir)
           if not (dirMeta.has_key("jobOptions") or dirMeta.has_key("description")):
             lastDirMetaDict = {}
             lastDirMetaDict['jobOptions'] = fileAttr['jobOptions']
             lastDirMetaDict['description'] = fileAttr['description']
-            self.__registerDirMetadata(lastDir,lastDirMetaDict)
-          lfn = lastDir + os.sep+fileAttr['LFN']
+            try:
+              self.__registerDirMetadata(lastDir,lastDirMetaDict)
+            except:
+              pass
+          if len(ePoint):
+            lastDir = lastDir + os.sep + ePoint
+          lfn = lastDir + os.sep + fileAttr['LFN']
           #upload and register file. 
           dirac = Dirac()
           result = dirac.addFile(lfn,fullpath,SE,guid,printOutput=True)

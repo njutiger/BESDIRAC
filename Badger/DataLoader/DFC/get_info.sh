@@ -23,11 +23,12 @@ def getCommonInfo(rootfile):
     gROOT.ProcessLine('Int_t num=tree1.GetEntries()')
     
     #get Boss Version
-    commoninfo["bossVer"] = ROOT.jobInfo.getBossVer() 
+    commoninfo["bossVer"] = ROOT.jobInfo.getBossVer().replace('.','')
+  
     #get RunId
     commoninfo["runId"] = abs(ROOT.evtHeader.getRunId())
     #get all entries
-    commoninfo["eventNum"] = ROOT.num
+    commoninfo["eventNumber"] = ROOT.num
     #get TotEvtNo
     #commoninfo["TotEvtNo"] = list(i for i in ROOT.jobInfo.getTotEvtNo())
     #get JobOption

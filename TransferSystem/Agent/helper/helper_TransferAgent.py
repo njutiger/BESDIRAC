@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import random
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -193,8 +194,11 @@ class helper_TransferAgent(object):
     if not res["OK"]:
       return None
     req_list = res["Value"]
-    if len(req_list):
-      return TransRequestEntryWithID._make(req_list[0])
+    len_req = len(req_list)
+    if len_req:
+      # random select
+      tmp_idx = random.randint(0, len_req-1)
+      return TransRequestEntryWithID._make(req_list[tmp_idx])
     pass
 
   def helper_get_new_File(self):

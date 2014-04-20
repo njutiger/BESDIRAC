@@ -138,34 +138,42 @@ class helper_TransferAgent(object):
   def helper_get_new_request(self):
     # 1. get the *new* File in the <<Transfer File List>>.
     #    if we get, goto <<Add New Transfer>>
-    result = self.helper_get_new_File()
-    if result:
-      return result
+    already_load_status = False
+    result_new_file = self.helper_get_new_File()
+    # 1.1 2014.04.20
+    #     They want to the other requests are also loaded,
+    #     so I have to not return immediately
+    if result_new_file:
+      already_load_status = True
     # 2. if we can't get, use should get a *new* request
     #    from the <<Transfer Request>>.
     #    if we can't get, return False. STOP
     self.helper_check_request()
     result = self.helper_get_new_request_entry()
-    if not result:
-      return result
-    # 3. add the filelist in the dataset to the << Transfer File List >>
-    condDict = {"name":result.dataset}  
-    res = self.transferDB.get_Dataset(condDict)
-    if not res["OK"]:
-      gLogger.error(res)
-      return None
-    filelist = res["Value"]
-    # update the status in << Request >>
-    if len(filelist) > 0:
-      req_status = "transfer"
-    else:
-      req_status = "finish"
-    self.helper_status_update(self.transferDB.tables["TransferRequest"],
-                              result.id,
-                              {"status":req_status})
-    self.transferDB.insert_TransferFileList(result.id, filelist)
+    if result:
+      # 3. add the filelist in the dataset to the << Transfer File List >>
+      condDict = {"name":result.dataset}  
+      res = self.transferDB.get_Dataset(condDict)
+      if not res["OK"]:
+        gLogger.error(res)
+        return None
+      filelist = res["Value"]
+      # update the status in << Request >>
+      if len(filelist) > 0:
+        req_status = "transfer"
+      else:
+        req_status = "finish"
+      self.helper_status_update(self.transferDB.tables["TransferRequest"],
+                                result.id,
+                                {"status":req_status})
+      self.transferDB.insert_TransferFileList(result.id, filelist)
     # 4. get the *new* File Again.
     # 5. can't get, return False. STOP
+    # 4.prelude
+    #    If already loaded, return the last result
+    if already_load_status and result_new_file:
+      return result_new_file
+      
     result = self.helper_get_new_File()
     return result
 

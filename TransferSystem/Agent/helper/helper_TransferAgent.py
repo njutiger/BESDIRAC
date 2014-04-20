@@ -220,9 +220,12 @@ class helper_TransferAgent(object):
     filelist = res["Value"]
     gLogger.info("Filelist:")
     gLogger.info(filelist)
-    if len(filelist) > 0:
-      gLogger.info("get file entry", filelist[0])
-      return TransFileListEntryWithID._make(filelist[0])
+    len_files = len(filelist)
+    if  len_files > 0:
+      tmp_idx = random.randint(0, len_files-1)
+      gLogger.info("get file entry index randomly: %d/%d"%(tmp_idx, len_files))
+      gLogger.info("get file entry", filelist[tmp_idx])
+      return TransFileListEntryWithID._make(filelist[tmp_idx])
     return None
 
   def helper_status_update(self, table, id, toUpdate):

@@ -75,16 +75,30 @@ def determineSe():
 
 def getFile(lfn, se=''):
     rm = ReplicaManager()
-    result = rm.getActiveReplicas(lfn)
-    if not (result['OK'] and result['Value']['Successful']):
-        return result
 
     download_ok = 0
+    get_active_replicas_ok = False
+    lfn_on_se = False
     error_msg = ''
-    lfnReplicas = result['Value']['Successful']
-    if se in lfnReplicas[lfn]:
+    for i in range(0, 16):
+        result = rm.getActiveReplicas(lfn)
+        if result['OK'] and result['Value']['Successful']:
+            get_active_replicas_ok = True
+            lfnReplicas = result['Value']['Successful']
+            if se in lfnReplicas[lfn]:
+                lfn_on_se = True
+                break
+
+    if not get_active_replicas_ok:
+        return S_ERROR('Get replicas error: %s' % lfn)
+
+    if lfn_on_se:
         pfn = lfnReplicas[lfn][se]
-        result = rm.getStorageFile(pfn, se)
+        # try 5 times
+        for i in range(0, 5):
+            result = rm.getStorageFile(pfn, se)
+            if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
+                break
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
                 download_ok = 1
@@ -93,8 +107,12 @@ def getFile(lfn, se=''):
         else:
             error_msg = result['Message']
     else:
-        print >>sys.stderr, 'File not found on SE "%s", trying other SE' % se
-        result = rm.getFile(lfn)
+        print >>sys.stderr, 'File %s not found on SE "%s", trying other SE' % (lfn, se)
+        # try 5 times
+        for i in range(0, 5):
+            result = rm.getFile(lfn)
+            if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
+                break
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 download_ok = 2
@@ -104,7 +122,7 @@ def getFile(lfn, se=''):
             error_msg = result['Message']
 
     if download_ok:
-        return S_OK({'DownloadOK': download_ok})
+        return S_OK({lfn: {'DownloadOK': download_ok}})
 
     return S_ERROR(error_msg)
 

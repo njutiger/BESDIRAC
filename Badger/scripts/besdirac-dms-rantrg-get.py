@@ -95,7 +95,7 @@ def getFile(lfn, se=''):
     if lfn_on_se:
         pfn = lfnReplicas[lfn][se]
         # try 5 times
-        for i in range(0, 5):
+        for j in range(0, 5):
             result = rm.getStorageFile(pfn, se)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
                 break
@@ -107,9 +107,9 @@ def getFile(lfn, se=''):
         else:
             error_msg = result['Message']
     else:
-        print >>sys.stderr, 'File %s not found on SE "%s", trying other SE' % (lfn, se)
+        print >>sys.stderr, 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
         # try 5 times
-        for i in range(0, 5):
+        for j in range(0, 5):
             result = rm.getFile(lfn)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 break
@@ -122,7 +122,7 @@ def getFile(lfn, se=''):
             error_msg = result['Message']
 
     if download_ok:
-        return S_OK({lfn: {'DownloadOK': download_ok}})
+        return S_OK({lfn: {'DownloadOK': download_ok, 'Retry': j+1}})
 
     return S_ERROR(error_msg)
 

@@ -162,13 +162,16 @@ def findFiles(runnb):
 
     (runmin,runmax) = runnb[0]
 
-    res = catalog.findFilesByMetadata({'runL':{'>=':runmin},'runH':{'<=':runmax}}, '/bes/File/randomtrg')
-     
-    lfns=[]
-    for f in res['Value']:
-       lfns.append(f)
+    for i in range(0, 5):
+        result = catalog.findFilesByMetadata({'runL':{'>=':runmin},'runH':{'<=':runmax}}, '/bes/File/randomtrg')
+        if result['OK']:
+            break
+    if not result['OK']:
+        print >>sys.stderr, 'Find files error in run (%s - %s)' % (runmin, runmax)
+        print >>sys.stderr, result
+        return []
 
-    return lfns
+    return result['Value']
 
 def main():
     jfile = ''

@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
 import sys
 import re
 import socket
+import time
 
 SeSiteMap = {
   'BES.JINR.ru'       : 'JINR-USER',
@@ -88,6 +89,8 @@ def getFile(lfn, se=''):
             if se in lfnReplicas[lfn]:
                 lfn_on_se = True
                 break
+        time.sleep(10)
+        print '- Get replicas for %s failed, try again' % lfn
 
     if not get_active_replicas_ok:
         return S_ERROR('Get replicas error: %s' % lfn)
@@ -99,6 +102,8 @@ def getFile(lfn, se=''):
             result = rm.getStorageFile(pfn, se)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
                 break
+            time.sleep(30)
+            print '- %s getStorageFile(%s, %s) failed, try again' % (lfn, pfn, se)
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
                 download_ok = 1
@@ -113,6 +118,8 @@ def getFile(lfn, se=''):
             result = rm.getFile(lfn)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 break
+            time.sleep(30)
+            print '- getFile(%s) failed, try again' % lfn
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 download_ok = 2
@@ -154,24 +161,31 @@ def parseOpt(filename):
     return (runmin, runmax)
 
 def findFiles(runnb):
-    result = FileCatalogFactory().createCatalog(fcType)
+    for i in range(0, 16):
+        result = FileCatalogFactory().createCatalog(fcType)
+        if result['OK']:
+            break
+        time.sleep(10)
+        print '- Get FileCatalog failed, try again'
     if not result['OK']:
-        print >>sys.stderr, result['Message']
+        print >>sys.stderr, 'Get FileCatalog error: %s. Retry %s' % (result['Message'], i+1)
+        return result
 
     catalog = result['Value']
 
     (runmin,runmax) = runnb[0]
 
-    for i in range(0, 5):
+    for i in range(0, 16):
         result = catalog.findFilesByMetadata({'runL':{'>=':runmin},'runH':{'<=':runmax}}, '/bes/File/randomtrg')
         if result['OK']:
             break
+        time.sleep(10)
+        print '- Find files failed, try again'
     if not result['OK']:
-        print >>sys.stderr, 'Find files error in run (%s - %s)' % (runmin, runmax)
+        print >>sys.stderr, 'Find files error in run (%s - %s). Retry %s' % (runmin, runmax, i+1)
         print >>sys.stderr, result
-        return []
 
-    return result['Value']
+    return result
 
 def main():
     jfile = ''
@@ -194,7 +208,7 @@ def main():
     
     if (runmin, runmax) == (0, 0):
         print >>sys.stderr, 'No input run range. Check arguments or jobOptions.txt'
-        sys.exit(65)
+        sys.exit(68)
 
     if(runmax < runmin):
         temp = runmax
@@ -207,13 +221,19 @@ def main():
         se = determineSe()
         print "Determine SE:", se
 
-    lfns = findFiles([(runmin, runmax)])
+    result = findFiles([(runmin, runmax)])
+    if not result['OK']:
+        print >>sys.stderr, 'Finally find file error: (%s, %s)' % (runmin, runmax)
+        print >>sys.stderr, result
+        sys.exit(65)
+
+    lfns = result['Value']
     print '%s files found in run %s - %s' % (len(lfns), runmin, runmax)
     for lfn in lfns:
         result = getFile(lfn, se)
         print result
         if not result['OK']:
-            print >>sys.stderr, 'Download file %s from SE "%s" error:' % (lfn, se)
+            print >>sys.stderr, 'Finally download file %s from SE "%s" error:' % (lfn, se)
             print >>sys.stderr, result
             sys.exit(66)
 

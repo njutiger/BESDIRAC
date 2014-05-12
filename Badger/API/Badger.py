@@ -611,6 +611,20 @@ class Badger:
         for par,value in parDict.items():
           print par.rjust(20),':',value 
 
+    def getDatasetMetadata(self, datasetName):
+        """Return a dict containing a description of metadata with which 
+           the given dataset was defined.
+           Example usage:
+           >>> result = badger.getDatasetMetadata('psipp_661_data_all_exp2')
+        """
+        result = self.client.getDatasetParameters(datasetName)
+        if not result['OK']:
+          print "ERROR: failed to get status of dataset:", result['Message']
+          return S_ERROR(result['Message'])
+        else:
+          parDict = result['Value']
+          return S_OK(parDict)
+
     def removeDataset(self,datasetName):
         """remove a dataset
         """

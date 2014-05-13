@@ -1,18 +1,21 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 #mtime:2013/12/10
 """
 besdirac-dms-get-files
   This script get a set of files from SE to localdir.
 
   Usage:
-    besdirac-dms-dataset-get datasetName 
+    besdirac-dms-dataset-get datasetName [destdir]
     Arguments:
       datasetName: a dataset that contain a set of files.
     Examples:
+      besdirac-dms-dataset-get User_XXX_XXX -D /localdir/subdir/subdir/ 
       besdirac-dms-dataset-get User_XXX_XXX 
 """
 __RCSID__ = "$Id$"
 
+import sched
 import os
 import anydbm
 import time
@@ -35,6 +38,12 @@ if not args:
   Script.showHelp()
   exit(1)
 setName = args[0]
+destDir = ''    #localdir that file download to
+#if len(args)>1:
+#  destDir = args[1]
+##print destDir
+
+rsync_url = 'rsync://bws0629.ihep.ac.cn:8873/bes-srm'
 
 method = 'rsync'
 output_dir = '.'
@@ -45,6 +54,7 @@ for option in options:
     method = val
   if switch == 'D' or switch == 'dir':
     output_dir = val
+    destDir = val
   if switch == 'w' or switch == 'wait':
     interval = int(val)
 
@@ -68,6 +78,54 @@ def getDB(name,function):
     db = anydbm.open(dbname,'c')
   return (db,dbname)
 
+def getCurrentDirTotalSize(destDir):
+  #calculate size of data that has download already
+  totalSize = 0
+  for path in os.listdir(destDir):
+    path = os.path.join(destDir,path)
+    if os.path.isfile(path):
+      #print path,os.path.getsize(path)
+      totalSize += os.path.getsize(path)
+  return totalSize
+
+
+def datasetGet():
+  badger = Badger()
+  datasetTotalSize = badger.getDatasetMetadata(setName)['Value']['TotalSize']
+  originLocalfileSize = getCurrentDirTotalSize(destDir) #check file size of the destDir before download
+  print "start download..."
+  start = time.time()
+
+  dw = DownloadWorker()
+  mw = MultiWorker(dw,5)
+  mw.main()
+  dw.Clear()
+
+  total=time.time()-start
+  print "Finished,total time is %s"%total
+
+
+def printInfo():
+  #输出平均速度，传输进度等信息 
+  spendTime = time.time()-start
+  localfileSize = getCurrentDirTotalSize(destDir)#-originLocalfileSize 
+  speed = round(float(localfileSize)/1024/spendTime,2)
+  downloadRatio = round(float(localfileSize)/datasetTotalSize,6)
+  print "The average speed is %s(KB/s)"%(speed)
+  print "Has download %s%% data"%(downloadRatio*100)
+
+#s = sched.scheduler(time.time,time.sleep)
+#def perform(inc):
+#  #可以周期性的执行printInfo函数
+#  s.enter(inc,0,perform,(inc,))
+#  printInfo()
+#
+#def mymain(inc=1):
+#  s.enter(0,0,perform,(inc,))
+#  s.run()
+#mymain()
+#exit(0)
+
 class DownloadWorker(IWorker):
   """
   """
@@ -77,7 +135,7 @@ class DownloadWorker(IWorker):
   def __init__(self):
     self.badger = Badger()
     self.db,self.dbName = getDB(setName,self.badger.getFilesByDatasetName)
-    print self.db,self.dbName
+    #print self.db,self.dbName
 
   def get_file_list(self):
     #return self.m_list
@@ -90,11 +148,12 @@ class DownloadWorker(IWorker):
   def Do(self, item):
     badger = Badger()
     #print "world"
-    result = badger.downloadFilesByFilelist([item])#,destDir)
+    result = badger.downloadFilesByFilelist([item],destDir)
     #print "result",result
     if result['OK']:
       self.db[item] = '2'
       self.db.sync()
+      printInfo()
   def Clear(self):
     transferOK = True
     for k,v in self.db.iteritems():
@@ -106,17 +165,6 @@ class DownloadWorker(IWorker):
     if transferOK:
       print "All files transfer successful"
       os.remove(self.dbName)
-
-def datasetGet():
-  print "start download..."
-  start = time.time()
-
-  dw = DownloadWorker()
-  mw = MultiWorker(dw,5)
-  mw.main()
-  dw.Clear()
-  total=time.time()-start
-  print "Finished,total time is %s"%total
 
 class Rsync:
   def __init__(self):
@@ -141,7 +189,7 @@ class Rsync:
     print 'There are %s files ready for download' % self.readyNum
 
   def sync(self):
-    cmd = ["rsync", "-avvvz", "--partial", "--files-from=%s"%self.listFile.name, "rsync://bws0629.ihep.ac.cn:8873/bes-srm%s"%self.dirName, "%s"%output_dir]
+    cmd = ["rsync", "-avvvz", "--partial", "--files-from=%s"%self.listFile.name, "%s%s"%(rsync_url, self.dirName), "%s"%output_dir]
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
     self.totalNum = 0

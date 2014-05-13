@@ -50,7 +50,8 @@ def getLFN(dstfile,format=[".dst",".tag"]):
     
     #split "*.dst" by "."
     #get lfn
-    lfn = filename.split('.')[0]
+    #lfn = filename.split('.')[0]
+    lfn = filename
 
     return lfn
 
@@ -135,7 +136,7 @@ def getCommonInfo(dstfile):
     if pos >= 0:
       return eval( output[pos:] )
 
-#get bossVer,eventNum,dataType,fileSize,name,eventType,expNum,
+#get bossVer,eventNumber,dataType,fileSize,name,eventType,expNum,
 #resonance,runH,runL,status,streamId,description
 class DataAll(object):
     def __init__(self,dstfile):
@@ -152,10 +153,17 @@ class DataAll(object):
         else:
             attributes = getCommonInfo(self.dstfile)
             #attributes["fileSize"] = getFileSize(self.dstfile)
+            #set values of attribute status,streamId,Description,...
+            attributes["status"] = 1
+            attributes["streamId"] = 'stream0' 
+            attributes["description"] = ''
             attributes["LFN"] = getLFN(self.dstfile)
             attributes["eventType"] = "all"
-            attributes["round"] = "round02" 
-            attributes["resonance"] = "jpsi"
+            attributes["count"] = 0
+
+            #NOTE, MUST RESET the follow two metadata
+            attributes["round"] = "round06" 
+            attributes["resonance"] = "xyz_4360scan"
 
             #get runId from filename
             runId = splitLFN(attributes["LFN"],"all")
@@ -172,10 +180,6 @@ class DataAll(object):
                     (self.dstfile,lfnInfo["runId"],attributes["runId"])
                 return "error"
 
-            #set values of attribute status,streamId,Description
-            attributes["status"] = -1
-            attributes["streamId"] = 'stream0' 
-            attributes["description"] = 'null'
             del attributes["runId"]
             #attributes["jobOptions"] = ""
             return attributes
@@ -200,9 +204,13 @@ class Others(object):
             attributes = getCommonInfo(self.dstfile)
             #attributes["fileSize"] = getFileSize(self.dstfile)
             attributes["LFN"] = getLFN(self.dstfile)
-            attributes["round"] = "round02"
+            attributes["status"] = 1
+            attributes["count"] = 0
+            #NOTE, MUST RESET the follow metadatas
+            attributes["round"] = "round02" 
+            attributes["resonance"] = "jpsi"
             attributes["eventType"] = "inclusive"
-            attributes["status"] = -1
+
             #get resonance,streamId,runL,runH in filename by calling splitLFN function
             lfnInfo = splitLFN(attributes["LFN"],"others")
             attributes["resonance"] = lfnInfo["resonance"]
@@ -240,7 +248,7 @@ if __name__=="__main__":
    import time
    client = FileCatalogClient()
    start = time.time()
-   obj = DataAll("/bes3fs/offline/data/663p01/4260/dst/./121215/run_0029679_All_file002_SFO-2.dst")
+   obj = DataAll("/bes3fs/offline/data/664p01/xyz/4230/dst/130402/run_0032239_All_file001_SFO-1.dst")
    #obj = Others("/besfs2/offline/data/664-1/jpsi/09mc/dst/jpsi2009_stream001_run10319_file1.dst")
    result = obj.getAttributes()
    print time.time()-start

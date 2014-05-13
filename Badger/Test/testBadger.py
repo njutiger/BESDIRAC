@@ -55,7 +55,7 @@ if __name__=="__main__":
   #pprint.pprint(result['Value']['group'])
   #print result
   #oprint getPrefix()
-  result = badger.calcCount('/bes/user/z/zhanggang/dst1.txt')
+  result = badger.removeDir('/bes/File/jpsi/6.6.4.p01')
   pprint.pprint(result)
 
 

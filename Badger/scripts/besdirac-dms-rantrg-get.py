@@ -31,6 +31,7 @@ import sys
 import re
 import socket
 import time
+import random
 
 SeSiteMap = {
   'BES.JINR.ru'       : 'JINR-USER',
@@ -89,7 +90,7 @@ def getFile(lfn, se=''):
             if se in lfnReplicas[lfn]:
                 lfn_on_se = True
                 break
-        time.sleep(10)
+        time.sleep(random.randint(30, 120))
         print '- Get replicas for %s failed, try again' % lfn
 
     if not get_active_replicas_ok:
@@ -102,7 +103,7 @@ def getFile(lfn, se=''):
             result = rm.getStorageFile(pfn, se)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
                 break
-            time.sleep(30)
+            time.sleep(random.randint(180, 600))
             print '- %s getStorageFile(%s, %s) failed, try again' % (lfn, pfn, se)
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
@@ -112,13 +113,13 @@ def getFile(lfn, se=''):
         else:
             error_msg = result['Message']
     else:
-        print >>sys.stderr, 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
+        print 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
         # try 5 times
         for j in range(0, 5):
             result = rm.getFile(lfn)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 break
-            time.sleep(30)
+            time.sleep(random.randint(180, 600))
             print '- getFile(%s) failed, try again' % lfn
         if result['OK']:
             if result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
@@ -165,7 +166,7 @@ def findFiles(runnb):
         result = FileCatalogFactory().createCatalog(fcType)
         if result['OK']:
             break
-        time.sleep(10)
+        time.sleep(random.randint(30, 120))
         print '- Get FileCatalog failed, try again'
     if not result['OK']:
         print >>sys.stderr, 'Get FileCatalog error: %s. Retry %s' % (result['Message'], i+1)
@@ -179,7 +180,7 @@ def findFiles(runnb):
         result = catalog.findFilesByMetadata({'runL':{'>=':runmin},'runH':{'<=':runmax}}, '/bes/File/randomtrg')
         if result['OK']:
             break
-        time.sleep(10)
+        time.sleep(random.randint(30, 120))
         print '- Find files failed, try again'
     if not result['OK']:
         print >>sys.stderr, 'Find files error in run (%s - %s). Retry %s' % (runmin, runmax, i+1)

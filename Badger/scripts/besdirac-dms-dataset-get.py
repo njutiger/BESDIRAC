@@ -38,12 +38,12 @@ if not args:
   Script.showHelp()
   exit(1)
 setName = args[0]
-destDir = ''    #localdir that file download to
+destDir = '.'    #localdir that file download to
 #if len(args)>1:
 #  destDir = args[1]
 ##print destDir
 
-rsync_url = 'rsync://bws0629.ihep.ac.cn:8873/bes-srm'
+rsync_url = 'rsync://vmdirac04.ihep.ac.cn/bes-srm'
 
 method = 'rsync'
 output_dir = '.'
@@ -88,9 +88,12 @@ def getCurrentDirTotalSize(destDir):
       totalSize += os.path.getsize(path)
   return totalSize
 
-
+start = 0
+datasetTotalSize = 0.0001
+originLocalfileSize = 0
 def datasetGet():
   badger = Badger()
+  badger.updateDataset(setName)
   datasetTotalSize = badger.getDatasetMetadata(setName)['Value']['TotalSize']
   originLocalfileSize = getCurrentDirTotalSize(destDir) #check file size of the destDir before download
   print "start download..."
@@ -195,6 +198,7 @@ class Rsync:
     self.totalNum = 0
     self.downloadNum = 0
     self.skipNum = 0
+    self.speed = 0
     for line in iter(popen.stdout.readline, ""):
       if line.find('recv_file_name') != -1:
         self.totalNum += 1
@@ -206,6 +210,7 @@ class Rsync:
       if line.find('bytes/sec') != -1:
         self.speed = float(line.split()[-2]) / 1024 / 1024
     self.status = popen.wait()
+    return self.status
 
   def output(self):
     print 'Download status: %s, speed: %.2f (MB/s)' % (self.status, self.speed)
@@ -216,8 +221,11 @@ def datasetRsync():
   while True:
     rsync = Rsync()
     rsync.getFileList()
-    rsync.sync()
-    rsync.output()
+    while True:
+      status = rsync.sync()
+      rsync.output()
+      if status == 0:
+        break
     del rsync
     print 'Waiting %s seconds for next downloading... Press Ctrl+C to exit\n' % interval
     time.sleep(interval)

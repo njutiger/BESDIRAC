@@ -20,11 +20,14 @@ from DIRAC.Core.Base import Script
 
 Script.registerSwitch("r","dir","the directory that dataset files located")
 Script.setUsageMessage(__doc__)
-dir = Script.getPositionalArgs()
+args = Script.getPositionalArgs()
 
-if len(dir) == 0:
+if len(args) == 0:
   Script.showHelp()
   exit(-1)
+ePoint = ''
+if len(args)>1:
+  energyPoint = args[1]
 
 from BESDIRAC.Badger.API.Badger import Badger
 from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
@@ -33,18 +36,19 @@ def getDB(name,function):
   """return a db instance,the db contain the file list.
   default value is 0,means the file is not transfer yet,if 2,means OK.
   """
-  dbname = "db_"+name[1]+str(name[-3:])
+  dbname = "db_"+name[1]+'_'+str(name[-3:])
   if not os.path.exists(dbname):
     fileList = function(name)
     #print fileList
     db = anydbm.open(dbname,'c')
     for file in fileList:
       db[file] = '0'
+      db.sync()
   else:
     db = anydbm.open(dbname,'c')
   return (db,dbname)
 
-localdir = dir[0]
+localdir = args[0]
 startTime = time.time()
 print "startTime",time.strftime("%Y-%m-%d %H:%m:%S",time.gmtime(startTime))
 
@@ -66,7 +70,7 @@ class UploadWorker(IWorker):
 
   def Do(self, item):
     badger = Badger()
-    result = badger.uploadAndRegisterFiles([item])
+    result = badger.uploadAndRegisterFiles([item],ePoint=energyPoint)
     if result['OK']:
       self.db[item] = '2'
       self.db.sync()

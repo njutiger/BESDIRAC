@@ -21,35 +21,59 @@ dirs = Script.getPositionalArgs()
 dfcdir = dirs[0]
 localDir = dirs[1]
 
+#get DFC file dict
 lfns = badger.listDir(dfcdir)
 lfnDict = badger.getSize(lfns)
+base_lfnDict = {}
+for k,v in lfnDict.items():
+  k = os.path.basename(k)
+  base_lfnDict[k] = v
+#get local files dict
 localFiles = badger.getFilenamesByLocaldir(localDir)
-#print len(lfns),len(localFiles)
-localDict = {}
+base_localDict = {}
 for file in localFiles:
-  localDict[file] = os.path.getsize(file)
+  base_localDict[os.path.basename(file)] = os.path.getsize(file)
 
 filesOK = True
 omitList = []
 partList = []
-for item in lfnDict.keys():
-  afsitem = os.path.join(localDir,os.path.basename(item))
-  if afsitem in localDict.keys():
-    if localDict[afsitem]!=lfnDict[item]:
-      partList.append(item,localDict[afsitem],lfnDict[item])
-      filesOK = False
+if len(lfns)>=len(localFiles):
+  for item in base_lfnDict.keys():
+    if item in base_localDict.keys():
+      if base_localDict[item]!=base_lfnDict[item]:
+        partList.append(item,base_localDict[item],base_lfnDict[item])
+        filesOK = False
+      else:
+        pass
     else:
-      pass
-  else:
-    omitList.append(item)
-    filesOK = False
-if partList:
-  print "these file has not transfer completely"
-  print partList
-if omitList:
-  print "these file has not tranfer yet."
-  print omitList
-if filesOK:
-  print "all are OK"
+      omitList.append(item)
+      filesOK = False
+  if partList:
+    print "these file has not transfer completely"
+    pprint.pprint(partList)
+  if omitList:
+    print "these file has not tranfer yet."
+    pprint.pprint(omitList)
+  if filesOK:
+    print "all are OK"
+else:
+  for item in base_localDict.keys():
+    if item in base_lfnDict.keys():
+      if base_lfnDict[item]!=base_localDict[item]:
+        partList.append(item,base_localDict[item],base_lfnDict[item])
+        filesOK = False
+      else:
+        pass
+    else:
+      omitList.append(item)
+      filesOK = False
+  if partList:
+    print "these file has not transfer completely"
+    pprint.pprint(partList)
+  if omitList:
+    print "these file has not tranfer yet."
+    pprint.pprint(omitList)
+  if filesOK:
+    print "all are OK"
 
 DIRAC.exit(0)

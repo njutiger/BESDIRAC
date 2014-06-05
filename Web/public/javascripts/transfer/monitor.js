@@ -225,6 +225,10 @@ function createFileListWindow() {
     width: 600,
     height:400,
     //autoHeight: true,
+    view: new Ext.grid.GroupingView({
+      forceFit: true,
+      groupTextTpl: '{text} ({[values.rs.length]})'
+    }),
     region: 'center',
     selModel: new Ext.grid.RowSelectionModel({singleSelect : true}),
     tbar: topbar,
@@ -284,12 +288,14 @@ function createFileListStore() {
   var group = gPageDescription.userData.group;
   var url = 'https://' + location.host + '/DIRAC/' + setup + '/' + group;
   url = url + '/transfer/monitor/req';
-  var store = new Ext.data.Store({
+  var store = new Ext.data.GroupingStore({
     reader: reader,
     proxy: new Ext.data.HttpProxy({
               url: url,
               method: 'POST',
             }),
+    sortInfo: {field: 'id', direction: "ASC"},
+    groupField: 'status',
     autoLoad: false,
     autoSync: true
   });

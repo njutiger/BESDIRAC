@@ -17,6 +17,7 @@ __RCSID__ = "$Id$"
 
 import sched
 import os
+import sys
 import anydbm
 import time
 import tempfile
@@ -60,6 +61,8 @@ for option in options:
 
 from BESDIRAC.Badger.API.Badger import Badger
 from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 def getDB(name,function):
   """return a db instance,the db contain the file list.
@@ -181,12 +184,13 @@ class Rsync:
   def getFileList(self):
     badger = Badger()
     result = badger.getFilesByDatasetName(setName)
+    fileList = []
     if result['OK']:
       fileList = result['Value']
       if fileList:
         self.dirName = os.path.dirname(fileList[0])
-      for file in fileList:
-        print >>self.listFile, os.path.basename(file)
+    for file in fileList:
+      print >>self.listFile, os.path.basename(file)
     self.readyNum = len(fileList)
     self.listFile.close()
     print 'There are %s files ready for download' % self.readyNum

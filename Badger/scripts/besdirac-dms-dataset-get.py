@@ -20,6 +20,7 @@ import os
 import sys
 import anydbm
 import time
+import datetime
 import tempfile
 import subprocess
 from DIRAC import S_OK, S_ERROR, gLogger, exit
@@ -63,6 +64,9 @@ from BESDIRAC.Badger.API.Badger import Badger
 from BESDIRAC.Badger.API.multiworker import IWorker,MultiWorker
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
+def time_print(message):
+  print '[%s UTC] %s' % (datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), message)
 
 def getDB(name,function):
   """return a db instance,the db contain the file list.
@@ -193,9 +197,12 @@ class Rsync:
       print >>self.listFile, os.path.basename(file)
     self.readyNum = len(fileList)
     self.listFile.close()
-    print 'There are %s files ready for download' % self.readyNum
+    time_print('There are %s files ready for download' % self.readyNum)
 
   def sync(self):
+    time_print('='*80)
+    time_print('Start downloading...')
+
     cmd = ["rsync", "-avvvz", "--partial", "--files-from=%s"%self.listFile.name, "%s%s"%(rsync_url, self.dirName), "%s"%output_dir]
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
@@ -208,21 +215,29 @@ class Rsync:
         self.totalNum += 1
       if line.find('renaming') != -1:
         self.downloadNum += 1
-        print 'File downloaded: %s' % line.split()[-1]
+        time_print('File downloaded: %s' % line.split()[-1])
       if line.find('is uptodate') != -1:
         self.skipNum += 1
       if line.find('bytes/sec') != -1:
         self.speed = float(line.split()[-2]) / 1024 / 1024
     self.status = popen.wait()
+
+    time_print('Finish downloading...')
+    time_print('='*80)
     return self.status
 
   def output(self):
-    print 'Download status: %s, speed: %.2f (MB/s)' % (self.status, self.speed)
-    print 'Generated: %s\nTotal: %s. Download: %s. Skip: %s' % (self.readyNum, self.totalNum, self.downloadNum, self.skipNum)
+    time_print('Download status: %s, speed: %.2f (MB/s)' % (self.status, self.speed))
+    time_print('Total: %s / %s' % (self.totalNum, self.readyNum))
+    time_print('Download in this cycle: %s' % self.downloadNum)
+    time_print('Skip already downloaded: %s' % self.skipNum)
 
 
 def datasetRsync():
+  rsync_counter = 0
   while True:
+    rsync_counter += 1
+    time_print('Start cycle %s' % rsync_counter)
     rsync = Rsync()
     rsync.getFileList()
     while True:
@@ -231,7 +246,7 @@ def datasetRsync():
       if status == 0:
         break
     del rsync
-    print 'Waiting %s seconds for next downloading... Press Ctrl+C to exit\n' % interval
+    time_print('Waiting %s seconds for next downloading... Press Ctrl+C to exit\n' % interval)
     time.sleep(interval)
 
 if method == 'get':

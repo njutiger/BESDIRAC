@@ -37,7 +37,7 @@ def findFiles(jobIds):
     lfns=[]
 
     for jobId in jobIds:
-        result = fcc.findFilesByMetadata({'dataType': 'log', 'jobId': jobId}, '/')
+        result = fcc.findFilesByMetadata({'dataType': 'log', 'jobId': int(jobId)}, '/')
 
         if result['OK']:
             for f in result['Value']:

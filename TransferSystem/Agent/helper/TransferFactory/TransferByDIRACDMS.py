@@ -12,10 +12,10 @@ class DIRACDMSTransferWorker(ITransferWorker):
     cmd_list = [#"dirac-dms-fts-submit", 
                   "dirac-dms-replicate-lfn",
                   LFN,
-                  #srcSE,
                   dstSE,
+                  srcSE,
                   "-c",
-                  "/scratch/tmp/x509up_u58002"]
+                  "y"]
     return cmd_list
 
   def handle_exit(self, returncode):

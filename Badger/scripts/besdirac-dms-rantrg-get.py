@@ -114,7 +114,8 @@ def getFile(lfn, se=''):
         else:
             error_msg = result['Message']
     else:
-        print 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
+        if se:
+            print 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
         # try 5 times
         for j in range(0, 5):
             result = rm.getFile(lfn)

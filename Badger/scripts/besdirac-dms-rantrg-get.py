@@ -83,7 +83,7 @@ def getFile(lfn, se=''):
     lfn_on_se = False
     error_msg = ''
     if se:
-        for i in range(0, 16):
+        for i in range(0, 5):
             result = rm.getActiveReplicas(lfn)
             if result['OK'] and result['Value']['Successful']:
                 get_active_replicas_ok = True
@@ -91,7 +91,7 @@ def getFile(lfn, se=''):
                 if se in lfnReplicas[lfn]:
                     lfn_on_se = True
                     break
-            time.sleep(random.randint(30, 120))
+            time.sleep(3)
             print '- Get replicas for %s failed, try again' % lfn
 
         if not get_active_replicas_ok:

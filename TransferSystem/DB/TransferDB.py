@@ -109,7 +109,7 @@ class TransferDB(DB):
   def insert_TransferRequest(self, entry):
     if not isinstance(entry, TransRequestEntry):
       raise TypeError("entry should be TransRequestEntry")
-    infoDict = entry._asdict()
+    infoDict = dict(entry._asdict())
     res = self.insertFields( self.tables["TransferRequest"],
                              inDict = infoDict)
     if not res["OK"]:
@@ -154,7 +154,7 @@ class TransferDB(DB):
   def insert_PerTransferFile(self, entry):
     if not isinstance(entry, TransFileListEntry):
       raise TypeError("entry should be TransFileListEntry")
-    infoDict = entry._asdict()
+    infoDict = dict(entry._asdict())
     res = self.insertFields( self.tables["TransferFileList"],
                              inDict = infoDict)
     if not res["OK"]:
@@ -368,7 +368,7 @@ class TransferDB(DB):
   def helper_insert_Dataset_table(self, entry):
     if not isinstance(entry, DatasetEntry):
       raise TypeError("entry should be DatasetEntry")
-    infoDict = entry._asdict()
+    infoDict = dict(entry._asdict())
     res = self.insertFields( self.tables["Dataset"],
                              inDict=infoDict,
                              )
@@ -383,7 +383,7 @@ class TransferDB(DB):
   def helper_insert_FilesInDataset_table(self, entry):
     if not isinstance(entry, FilesInDatasetEntry):
       raise TypeError("entry should be FilesInDatasetEntry")
-    infoDict = entry._asdict()
+    infoDict = dict(entry._asdict())
     res = self.insertFields( self.tables["FilesInDataSet"],
                              inDict=infoDict,
                              )

@@ -10,7 +10,9 @@ __RCSID__ = "$Id: TaskDB.py 1 2015-01-11 11:39:29 zhaoxh@ihep.ac.cn $"
 
 class TaskDB( DB ):
 
-  def __init__( self ):
+  def __init__( self, maxQueueSize = 10 ):
+    DB.__init__( self, 'TaskDB', 'WorkloadManagement/TaskDB', maxQueueSize )
+
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )

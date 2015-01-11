@@ -18,8 +18,7 @@ def initializeTaskManagerHandler( serviceInfo ):
 
   global gTaskDB
 
-  dbLocation = getServiceOption( serviceInfo, 'Database', 'WorkloadManagement/TaskDB' )
-  gTaskDB = TaskDB( dbLocation )
+  gTaskDB = TaskDB()
 
   return S_OK()
 

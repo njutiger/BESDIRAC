@@ -84,7 +84,7 @@ class TaskDB( DB ):
     status = 'Created'
 
     taskAttrNames = ['TaskName', 'CreationTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
-    taskAttrValues = [jdl, Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
+    taskAttrValues = [taskName, Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
 
     result = self.insertFields( 'Task' , taskAttrNames, taskAttrValues )
     if not result['OK']:
@@ -114,7 +114,7 @@ class TaskDB( DB ):
 
   def addTaskJob( self, taskID, jobID, jobInfo ):
     taskJobAttrNames = ['TaskID', 'JobID', 'Info']
-    taskJobAttrValues = [taskID, jobID, json.dump(jobInfo)]
+    taskJobAttrValues = [taskID, jobID, json.dumps(jobInfo)]
 
     result = self.insertFields( 'TaskJob' , taskJobAttrNames, taskJobAttrValues )
     if not result['OK']:

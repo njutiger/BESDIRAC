@@ -14,7 +14,7 @@ __RCSID__ = '$Id: $'
 # This is a global instance of the TaskDB class
 gTaskDB = None
 
-def initializeTaskHandler( serviceInfo ):
+def initializeTaskManagerHandler( serviceInfo ):
 
   global gTaskDB
 

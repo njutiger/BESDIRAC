@@ -23,7 +23,7 @@ def initializeTaskHandler( serviceInfo ):
 
   return S_OK()
 
-class TaskHandler( RequestHandler ):
+class TaskManagerHandler( RequestHandler ):
 
   def initialize( self ):
      credDict = self.getRemoteCredentials()

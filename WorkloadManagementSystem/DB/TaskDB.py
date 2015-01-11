@@ -80,13 +80,11 @@ class TaskDB( DB ):
 
     return self._createTables( tablesToCreate )
 
-  def createTask( self, taskName, owner, ownerDN, ownerGroup, taskInfo ):
-    status = 'Created'
-
+  def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo ):
     taskAttrNames = ['TaskName', 'CreationTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
     taskAttrValues = [taskName, Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
 
-    result = self.insertFields( 'Task' , taskAttrNames, taskAttrValues )
+    result = self.insertFields( 'Task', taskAttrNames, taskAttrValues )
     if not result['OK']:
       self.log.error( 'Can not create new task', result['Message'] )
       return result
@@ -98,15 +96,13 @@ class TaskDB( DB ):
 
     self.log.info( 'TaskDB: New TaskID served "%s"' % taskID )
 
-    self.insertTaskHistory( taskID, status, 'New task created' )
-
     return S_OK( taskID )
 
   def insertTaskHistory( self, taskID, status, discription = '' ):
     taskHistoryAttrNames = ['TaskID', 'Status', 'StatusTime', 'Discription']
     taskHistoryAttrValues = [taskID, status, Time.dateTime(), discription]
 
-    result = self.insertFields( 'TaskHistory' , taskHistoryAttrNames, taskHistoryAttrValues )
+    result = self.insertFields( 'TaskHistory', taskHistoryAttrNames, taskHistoryAttrValues )
     if not result['OK']:
       self.log.error( 'Can not insert task history', result['Message'] )
 
@@ -116,8 +112,33 @@ class TaskDB( DB ):
     taskJobAttrNames = ['TaskID', 'JobID', 'Info']
     taskJobAttrValues = [taskID, jobID, json.dumps(jobInfo)]
 
-    result = self.insertFields( 'TaskJob' , taskJobAttrNames, taskJobAttrValues )
+    result = self.insertFields( 'TaskJob', taskJobAttrNames, taskJobAttrValues )
     if not result['OK']:
       self.log.error( 'Can not add job to task', result['Message'] )
 
     return result
+
+  def updateTaskStatus( self, taskID, status ):
+    condDict = { 'TaskID': taskID }
+    taskAttrNames = ['Status']
+    taskAttrValues = [status]
+
+    result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not update task status', result['Message'] )
+
+    return result
+
+  def getTaskStatus( self, taskID ):
+    condDict = { 'TaskID': taskID }
+    outFields = ( 'Status' )
+    result = self.getFields( 'Task', outFields, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not get task status', result['Message'] )
+      return result
+
+    if not result['Value']:
+      self.log.error( 'Task ID %d not found' % taskID )
+      return S_ERROR( 'Task ID %d not found' % taskID )
+
+    return S_OK( result['Value'][0] )

@@ -32,11 +32,22 @@ class TaskManagerHandler( RequestHandler ):
   def export_createTask( self, taskName, taskInfo ):
     """ Create a new task
     """
+    status = 'Created'
     credDict = self.getRemoteCredentials()
     owner = credDict[ 'username' ]
     ownerDN = credDict[ 'DN' ]
     ownerGroup = credDict[ 'group' ]
-    return gTaskDB.createTask( taskName, owner, ownerDN, ownerGroup, taskInfo )
+
+    result = gTaskDB.createTask( taskName, status, owner, ownerDN, ownerGroup, taskInfo )
+    if not result['OK']:
+      return result
+    taskID = result['Value']
+
+    result = gTaskDB.insertTaskHistory( taskID, status, 'New task created' )
+    if not result['OK']:
+      return result
+
+    return S_OK( taskID )
 
   types_insertTaskHistory = [ [IntType, LongType], StringTypes, StringTypes ]
   def export_insertTaskHistory( self, taskID, status, discription = '' ):
@@ -49,3 +60,23 @@ class TaskManagerHandler( RequestHandler ):
     """ Add a job to the task
     """
     return gTaskDB.addTaskJob( taskID, jobID, jobInfo )
+
+  types_updateTaskStatus = [ [IntType, LongType], StringTypes, StringTypes ]
+  def export_updateTaskStatus( self, taskID, status, discription ):
+    """ Update status of a task
+    """
+    result = gTaskDB.updateTaskStatus( taskID, status )
+    if not result['OK']:
+      return result
+
+    result = gTaskDB.insertTaskHistory( taskID, status, discription )
+    if not result['OK']:
+      return result
+
+    return S_OK()
+
+  types_getTaskStatus = [ [IntType, LongType] ]
+  def getTaskStatus( self, taskID ):
+    """ Get task status
+    """
+    return gTaskDB.getTaskStatus( taskID )

@@ -11,10 +11,10 @@ Script.setUsageMessage( """
 List all the tasks
 
 Usage:
-   %s [option] ... [JobID] ...
+   %s [option]
 """ % Script.scriptName )
 
-Script.registerSwitch( "f:", "field=",          "Fields to list, seperated by comma. (TaskID,TaskName,Status,Owner,OwnerDN,OwnerGroup,CreationTime,Site,JobGroup)" )
+Script.registerSwitch( "f:", "field=",          "Fields to list, seperated by comma. (TaskID,TaskName,Status,Owner,OwnerDN,OwnerGroup,CreationTime,JobGroup,Site)" )
 Script.registerSwitch( "l:", "limit=",          "Task number limit" )
 Script.registerSwitch( "p",  "progress",        "Show task progress" )
 
@@ -75,7 +75,7 @@ def showTask(fields, task):
   print ''
 
 def main():
-  fields = ['TaskID','TaskName','Status','Owner','OwnerGroup','CreationTime','Site','JobGroup']
+  fields = ['TaskID','TaskName','Status','Owner','OwnerGroup','CreationTime','JobGroup','Site']
   limit = 0
   addProgress = False
   for arg in args:

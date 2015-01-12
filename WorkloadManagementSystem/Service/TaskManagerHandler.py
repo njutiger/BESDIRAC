@@ -127,6 +127,8 @@ class TaskManagerHandler( RequestHandler ):
     newAttributes = result['Value']
 
     attributes = list( set( oldAttributes ) + set( newAttributes ) )
+    if '' in attributes:
+      attributes.remove( '' )
 
     allAttributes = ','.join( attributes )
     result = gTaskDB.updateTask( taskID, [attributeType], [allAttributes] )

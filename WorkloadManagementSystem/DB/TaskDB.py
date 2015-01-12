@@ -36,7 +36,7 @@ class TaskDB( DB ):
                                                  'Owner'        : 'VARCHAR(64) NOT NULL DEFAULT "unknown"',
                                                  'OwnerDN'      : 'VARCHAR(255) NOT NULL DEFAULT "unknown"',
                                                  'OwnerGroup'   : 'VARCHAR(128) NOT NULL DEFAULT "unknown"',
-                                                 'Site'         : 'VARCHAR(512) NOT NULL DEFAULT "ANY"',
+                                                 'Site'         : 'VARCHAR(512) NOT NULL DEFAULT ""',
                                                  'JobGroup'     : 'VARCHAR(512) NOT NULL DEFAULT ""',
                                                  'Progress'     : 'VARCHAR(128) NOT NULL DEFAULT "{}"',
                                                  'Info'         : 'VARCHAR(4096) NOT NULL DEFAULT "{}"',
@@ -191,7 +191,7 @@ class TaskDB( DB ):
   def getJobInfo( self, jobID ):
     condDict = { 'JobID': jobID }
     outFields = ( 'Info', )
-    result = self.getFields( 'TaskJob', outFields, condDict )
+    result = self.getFields( 'TaskJob', outFields, condDict, orderAttribute = 'JobID:ASC' )
     if not result['OK']:
       self.log.error( 'Can not get job info', result['Message'] )
       return result

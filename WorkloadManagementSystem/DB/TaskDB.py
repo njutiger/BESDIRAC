@@ -181,7 +181,7 @@ class TaskDB( DB ):
   def getTaskJobs( self, taskID ):
     condDict = { 'TaskID': taskID }
     outFields = ( 'JobID', )
-    result = self.getFields( 'TaskJob', outFields, condDict )
+    result = self.getFields( 'TaskJob', outFields, condDict, orderAttribute = 'JobID:ASC' )
     if not result['OK']:
       self.log.error( 'Can not get task jobs', result['Message'] )
       return result
@@ -191,7 +191,7 @@ class TaskDB( DB ):
   def getJobInfo( self, jobID ):
     condDict = { 'JobID': jobID }
     outFields = ( 'Info', )
-    result = self.getFields( 'TaskJob', outFields, condDict, orderAttribute = 'JobID:ASC' )
+    result = self.getFields( 'TaskJob', outFields, condDict )
     if not result['OK']:
       self.log.error( 'Can not get job info', result['Message'] )
       return result

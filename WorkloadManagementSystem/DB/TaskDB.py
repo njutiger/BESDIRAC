@@ -129,12 +129,11 @@ class TaskDB( DB ):
 
     return result
 
-  def getTaskStatus( self, taskID ):
+  def getTask( self, taskID, outFields ):
     condDict = { 'TaskID': taskID }
-    outFields = ( 'Status' )
     result = self.getFields( 'Task', outFields, condDict )
     if not result['OK']:
-      self.log.error( 'Can not get task status', result['Message'] )
+      self.log.error( 'Can not get task', result['Message'] )
       return result
 
     if not result['Value']:
@@ -142,3 +141,45 @@ class TaskDB( DB ):
       return S_ERROR( 'Task ID %d not found' % taskID )
 
     return S_OK( result['Value'][0] )
+
+  def getTaskStatus( self, taskID ):
+    outFields = ( 'Status', )
+    result = self.getTask( taskID, outFields )
+    if not result['OK']:
+      self.log.error( 'Can not get task status', result['Message'] )
+      return result
+
+    return S_OK( result['Value'][0] )
+
+  def getTaskInfo( self, taskID ):
+    outFields = ( 'Info', )
+    result = self.getTask( taskID, outFields )
+    if not result['OK']:
+      self.log.error( 'Can not get task info', result['Message'] )
+      return result
+
+    return S_OK( json.loads( result['Value'][0] ) )
+
+  def getTaskJobs( self, taskID ):
+    condDict = { 'TaskID': taskID }
+    outFields = ( 'JobID', )
+    result = self.getFields( 'TaskJob', outFields, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not get task jobs', result['Message'] )
+      return result
+
+    return S_OK( [ i[0] for i in  result['Value'] ] )
+
+  def getJobInfo( self, jobID ):
+    condDict = { 'JobID': jobID }
+    outFields = ( 'Info', )
+    result = self.getFields( 'TaskJob', outFields, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not get job info', result['Message'] )
+      return result
+
+    if not result['Value']:
+      self.log.error( 'Job info %d not found' % jobID )
+      return S_ERROR( 'Job info %d not found' % jobID )
+
+    return S_OK( json.loads( result['Value'][0][0] ) )

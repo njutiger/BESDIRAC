@@ -75,8 +75,32 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK()
 
+  types_getTask = [ [IntType, LongType], ListType ]
+  def export_getTask( self, taskID, outFields ):
+    """ Get task
+    """
+    return gTaskDB.getTask( taskID, outFields )
+
   types_getTaskStatus = [ [IntType, LongType] ]
-  def getTaskStatus( self, taskID ):
+  def export_getTaskStatus( self, taskID ):
     """ Get task status
     """
     return gTaskDB.getTaskStatus( taskID )
+
+  types_getTaskInfo = [ [IntType, LongType] ]
+  def export_getTaskInfo( self, taskID ):
+    """ Get task info
+    """
+    return gTaskDB.getTaskInfo( taskID )
+
+  types_getTaskJobs = [ [IntType, LongType] ]
+  def export_getTaskJobs( self, taskID ):
+    """ Get task jobs
+    """
+    return gTaskDB.getTaskJobs( taskID )
+
+  types_getJobInfo = [ [IntType, LongType] ]
+  def export_getJobInfo( self, jobID ):
+    """ Get job info
+    """
+    return gTaskDB.getJobInfo( jobID )

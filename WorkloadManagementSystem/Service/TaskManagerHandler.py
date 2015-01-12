@@ -121,10 +121,10 @@ class TaskManagerHandler( RequestHandler ):
     return S_OK()
 
   types_getTasks = [ ListType, [IntType, LongType] ]
-  def export_getTasks( self, outFields, limit = 5 ):
+  def export_getTasks( self, outFields, condDict, limit = 5 ):
     """ Get task
     """
-    return gTaskDB.getTasks( outFields, limit )
+    return gTaskDB.getTasks( outFields, condDict, limit )
 
   types_getTask = [ [IntType, LongType], ListType ]
   def export_getTask( self, taskID, outFields ):
@@ -182,7 +182,7 @@ class TaskManagerHandler( RequestHandler ):
     newStatus = self.analyseTaskStatus( progress )
     gLogger.info( 'Task %d new status: %s' % ( taskID, newStatus ) )
     if newStatus != status:
-      result = gTaskDB.insertTaskHistory( taskID, newStatus, '' )
+      result = gTaskDB.updateTaskStatus( taskID, newStatus )
       if not result['OK']:
         return result
 

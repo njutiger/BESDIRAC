@@ -119,7 +119,7 @@ class TaskManagerHandler( RequestHandler ):
     result = gTaskDB.getTask( taskID, [attributeType] )
     if not result['OK']:
       return result
-    oldAttributes = result['Value'].split( ',' )
+    oldAttributes = result['Value'][0].split( ',' )
 
     result = self.__retrieveTaskAttribute( taskID, attributeType )
     if not result['OK']:

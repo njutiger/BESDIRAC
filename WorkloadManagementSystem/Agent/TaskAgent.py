@@ -35,9 +35,19 @@ class TaskAgent( AgentModule ):
 
     for task in tasks:
       taskID = task[0]
+
       result = self.__taskManager.refreshTask( taskID )
       if not result['OK']:
         return result
+
+      result = self.__taskManager.refreshTaskSites( taskID )
+      if not result['OK']:
+        return result
+
+      result = self.__taskManager.refreshTaskJobGroup( taskID )
+      if not result['OK']:
+        return result
+
       gLogger.info( 'Task %d is refreshed' % taskID )
 
     return S_OK()

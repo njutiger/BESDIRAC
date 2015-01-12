@@ -32,7 +32,7 @@ class TaskManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     self.rpcProperties   = credDict[ 'properties' ]
 
-  def getJobAttributesForTask( self, taskID, outFields ):
+  def __getJobAttributesForTask( self, taskID, outFields ):
     result = gTaskDB.getTaskJobs( taskID )
     if not result['OK']:
       return result
@@ -40,8 +40,8 @@ class TaskManagerHandler( RequestHandler ):
 
     return gJobDB.getAttributesForJobList( jobIDs, outFields )
 
-  def getStatusNumber( self, taskID, statusType ):
-    result = self.getJobAttributesForTask( taskID, [statusType] )
+  def __getStatusNumber( self, taskID, statusType ):
+    result = self.__getJobAttributesForTask( taskID, [statusType] )
     if not result['OK']:
       return result
     statuses = result['Value']
@@ -55,7 +55,12 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( statusNumber )
 
-  def retrieveTaskProgress( self, jobIDs ):
+  def __retrieveTaskProgress( self, taskID ):
+    result = gTaskDB.getTaskJobs( taskID )
+    if not result['OK']:
+      return result
+    jobIDs = result['Value']
+
     result = gJobDB.getAttributesForJobList( jobIDs, ['Status'] )
     if not result['OK']:
       return result
@@ -79,7 +84,7 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( progress )
 
-  def analyseTaskStatus( self, progress ):
+  def __analyseTaskStatus( self, progress ):
     totalJob = progress.get( 'Total', 0 )
     runningJob = progress.get( 'Running', 0 )
     waitingJob = progress.get( 'Waiting', 0 )
@@ -95,6 +100,23 @@ class TaskManagerHandler( RequestHandler ):
       status = 'Waiting'
 
     return status
+
+  def __retrieveTaskAttribute( self, taskID, attributeType ):
+    result = gTaskDB.getTaskJobs( taskID )
+    if not result['OK']:
+      return result
+    jobIDs = result['Value']
+
+    condDict = { 'JobID': jobIDs }
+
+    result = gJobDB.getDistinctJobAttributes( attributeType, condDict )
+    if not result['OK']:
+      return result
+    attributes = result['Value']
+
+    return S_OK( attributes )
+
+
 
   types_createTask = [ StringTypes, DictType ]
   def export_createTask( self, taskName, taskInfo ):
@@ -133,7 +155,7 @@ class TaskManagerHandler( RequestHandler ):
   def export_updateTaskStatus( self, taskID, status, discription ):
     """ Update status of a task
     """
-    result = gTaskDB.updateTaskStatus( taskID, status )
+    result = gTaskDB.updateTask( taskID, ['Status'], [status] )
     if not result['OK']:
       return result
     result = gTaskDB.insertTaskHistory( taskID, status, discription )
@@ -183,31 +205,26 @@ class TaskManagerHandler( RequestHandler ):
   def export_getJobsStatus( self, taskID ):
     """ Get status of all jobs in the task
     """
-    return self.getStatusNumber( taskID, 'Status' )
+    return self.__getStatusNumber( taskID, 'Status' )
 
   types_getJobsMinorStatus = [ [IntType, LongType] ]
   def export_getJobsMinorStatus( self, taskID ):
     """ Get minor status of all jobs in the task
     """
-    return self.getStatusNumber( taskID, 'MinorStatus' )
+    return self.__getStatusNumber( taskID, 'MinorStatus' )
 
   types_getJobsApplicationStatus = [ [IntType, LongType] ]
   def export_getJobsApplicationStatus( self, taskID ):
     """ Get application status of all jobs in the task
     """
-    return self.getStatusNumber( taskID, 'ApplicationStatus' )
+    return self.__getStatusNumber( taskID, 'ApplicationStatus' )
 
   types_refreshTask = [ [IntType, LongType] ]
   def export_refreshTask( self, taskID ):
     """ Refresh a task
     """
-    result = gTaskDB.getTaskJobs( taskID )
-    if not result['OK']:
-      return result
-    jobIDs = result['Value']
-
     # get task progress from the job list
-    result = self.retrieveTaskProgress( jobIDs )
+    result = self.__retrieveTaskProgress( taskID )
     if not result['OK']:
       return result
     progress = result['Value']
@@ -223,10 +240,10 @@ class TaskManagerHandler( RequestHandler ):
     status = result['Value']
 
     # get current task status from the progress
-    newStatus = self.analyseTaskStatus( progress )
+    newStatus = self.__analyseTaskStatus( progress )
     gLogger.debug( 'Task %d new status: %s' % ( taskID, newStatus ) )
     if newStatus != status:
-      result = gTaskDB.updateTaskStatus( taskID, newStatus )
+      result = gTaskDB.updateTask( taskID, ['Status'], [newStatus] )
       if not result['OK']:
         return result
       result = gTaskDB.insertTaskHistory( taskID, newStatus, 'Status refreshed' )
@@ -234,3 +251,35 @@ class TaskManagerHandler( RequestHandler ):
         return result
 
     return S_OK( newStatus )
+
+  types_refreshTaskSites = [ [IntType, LongType] ]
+  def export_refreshTaskSites( self, taskID ):
+    """ Refresh sites of a task
+    """
+    result = self.__retrieveTaskAttribute( taskID, 'Site' )
+    if not result['OK']:
+      return result
+    sites = ','.join( result['Value'] )
+    gLogger.debug( 'Task %d sites: %s' % ( taskID, sites ) )
+
+    result = gTaskDB.updateTask( taskID, ['Site'], [sites] )
+    if not result['OK']:
+      return result
+
+    return S_OK( sites )
+
+  types_refreshTaskJobGroup = [ [IntType, LongType] ]
+  def export_refreshTaskJobGroup( self, taskID ):
+    """ Refresh job groups of a task
+    """
+    result = self.__retrieveTaskAttribute( taskID, 'JobGroup' )
+    if not result['OK']:
+      return result
+    jobGroups = ','.join( result['Value'] )
+    gLogger.debug( 'Task %d job groups: %s' % ( taskID, jobGroups ) )
+
+    result = gTaskDB.updateTask( taskID, ['JobGroup'], [jobGroups] )
+    if not result['OK']:
+      return result
+
+    return S_OK( jobGroups )

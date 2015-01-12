@@ -119,14 +119,12 @@ class TaskDB( DB ):
 
     return result
 
-  def updateTaskStatus( self, taskID, status ):
+  def updateTask( self, taskID, taskAttrNames, taskAttrValues ):
     condDict = { 'TaskID': taskID }
-    taskAttrNames = ['Status']
-    taskAttrValues = [status]
 
     result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
     if not result['OK']:
-      self.log.error( 'Can not update task status', result['Message'] )
+      self.log.error( 'Can not update task', result['Message'] )
 
     return result
 

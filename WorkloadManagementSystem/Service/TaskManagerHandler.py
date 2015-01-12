@@ -120,7 +120,7 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK()
 
-  types_getTasks = [ ListType, [IntType, LongType] ]
+  types_getTasks = [ ListType, DictType, [IntType, LongType] ]
   def export_getTasks( self, outFields, condDict, limit = 5 ):
     """ Get task
     """

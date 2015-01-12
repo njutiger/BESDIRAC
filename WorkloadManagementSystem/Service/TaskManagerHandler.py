@@ -173,15 +173,17 @@ class TaskManagerHandler( RequestHandler ):
 
     # get task progress from the job list
     progress = self.retrieveTaskProgress( jobIDs )
+    gLogger.info( 'Task %d Progress: %s' % ( taskID, progress ) )
     result = gTaskDB.updateTaskProgress( taskID, progress )
     if not result['OK']:
       return result
 
     # get current task status from the progress
     newStatus = self.analyseTaskStatus( progress )
+    gLogger.info( 'Task %d new status: %s' % ( taskID, newStatus ) )
     if newStatus != status:
-      result = gTaskDB.insertTaskHistory( taskID, status, '' )
+      result = gTaskDB.insertTaskHistory( taskID, newStatus, '' )
       if not result['OK']:
         return result
 
-    return S_OK()
+    return S_OK( taskID )

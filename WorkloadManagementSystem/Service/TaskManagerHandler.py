@@ -6,7 +6,6 @@ import time
 # DIRAC
 from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
 from DIRAC.Core.DISET.RequestHandler      import RequestHandler, getServiceOption
-from DIRAC.Core.DISET.RPCClient           import RPCClient
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB  import JobDB
 from BESDIRAC.WorkloadManagementSystem.DB.TaskDB  import TaskDB
@@ -116,6 +115,25 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( attributes )
 
+  def __refreshTaskStringAttribute( self, taskID, attributeType ):
+    result = gTaskDB.getTask( taskID, [attributeType] )
+    if not result['OK']:
+      return result
+    oldAttributes = result['Value'].split( ',' )
+
+    result = self.__retrieveTaskAttribute( taskID, attributeType )
+    if not result['OK']:
+      return result
+    newAttributes = result['Value']
+
+    attributes = list( set( oldAttributes ) + set( newAttributes ) )
+
+    allAttributes = ','.join( attributes )
+    result = gTaskDB.updateTask( taskID, [attributeType], [allAttributes] )
+    if not result['OK']:
+      return result
+
+    return S_OK( allAttributes )
 
 
   types_createTask = [ StringTypes, DictType ]
@@ -256,30 +274,10 @@ class TaskManagerHandler( RequestHandler ):
   def export_refreshTaskSites( self, taskID ):
     """ Refresh sites of a task
     """
-    result = self.__retrieveTaskAttribute( taskID, 'Site' )
-    if not result['OK']:
-      return result
-    sites = ','.join( result['Value'] )
-    gLogger.debug( 'Task %d sites: %s' % ( taskID, sites ) )
-
-    result = gTaskDB.updateTask( taskID, ['Site'], [sites] )
-    if not result['OK']:
-      return result
-
-    return S_OK( sites )
+    return self.__refreshTaskStringAttribute( taskID, 'Site' )
 
   types_refreshTaskJobGroup = [ [IntType, LongType] ]
   def export_refreshTaskJobGroup( self, taskID ):
     """ Refresh job groups of a task
     """
-    result = self.__retrieveTaskAttribute( taskID, 'JobGroup' )
-    if not result['OK']:
-      return result
-    jobGroups = ','.join( result['Value'] )
-    gLogger.debug( 'Task %d job groups: %s' % ( taskID, jobGroups ) )
-
-    result = gTaskDB.updateTask( taskID, ['JobGroup'], [jobGroups] )
-    if not result['OK']:
-      return result
-
-    return S_OK( jobGroups )
+    return self.__refreshTaskStringAttribute( taskID, 'JobGroup' )

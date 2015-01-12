@@ -81,7 +81,7 @@ class TaskDB( DB ):
 
     return self._createTables( tablesToCreate )
 
-  def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo ):
+  def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo = {} ):
     taskAttrNames = ['TaskName', 'CreationTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
     taskAttrValues = [taskName, Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
 

@@ -6,6 +6,7 @@ import time
 # DIRAC
 from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
 from DIRAC.Core.DISET.RequestHandler      import RequestHandler, getServiceOption
+from DIRAC.Core.DISET.RPCClient           import RPCClient
 
 from BESDIRAC.WorkloadManagementSystem.DB.TaskDB  import TaskDB
 
@@ -25,8 +26,52 @@ def initializeTaskManagerHandler( serviceInfo ):
 class TaskManagerHandler( RequestHandler ):
 
   def initialize( self ):
-     credDict = self.getRemoteCredentials()
-     self.rpcProperties       = credDict[ 'properties' ]
+    credDict = self.getRemoteCredentials()
+    self.rpcProperties   = credDict[ 'properties' ]
+
+    self.__jobMonitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
+
+  def retrieveTaskProgress( self, jobIDs ):
+    result = self.__jobMonitoring.getJobsStatus( jobIDs )
+    if not result['OK']:
+      return result
+
+    statuses = result['Value']
+
+    progress = { 'Total': 0, 'Done': 0, 'Failed': 0, 'Running': 0, 'Waiting': 0, 'Deleted': 0 }
+    progress['Total'] = len(jobIDs)
+    for jobID in jobIDs:
+      if jobID in statuses:
+        status = statuses[jobID]['Status']
+        if status in ['Done']:
+          progress['Done'] += 1
+        elif status in ['Failed', 'Stalled', 'Killed']:
+          progress['Failed'] += 1
+        elif status in ['Running', 'Completed']:
+          progress['Running'] += 1
+        else:
+          progress['Waiting'] += 1
+      else:
+        progress['Deleted'] += 1
+
+    return progress
+
+  def analyseTaskStatus( self, progress ):
+    totalJob = progress.get( 'Total', 0 )
+    runningJob = progress.get( 'Running', 0 )
+    waitingJob = progress.get( 'Waiting', 0 )
+
+    status = 'Unknown'
+    if totalJob == 0:
+      status = 'Empty'
+    elif runningJob != 0:
+      status = 'Running'
+    elif waitingJob == 0:
+      status = 'Finished'
+    else:
+      status = 'Waiting'
+
+    return status
 
   types_createTask = [ StringTypes, DictType ]
   def export_createTask( self, taskName, taskInfo ):
@@ -75,20 +120,6 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK()
 
-  types_updateTaskProgress = [ [IntType, LongType], DictType ]
-  def export_updateTaskProgress( self, taskID, progress ):
-    """ Update progress of a task
-    """
-    result = gTaskDB.updateTaskProgress( taskID, progress )
-    if not result['OK']:
-      return result
-
-#    result = gTaskDB.insertTaskHistory( taskID, status, '' )
-#    if not result['OK']:
-#      return result
-
-    return S_OK()
-
   types_getTasks = [ ListType, [IntType, LongType] ]
   def export_getTasks( self, outFields, limit = 5 ):
     """ Get task
@@ -124,3 +155,33 @@ class TaskManagerHandler( RequestHandler ):
     """ Get job info
     """
     return gTaskDB.getJobInfo( jobID )
+
+
+  types_refreshTask = [ [IntType, LongType] ]
+  def export_refreshTask( self, taskID ):
+    """ Refresh a task
+    """
+    result = gTaskDB.getTaskStatus( taskID )
+    if not result['OK']:
+      return result
+    status = result['Value']
+
+    result = gTaskDB.getTaskJobs( taskID )
+    if not result['OK']:
+      return result
+    jobIDs = result['Value']
+
+    # get task progress from the job list
+    progress = self.retrieveTaskProgress( jobIDs )
+    result = gTaskDB.updateTaskProgress( taskID, progress )
+    if not result['OK']:
+      return result
+
+    # get current task status from the progress
+    newStatus = self.analyseTaskStatus( progress )
+    if newStatus != status:
+      result = gTaskDB.insertTaskHistory( taskID, status, '' )
+      if not result['OK']:
+        return result
+
+    return S_OK()

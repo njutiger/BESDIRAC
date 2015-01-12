@@ -126,7 +126,7 @@ class TaskManagerHandler( RequestHandler ):
       return result
     newAttributes = result['Value']
 
-    attributes = list( set( oldAttributes ) + set( newAttributes ) )
+    attributes = list( set( oldAttributes ) | set( newAttributes ) )
     if '' in attributes:
       attributes.remove( '' )
 

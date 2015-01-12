@@ -143,10 +143,10 @@ class TaskManagerHandler( RequestHandler ):
     return S_OK( status )
 
   types_getTasks = [ ListType, DictType, [IntType, LongType] ]
-  def export_getTasks( self, outFields, condDict, limit = 5 ):
-    """ Get task
+  def export_getTasks( self, outFields, condDict, limit = 5, orderAttribute = None ):
+    """ Get task list
     """
-    return gTaskDB.getTasks( outFields, condDict, limit )
+    return gTaskDB.getTasks( outFields, condDict, limit, orderAttribute )
 
   types_getTask = [ [IntType, LongType], ListType ]
   def export_getTask( self, taskID, outFields ):

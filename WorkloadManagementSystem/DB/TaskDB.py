@@ -141,8 +141,8 @@ class TaskDB( DB ):
 
     return result
 
-  def getTasks( self, outFields, condDict, limit ):
-    result = self.getFields( 'Task', outFields, condDict, limit )
+  def getTasks( self, outFields, condDict, limit, orderAttribute = None ):
+    result = self.getFields( 'Task', outFields, condDict, limit, orderAttribute = orderAttribute )
     if not result['OK']:
       self.log.error( 'Can not get task list', result['Message'] )
       return result

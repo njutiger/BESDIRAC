@@ -75,6 +75,26 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK()
 
+  types_updateTaskProgress = [ [IntType, LongType], DictType ]
+  def export_updateTaskProgress( self, taskID, progress ):
+    """ Update progress of a task
+    """
+    result = gTaskDB.updateTaskProgress( taskID, progress )
+    if not result['OK']:
+      return result
+
+#    result = gTaskDB.insertTaskHistory( taskID, status, '' )
+#    if not result['OK']:
+#      return result
+
+    return S_OK()
+
+  types_getTasks = [ ListType, [IntType, LongType] ]
+  def export_getTasks( self, outFields, limit = 5 ):
+    """ Get task
+    """
+    return gTaskDB.getTasks( outFields, limit )
+
   types_getTask = [ [IntType, LongType], ListType ]
   def export_getTask( self, taskID, outFields ):
     """ Get task

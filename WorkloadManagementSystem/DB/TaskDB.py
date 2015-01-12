@@ -38,6 +38,7 @@ class TaskDB( DB ):
                                                  'OwnerGroup'   : 'VARCHAR(128) NOT NULL DEFAULT "unknown"',
                                                  'Site'         : 'VARCHAR(512) NOT NULL DEFAULT "ANY"',
                                                  'JobGroup'     : 'VARCHAR(512) NOT NULL DEFAULT ""',
+                                                 'Progress'     : 'VARCHAR(128) NOT NULL DEFAULT "{}"',
                                                  'Info'         : 'VARCHAR(4096) NOT NULL DEFAULT "{}"',
                                                },
                                     'PrimaryKey' : 'TaskID',
@@ -128,6 +129,25 @@ class TaskDB( DB ):
       self.log.error( 'Can not update task status', result['Message'] )
 
     return result
+
+  def updateTaskProgress( self, taskID, progress ):
+    condDict = { 'TaskID': taskID }
+    taskAttrNames = ['Progress']
+    taskAttrValues = [json.dumps(progress)]
+
+    result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not update task progress', result['Message'] )
+
+    return result
+
+  def getTasks( self, outFields, limit ):
+    result = self.getFields( 'Task', outFields, limit = limit )
+    if not result['OK']:
+      self.log.error( 'Can not get task list', result['Message'] )
+      return result
+
+    return S_OK( result['Value'] )
 
   def getTask( self, taskID, outFields ):
     condDict = { 'TaskID': taskID }

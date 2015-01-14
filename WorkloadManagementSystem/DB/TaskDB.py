@@ -32,6 +32,7 @@ class TaskDB( DB ):
     self.__tablesDesc[ 'Task' ] = { 'Fields' : { 'TaskID'       : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                                                  'TaskName'     : 'VARCHAR(128) NOT NULL DEFAULT "unknown"',
                                                  'CreationTime' : 'DATETIME NOT NULL',
+                                                 'UpdateTime'   : 'DATETIME NOT NULL',
                                                  'Status'       : 'VARCHAR(64) NOT NULL DEFAULT "Unknown"',
                                                  'Owner'        : 'VARCHAR(64) NOT NULL DEFAULT "unknown"',
                                                  'OwnerDN'      : 'VARCHAR(255) NOT NULL DEFAULT "unknown"',
@@ -44,6 +45,7 @@ class TaskDB( DB ):
                                     'PrimaryKey' : 'TaskID',
                                     'Indexes': { 'TaskIDIndex'       : [ 'TaskID' ],
                                                  'CreationTimeIndex' : [ 'CreationTime' ],
+                                                 'UpdateTimeIndex'   : [ 'UpdateTime' ],
                                                  'StatusIndex'       : [ 'Status' ],
                                                  'OwnerIndex'        : [ 'Owner' ],
                                                  'OwnerDNIndex'      : [ 'OwnerDN' ],
@@ -82,8 +84,8 @@ class TaskDB( DB ):
     return self._createTables( tablesToCreate )
 
   def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo = {} ):
-    taskAttrNames = ['TaskName', 'CreationTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
-    taskAttrValues = [taskName, Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
+    taskAttrNames = ['TaskName', 'CreationTime', 'UpdateTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
+    taskAttrValues = [taskName, Time.dateTime(), Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo)]
 
     result = self.insertFields( 'Task', taskAttrNames, taskAttrValues )
     if not result['OK']:
@@ -121,6 +123,10 @@ class TaskDB( DB ):
 
   def updateTask( self, taskID, taskAttrNames, taskAttrValues ):
     condDict = { 'TaskID': taskID }
+
+    if 'UpdateTime' not in taskAttrNames:
+      taskAttrNames.append( 'UpdateTime' )
+      taskAttrValues.append( Time.dateTime() )
 
     result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
     if not result['OK']:

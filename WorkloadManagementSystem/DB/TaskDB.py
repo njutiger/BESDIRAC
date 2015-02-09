@@ -67,7 +67,7 @@ class TaskDB( DB ):
 
     self.__tablesDesc[ 'TaskJob' ] = { 'Fields' : { 'TaskJobID'    : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                                                     'TaskID'       : 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
-                                                    'JobID'        : 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                                                    'JobID'        : 'BIGINT UNSIGNED UNIQUE NOT NULL DEFAULT 0',
                                                     'Info'         : 'VARCHAR(4096) NOT NULL DEFAULT "{}"',
                                                   },
                                        'PrimaryKey' : 'TaskJobID',

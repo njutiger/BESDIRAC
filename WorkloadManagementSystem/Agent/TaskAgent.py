@@ -24,19 +24,19 @@ class TaskAgent( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-    condDict = { 'Status': [ 'Created', 'Waiting', 'Running', 'Empty' ] }
-    result = self.__taskManager.getTasks( [ 'TaskID' ], condDict, 0 )
+    condDict = { 'Active': int(True) }
+    result = self.__taskManager.getTasks( [ 'TaskID' ], condDict, -1, '' )
     if not result['OK']:
       return result
 
     tasks = result['Value']
 
-    gLogger.info( '%d tasks will be refreshed' % len(tasks) )
+    self.log.info( '%d tasks will be refreshed' % len(tasks) )
 
     for task in tasks:
       taskID = task[0]
 
-      result = self.__taskManager.refreshTask( taskID )
+      result = self.__taskManager.refreshTaskStatus( taskID )
       if not result['OK']:
         return result
 
@@ -48,6 +48,6 @@ class TaskAgent( AgentModule ):
       if not result['OK']:
         return result
 
-      gLogger.info( 'Task %d is refreshed' % taskID )
+      self.log.info( 'Task %d is refreshed' % taskID )
 
     return S_OK()

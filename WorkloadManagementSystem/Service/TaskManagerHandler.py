@@ -31,7 +31,181 @@ class TaskManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     self.rpcProperties   = credDict[ 'properties' ]
 
-  def __getJobAttributesForTask( self, taskID, outFields ):
+
+################################################################################
+# exported interfaces
+
+  types_createTask = [ StringTypes, DictType ]
+  def export_createTask( self, taskName, taskInfo ):
+    """ Create a new task
+    """
+    status = 'Init'
+    credDict = self.getRemoteCredentials()
+    owner = credDict[ 'username' ]
+    ownerDN = credDict[ 'DN' ]
+    ownerGroup = credDict[ 'group' ]
+
+    result = gTaskDB.createTask( taskName, status, owner, ownerDN, ownerGroup, taskInfo )
+    if not result['OK']:
+      return result
+    taskID = result['Value']
+
+    result = gTaskDB.insertTaskHistory( taskID, status, 'New task created' )
+    if not result['OK']:
+      return result
+
+    return S_OK( taskID )
+
+  types_activateTask = [ [IntType, LongType] ]
+  def export_activateTask( self, taskID ):
+    """ Activate the task
+    """
+    return gTaskDB.updateTaskActive( taskID, True )
+
+#  types_isTaskActive = [ [IntType, LongType] ]
+#  def export_isTaskActive( self, taskID ):
+#    """ Check if task is active
+#    """
+#    result = gTaskDB.getTask( taskID, ['Active'] )
+#    if not result['OK']:
+#      return result
+#    return S_OK( bool( result['Value'][0] ) )
+
+#  types_insertTaskHistory = [ [IntType, LongType], StringTypes, StringTypes ]
+#  def export_insertTaskHistory( self, taskID, status, discription = '' ):
+#    """ Insert a task history
+#    """
+#    return gTaskDB.insertTaskHistory( taskID, status, discription )
+
+  types_addTaskJob = [ [IntType, LongType], [IntType, LongType], DictType ]
+  def export_addTaskJob( self, taskID, jobID, jobInfo ):
+    """ Add a job to the task
+    """
+    result = gTaskDB.getTask( taskID, ['Active'] )
+    if not result['OK']:
+      return result
+
+    if result['Value'][0]:
+      self.log.error( 'Can not add job to an active task' % taskID )
+      return S_ERROR( 'Can not add job to an active task' % taskID )
+
+    return gTaskDB.addTaskJob( taskID, jobID, jobInfo )
+
+  types_updateTaskInfo = [ [IntType, LongType], DictType ]
+  def export_updateTaskInfo( self, taskID, taskInfo ):
+    """ Update the task info
+    """
+    result = gTaskDB.getTaskInfo( taskID )
+    if not result['OK']:
+      return result
+
+    newTaskInfo = result['Value']
+    newTaskInfo.update( taskInfo )
+
+    return gTaskDB.updateTaskInfo( taskID, newTaskInfo )
+
+#  types_updateTaskStatus = [ [IntType, LongType], StringTypes, StringTypes ]
+#  def export_updateTaskStatus( self, taskID, status, discription ):
+#    """ Update status of a task
+#    """
+#    return self.__updateTaskStatus( taskID, status, discription )
+
+################################################################################
+
+  types_getTasks = [ ListType, DictType, [IntType, LongType], StringTypes ]
+  def export_getTasks( self, outFields, condDict, limit, orderAttribute ):
+    """ Get task list
+    """
+    newLimit = limit if limit >= 0 else False
+    newOrderAttribute = orderAttribute if orderAttribute else None
+    return gTaskDB.getTasks( outFields, condDict, newLimit, newOrderAttribute )
+
+  types_getTask = [ [IntType, LongType], ListType ]
+  def export_getTask( self, taskID, outFields ):
+    """ Get task
+    """
+    return gTaskDB.getTask( taskID, outFields )
+
+  types_getTaskStatus = [ [IntType, LongType] ]
+  def export_getTaskStatus( self, taskID ):
+    """ Get task status
+    """
+    return gTaskDB.getTaskStatus( taskID )
+
+  types_getTaskInfo = [ [IntType, LongType] ]
+  def export_getTaskInfo( self, taskID ):
+    """ Get task info
+    """
+    return gTaskDB.getTaskInfo( taskID )
+
+  types_getTaskJobs = [ [IntType, LongType] ]
+  def export_getTaskJobs( self, taskID ):
+    """ Get task jobs
+    """
+    return gTaskDB.getTaskJobs( taskID )
+
+  types_getTaskIDFromJob = [ [IntType, LongType] ]
+  def export_getTaskIDFromJob( self, jobID ):
+    """ Get task ID from job ID
+    """
+    return gTaskDB.getTaskIDFromJob( jobID )
+
+  types_getJobInfo = [ [IntType, LongType] ]
+  def export_getJobInfo( self, jobID ):
+    """ Get job info
+    """
+    return gTaskDB.getJobInfo( jobID )
+
+
+  types_getTaskJobsStatus = [ [IntType, LongType] ]
+  def export_getTaskJobsStatus( self, taskID ):
+    """ Get status of all jobs in the task
+    """
+    return self.__getTaskStatusCount( taskID, 'Status' )
+
+  types_getTaskJobsMinorStatus = [ [IntType, LongType] ]
+  def export_getTaskJobsMinorStatus( self, taskID ):
+    """ Get minor status of all jobs in the task
+    """
+    return self.__getTaskStatusCount( taskID, 'MinorStatus' )
+
+  types_getTaskJobsApplicationStatus = [ [IntType, LongType] ]
+  def export_getTaskJobsApplicationStatus( self, taskID ):
+    """ Get application status of all jobs in the task
+    """
+    return self.__getTaskStatusCount( taskID, 'ApplicationStatus' )
+
+  types_getTaskJobIDs = [ [IntType, LongType] ]
+  def export_getTaskJobIDs( self, taskID, condition ):
+    """ Get all job IDs by the condition
+    """
+    return self
+
+################################################################################
+
+  types_refreshTaskStatus = [ [IntType, LongType] ]
+  def export_refreshTaskStatus( self, taskID ):
+    """ Refresh a task
+    """
+    return self.__refreshTaskStatus( taskID )
+
+  types_refreshTaskSites = [ [IntType, LongType] ]
+  def export_refreshTaskSites( self, taskID ):
+    """ Refresh sites of a task
+    """
+    return self.__refreshTaskStringAttribute( taskID, 'Site' )
+
+  types_refreshTaskJobGroup = [ [IntType, LongType] ]
+  def export_refreshTaskJobGroup( self, taskID ):
+    """ Refresh job groups of a task
+    """
+    return self.__refreshTaskStringAttribute( taskID, 'JobGroup' )
+
+
+################################################################################
+# private functions
+
+  def __getTaskJobAttributes( self, taskID, outFields ):
     result = gTaskDB.getTaskJobs( taskID )
     if not result['OK']:
       return result
@@ -39,22 +213,22 @@ class TaskManagerHandler( RequestHandler ):
 
     return gJobDB.getAttributesForJobList( jobIDs, outFields )
 
-  def __getStatusNumber( self, taskID, statusType ):
-    result = self.__getJobAttributesForTask( taskID, [statusType] )
+  def __getTaskStatusCount( self, taskID, statusType ):
+    result = self.__getTaskJobAttributes( taskID, [statusType] )
     if not result['OK']:
       return result
     statuses = result['Value']
 
-    statusNumber = {}
+    statusCount = {}
     for jobID in statuses:
       status = statuses[jobID][statusType]
-      if status not in statusNumber:
-        statusNumber[status] = 0
-      statusNumber[status] += 1
+      if status not in statusCount:
+        statusCount[status] = 0
+      statusCount[status] += 1
 
-    return S_OK( statusNumber )
+    return S_OK( statusCount )
 
-  def __retrieveTaskProgress( self, taskID ):
+  def __getTaskProgress( self, taskID ):
     result = gTaskDB.getTaskJobs( taskID )
     if not result['OK']:
       return result
@@ -83,24 +257,9 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( progress )
 
-  def __analyseTaskStatus( self, progress ):
-    totalJob = progress.get( 'Total', 0 )
-    runningJob = progress.get( 'Running', 0 )
-    waitingJob = progress.get( 'Waiting', 0 )
-
-    status = 'Unknown'
-    if totalJob == 0:
-      status = 'Empty'
-    elif runningJob != 0:
-      status = 'Running'
-    elif waitingJob == 0:
-      status = 'Finished'
-    else:
-      status = 'Waiting'
-
-    return status
-
-  def __retrieveTaskAttribute( self, taskID, attributeType ):
+  def __getTaskAttribute( self, taskID, attributeType ):
+    """ Get all attributes of the jobs in the task
+    """
     result = gTaskDB.getTaskJobs( taskID )
     if not result['OK']:
       return result
@@ -115,66 +274,7 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( attributes )
 
-  def __refreshTaskStringAttribute( self, taskID, attributeType ):
-    result = gTaskDB.getTask( taskID, [attributeType] )
-    if not result['OK']:
-      return result
-    oldAttributes = result['Value'][0].split( ',' )
-
-    result = self.__retrieveTaskAttribute( taskID, attributeType )
-    if not result['OK']:
-      return result
-    newAttributes = result['Value']
-
-    attributes = list( set( oldAttributes ) | set( newAttributes ) )
-    if '' in attributes:
-      attributes.remove( '' )
-
-    allAttributes = ','.join( attributes )
-    result = gTaskDB.updateTask( taskID, [attributeType], [allAttributes] )
-    if not result['OK']:
-      return result
-
-    return S_OK( allAttributes )
-
-
-  types_createTask = [ StringTypes, DictType ]
-  def export_createTask( self, taskName, taskInfo ):
-    """ Create a new task
-    """
-    status = 'Created'
-    credDict = self.getRemoteCredentials()
-    owner = credDict[ 'username' ]
-    ownerDN = credDict[ 'DN' ]
-    ownerGroup = credDict[ 'group' ]
-
-    result = gTaskDB.createTask( taskName, status, owner, ownerDN, ownerGroup, taskInfo )
-    if not result['OK']:
-      return result
-    taskID = result['Value']
-
-    result = gTaskDB.insertTaskHistory( taskID, status, 'New task created' )
-    if not result['OK']:
-      return result
-
-    return S_OK( taskID )
-
-  types_insertTaskHistory = [ [IntType, LongType], StringTypes, StringTypes ]
-  def export_insertTaskHistory( self, taskID, status, discription = '' ):
-    """ Insert a task history
-    """
-    return gTaskDB.insertTaskHistory( taskID, status, discription )
-
-  types_addTaskJob = [ [IntType, LongType], [IntType, LongType], DictType ]
-  def export_addTaskJob( self, taskID, jobID, jobInfo ):
-    """ Add a job to the task
-    """
-    return gTaskDB.addTaskJob( taskID, jobID, jobInfo )
-
-  types_updateTaskStatus = [ [IntType, LongType], StringTypes, StringTypes ]
-  def export_updateTaskStatus( self, taskID, status, discription ):
-    """ Update status of a task
-    """
+  def __updateTaskStatus( self, taskID, status, discription ):
     result = gTaskDB.updateTask( taskID, ['Status'], [status] )
     if not result['OK']:
       return result
@@ -184,71 +284,33 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( status )
 
-  types_getTasks = [ ListType, DictType, [IntType, LongType] ]
-  def export_getTasks( self, outFields, condDict, limit = 5, orderAttribute = None ):
-    """ Get task list
-    """
-    return gTaskDB.getTasks( outFields, condDict, limit, orderAttribute )
+  def __analyseTaskStatus( self, progress ):
+    totalJob = progress.get( 'Total', 0 )
+    runningJob = progress.get( 'Running', 0 )
+    waitingJob = progress.get( 'Waiting', 0 )
+    deletedJob = progress.get( 'Deleted', 0 )
 
-  types_getTask = [ [IntType, LongType], ListType ]
-  def export_getTask( self, taskID, outFields ):
-    """ Get task
-    """
-    return gTaskDB.getTask( taskID, outFields )
+    status = 'Unknown'
+    if totalJob == 0:
+      status = 'Init'
+    elif deletedJob == totalJob:
+      status = 'Expired'
+    elif runningJob == 0 and waitingJob == 0:
+      status = 'Finished'
+    else:
+      status = 'Processing'
 
-  types_getTaskStatus = [ [IntType, LongType] ]
-  def export_getTaskStatus( self, taskID ):
-    """ Get task status
-    """
-    return gTaskDB.getTaskStatus( taskID )
+    return status
 
-  types_getTaskInfo = [ [IntType, LongType] ]
-  def export_getTaskInfo( self, taskID ):
-    """ Get task info
-    """
-    return gTaskDB.getTaskInfo( taskID )
-
-  types_getTaskJobs = [ [IntType, LongType] ]
-  def export_getTaskJobs( self, taskID ):
-    """ Get task jobs
-    """
-    return gTaskDB.getTaskJobs( taskID )
-
-  types_getJobInfo = [ [IntType, LongType] ]
-  def export_getJobInfo( self, jobID ):
-    """ Get job info
-    """
-    return gTaskDB.getJobInfo( jobID )
-
-
-  types_getJobsStatus = [ [IntType, LongType] ]
-  def export_getJobsStatus( self, taskID ):
-    """ Get status of all jobs in the task
-    """
-    return self.__getStatusNumber( taskID, 'Status' )
-
-  types_getJobsMinorStatus = [ [IntType, LongType] ]
-  def export_getJobsMinorStatus( self, taskID ):
-    """ Get minor status of all jobs in the task
-    """
-    return self.__getStatusNumber( taskID, 'MinorStatus' )
-
-  types_getJobsApplicationStatus = [ [IntType, LongType] ]
-  def export_getJobsApplicationStatus( self, taskID ):
-    """ Get application status of all jobs in the task
-    """
-    return self.__getStatusNumber( taskID, 'ApplicationStatus' )
-
-  types_refreshTask = [ [IntType, LongType] ]
-  def export_refreshTask( self, taskID ):
-    """ Refresh a task
+  def __refreshTaskStatus( self, taskID ):
+    """ Refresh the task status
     """
     # get task progress from the job list
-    result = self.__retrieveTaskProgress( taskID )
+    result = self.__getTaskProgress( taskID )
     if not result['OK']:
       return result
     progress = result['Value']
-    gLogger.debug( 'Task %d Progress: %s' % ( taskID, progress ) )
+    self.log.debug( 'Task %d Progress: %s' % ( taskID, progress ) )
     result = gTaskDB.updateTaskProgress( taskID, progress )
     if not result['OK']:
       return result
@@ -261,25 +323,42 @@ class TaskManagerHandler( RequestHandler ):
 
     # get current task status from the progress
     newStatus = self.__analyseTaskStatus( progress )
-    gLogger.debug( 'Task %d new status: %s' % ( taskID, newStatus ) )
+    self.log.debug( 'Task %d new status: %s' % ( taskID, newStatus ) )
+    if newStatus == 'Expired':
+      gTaskDB.updateTaskActive( taskID, False )
     if newStatus != status:
-      result = gTaskDB.updateTask( taskID, ['Status'], [newStatus] )
-      if not result['OK']:
-        return result
-      result = gTaskDB.insertTaskHistory( taskID, newStatus, 'Status refreshed' )
+      self.__updateTaskStatus( taskID, newStatus, 'Status refreshed' )
       if not result['OK']:
         return result
 
     return S_OK( newStatus )
 
-  types_refreshTaskSites = [ [IntType, LongType] ]
-  def export_refreshTaskSites( self, taskID ):
-    """ Refresh sites of a task
-    """
-    return self.__refreshTaskStringAttribute( taskID, 'Site' )
 
-  types_refreshTaskJobGroup = [ [IntType, LongType] ]
-  def export_refreshTaskJobGroup( self, taskID ):
-    """ Refresh job groups of a task
+  def __refreshTaskStringAttribute( self, taskID, attributeType ):
+    """ Refresh the task attribute. The attribute type must be string and seperated by comma
     """
-    return self.__refreshTaskStringAttribute( taskID, 'JobGroup' )
+    # get task attibutes from the job list
+    result = self.__getTaskAttribute( taskID, attributeType )
+    if not result['OK']:
+      return result
+    newAttributes = result['Value']
+
+    # get previous task attributes
+    result = gTaskDB.getTask( taskID, [attributeType] )
+    if not result['OK']:
+      return result
+    oldAttributes = result['Value'][0].split( ',' )
+
+    # make a combination of old and new attributes
+    attributes = list( set( oldAttributes ) | set( newAttributes ) )
+    for emptyAttr in [ '', 'ANY', 'Multiple' ]:
+      if emptyAttr in attributes:
+        attributes.remove( emptyAttr )
+
+    # generate a new attribute
+    allAttributes = ','.join( attributes )
+    result = gTaskDB.updateTask( taskID, [attributeType], [allAttributes] )
+    if not result['OK']:
+      return result
+
+    return S_OK( allAttributes )

@@ -24,8 +24,8 @@ class TaskAgent( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-    condDict = { 'Active': int(True) }
-    result = self.__taskManager.getTasks( [ 'TaskID' ], condDict, -1, '' )
+    condDict = { 'Status': ['Ready', 'Processing', 'Finished', 'Rescheduling', 'Deleting'] }
+    result = self.__taskManager.getTasks( [ 'TaskID', 'Status' ], condDict, -1, '' )
     if not result['OK']:
       return result
 
@@ -35,19 +35,33 @@ class TaskAgent( AgentModule ):
 
     for task in tasks:
       taskID = task[0]
+      status = task[1]
 
-      result = self.__taskManager.refreshTaskStatus( taskID )
-      if not result['OK']:
-        return result
+      if status in ['Ready', 'Processing', 'Finished']:
+        result = self.__refreshTask( taskID )
+        if not result['OK']:
+          return result
+        self.log.info( 'Task %d status is refreshed' % taskID )
 
-      result = self.__taskManager.refreshTaskSites( taskID )
-      if not result['OK']:
-        return result
+      elif status in ['Rescheduling']:
+        result = self.__rescheduleTask( taskID )
+        if not result['OK']:
+          return result
+        self.log.info( 'Task %d is being rescheduled' % taskID )
 
-      result = self.__taskManager.refreshTaskJobGroup( taskID )
-      if not result['OK']:
-        return result
-
-      self.log.info( 'Task %d is refreshed' % taskID )
+      elif status in ['Deleting']:
+        result = self.__deleteTask( taskID )
+        if not result['OK']:
+          return result
+        self.log.info( 'Task %d is being deleted' % taskID )
 
     return S_OK()
+
+  def __refreshTask( self, taskID ):
+    return self.__taskManager.refreshTaskStatus( taskID )
+
+  def __rescheduleTask( self, taskID ):
+    return self.__taskManager.rescheduleTask( taskID )
+
+  def __deleteTask( self, taskID ):
+    return self.__taskManager.deleteTask( taskID )

@@ -6,6 +6,7 @@ import time
 # DIRAC
 from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
 from DIRAC.Core.DISET.RequestHandler      import RequestHandler, getServiceOption
+from DIRAC.Core.Security                  import Properties
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB  import JobDB
 from BESDIRAC.WorkloadManagementSystem.DB.TaskDB  import TaskDB
@@ -29,7 +30,10 @@ class TaskManagerHandler( RequestHandler ):
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
-    self.rpcProperties   = credDict[ 'properties' ]
+    self.owner          = credDict[ 'username' ]
+    self.ownerDN        = credDict[ 'DN' ]
+    self.ownerGroup     = credDict[ 'group' ]
+    self.userProperties = credDict[ 'properties' ]
 
 
 ################################################################################
@@ -39,13 +43,12 @@ class TaskManagerHandler( RequestHandler ):
   def export_createTask( self, taskName, taskInfo ):
     """ Create a new task
     """
-    status = 'Init'
-    credDict = self.getRemoteCredentials()
-    owner = credDict[ 'username' ]
-    ownerDN = credDict[ 'DN' ]
-    ownerGroup = credDict[ 'group' ]
+    if Properties.NORMAL_USER not in self.userProperties and Properties.JOB_ADMINISTRATOR not in self.userProperties:
+      return S_ERROR( 'Access denied to create task' )
 
-    result = gTaskDB.createTask( taskName, status, owner, ownerDN, ownerGroup, taskInfo )
+    status = 'Init'
+
+    result = gTaskDB.createTask( taskName, status, self.owner, self.ownerDN, self.ownerGroup, taskInfo )
     if not result['OK']:
       return result
     taskID = result['Value']
@@ -60,27 +63,18 @@ class TaskManagerHandler( RequestHandler ):
   def export_activateTask( self, taskID ):
     """ Activate the task
     """
-    return gTaskDB.updateTaskActive( taskID, True )
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to activate task %s' % taskID )
 
-#  types_isTaskActive = [ [IntType, LongType] ]
-#  def export_isTaskActive( self, taskID ):
-#    """ Check if task is active
-#    """
-#    result = gTaskDB.getTask( taskID, ['Active'] )
-#    if not result['OK']:
-#      return result
-#    return S_OK( bool( result['Value'][0] ) )
-
-#  types_insertTaskHistory = [ [IntType, LongType], StringTypes, StringTypes ]
-#  def export_insertTaskHistory( self, taskID, status, discription = '' ):
-#    """ Insert a task history
-#    """
-#    return gTaskDB.insertTaskHistory( taskID, status, discription )
+    return self.__updateTaskStatus( taskID, 'Ready', 'Task is activated' )
 
   types_addTaskJob = [ [IntType, LongType], [IntType, LongType], DictType ]
   def export_addTaskJob( self, taskID, jobID, jobInfo ):
     """ Add a job to the task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to add job to task %s' % taskID )
+
     result = gTaskDB.getTask( taskID, ['Active'] )
     if not result['OK']:
       return result
@@ -95,6 +89,9 @@ class TaskManagerHandler( RequestHandler ):
   def export_updateTaskInfo( self, taskID, taskInfo ):
     """ Update the task info
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to update task info for task %s' % taskID )
+
     result = gTaskDB.getTaskInfo( taskID )
     if not result['OK']:
       return result
@@ -104,18 +101,25 @@ class TaskManagerHandler( RequestHandler ):
 
     return gTaskDB.updateTaskInfo( taskID, newTaskInfo )
 
-#  types_updateTaskStatus = [ [IntType, LongType], StringTypes, StringTypes ]
-#  def export_updateTaskStatus( self, taskID, status, discription ):
-#    """ Update status of a task
-#    """
-#    return self.__updateTaskStatus( taskID, status, discription )
-
 ################################################################################
 
   types_getTasks = [ ListType, DictType, [IntType, LongType], StringTypes ]
   def export_getTasks( self, outFields, condDict, limit, orderAttribute ):
     """ Get task list
     """
+    if Properties.NORMAL_USER not in self.userProperties and Properties.JOB_ADMINISTRATOR not in self.userProperties:
+      return S_ERROR( 'Access denied to get tasks' )
+
+    if Properties.NORMAL_USER in self.userProperties:
+      condDict['OwnerDN'] = self.ownerDN
+      condDict['OwnerGroup'] = self.ownerGroup
+
+      if 'Status' not in condDict:
+        condDict['Status'] = [ 'Init', 'Ready', 'Processing', 'Finished', 'Expired', 'Rescheduling', 'Deleting' ]
+      else:
+        condDict['Status'] = list( condDict['Status'] )
+        condDict['Status'] = [ v for v in condDict['Status'] if v != 'Removed' ]
+
     newLimit = limit if limit >= 0 else False
     newOrderAttribute = orderAttribute if orderAttribute else None
     return gTaskDB.getTasks( outFields, condDict, newLimit, newOrderAttribute )
@@ -124,24 +128,45 @@ class TaskManagerHandler( RequestHandler ):
   def export_getTask( self, taskID, outFields ):
     """ Get task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task for task %s' % taskID )
+
     return gTaskDB.getTask( taskID, outFields )
 
   types_getTaskStatus = [ [IntType, LongType] ]
   def export_getTaskStatus( self, taskID ):
     """ Get task status
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task status for task %s' % taskID )
+
     return gTaskDB.getTaskStatus( taskID )
 
   types_getTaskInfo = [ [IntType, LongType] ]
   def export_getTaskInfo( self, taskID ):
     """ Get task info
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task info for task %s' % taskID )
+
     return gTaskDB.getTaskInfo( taskID )
+
+  types_getTaskHistories = [ [IntType, LongType] ]
+  def export_getTaskHistories( self, taskID ):
+    """ Get task histories
+    """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task histories for task %s' % taskID )
+
+    return gTaskDB.getTaskHistories( taskID )
 
   types_getTaskJobs = [ [IntType, LongType] ]
   def export_getTaskJobs( self, taskID ):
     """ Get task jobs
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task jobs for task %s' % taskID )
+
     return gTaskDB.getTaskJobs( taskID )
 
   types_getTaskIDFromJob = [ [IntType, LongType] ]
@@ -161,25 +186,38 @@ class TaskManagerHandler( RequestHandler ):
   def export_getTaskJobsStatus( self, taskID ):
     """ Get status of all jobs in the task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task jobs status for task %s' % taskID )
+
     return self.__getTaskStatusCount( taskID, 'Status' )
 
   types_getTaskJobsMinorStatus = [ [IntType, LongType] ]
   def export_getTaskJobsMinorStatus( self, taskID ):
     """ Get minor status of all jobs in the task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task jobs minor status for task %s' % taskID )
+
     return self.__getTaskStatusCount( taskID, 'MinorStatus' )
 
   types_getTaskJobsApplicationStatus = [ [IntType, LongType] ]
   def export_getTaskJobsApplicationStatus( self, taskID ):
     """ Get application status of all jobs in the task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task jobs application status for task %s' % taskID )
+
     return self.__getTaskStatusCount( taskID, 'ApplicationStatus' )
 
   types_getTaskJobIDs = [ [IntType, LongType] ]
   def export_getTaskJobIDs( self, taskID, condition ):
     """ Get all job IDs by the condition
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task job IDs for task %s' % taskID )
+
     return self
+
 
 ################################################################################
 
@@ -187,23 +225,58 @@ class TaskManagerHandler( RequestHandler ):
   def export_refreshTaskStatus( self, taskID ):
     """ Refresh a task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to refresh task status for task %s' % taskID )
+
     return self.__refreshTaskStatus( taskID )
 
   types_refreshTaskSites = [ [IntType, LongType] ]
   def export_refreshTaskSites( self, taskID ):
     """ Refresh sites of a task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to refresh task sites for task %s' % taskID )
+
     return self.__refreshTaskStringAttribute( taskID, 'Site' )
 
-  types_refreshTaskJobGroup = [ [IntType, LongType] ]
-  def export_refreshTaskJobGroup( self, taskID ):
+  types_refreshTaskJobGroups = [ [IntType, LongType] ]
+  def export_refreshTaskJobGroups( self, taskID ):
     """ Refresh job groups of a task
     """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to refresh task job groups for task %s' % taskID )
+
     return self.__refreshTaskStringAttribute( taskID, 'JobGroup' )
 
 
 ################################################################################
 # private functions
+
+  def __isSameDNGroup( self, taskID ):
+    result = gTaskDB.getTask( taskID, ['OwnerDN', 'OwnerGroup'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return False
+    if not result['Value']:
+      self.log.error( 'Task ID %s not found' % taskID )
+      return False
+
+    jobOwnerDN, jobOwnerGroup = result['Value']
+    if self.ownerDN == jobOwnerDN and self.ownerGroup == jobOwnerGroup:
+      return True
+
+    return False
+
+  def __hasTaskAccess( self, taskID ):
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      return True
+
+    if Properties.NORMAL_USER in self.userProperties:
+      if self.__isSameDNGroup( taskID ):
+        return True
+
+    return False
+
 
   def __getTaskJobAttributes( self, taskID, outFields ):
     result = gTaskDB.getTaskJobs( taskID )
@@ -274,11 +347,11 @@ class TaskManagerHandler( RequestHandler ):
 
     return S_OK( attributes )
 
-  def __updateTaskStatus( self, taskID, status, discription ):
+  def __updateTaskStatus( self, taskID, status, description ):
     result = gTaskDB.updateTask( taskID, ['Status'], [status] )
     if not result['OK']:
       return result
-    result = gTaskDB.insertTaskHistory( taskID, status, discription )
+    result = gTaskDB.insertTaskHistory( taskID, status, description )
     if not result['OK']:
       return result
 

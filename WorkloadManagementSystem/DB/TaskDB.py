@@ -34,21 +34,19 @@ class TaskDB( DB ):
                                                  'CreationTime' : 'DATETIME NOT NULL',
                                                  'UpdateTime'   : 'DATETIME NOT NULL',
                                                  'Status'       : 'VARCHAR(64) NOT NULL DEFAULT "Unknown"',
-                                                 'Active'       : 'TINYINT NOT NULL DEFAULT 0',
                                                  'Owner'        : 'VARCHAR(64) NOT NULL DEFAULT "unknown"',
                                                  'OwnerDN'      : 'VARCHAR(255) NOT NULL DEFAULT "unknown"',
                                                  'OwnerGroup'   : 'VARCHAR(128) NOT NULL DEFAULT "unknown"',
                                                  'Site'         : 'VARCHAR(512) NOT NULL DEFAULT ""',
                                                  'JobGroup'     : 'VARCHAR(512) NOT NULL DEFAULT ""',
                                                  'Progress'     : 'VARCHAR(128) NOT NULL DEFAULT "{}"',
-                                                 'Info'         : 'TEXT NOT NULL DEFAULT "{}"',
+                                                 'Info'         : 'TEXT NOT NULL',
                                                },
                                     'PrimaryKey' : 'TaskID',
                                     'Indexes': { 'TaskIDIndex'       : [ 'TaskID' ],
                                                  'CreationTimeIndex' : [ 'CreationTime' ],
                                                  'UpdateTimeIndex'   : [ 'UpdateTime' ],
                                                  'StatusIndex'       : [ 'Status' ],
-                                                 'ActiveIndex'       : [ 'Active' ],
                                                  'OwnerIndex'        : [ 'Owner' ],
                                                  'OwnerDNIndex'      : [ 'OwnerDN' ],
                                                  'OwnerGroupIndex'   : [ 'OwnerGroup' ],
@@ -59,7 +57,7 @@ class TaskDB( DB ):
                                                         'TaskID'        : 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
                                                         'Status'        : 'VARCHAR(64) NOT NULL DEFAULT "Unknown"',
                                                         'StatusTime'    : 'DATETIME NOT NULL',
-                                                        'Discription'   : 'VARCHAR(128) NOT NULL DEFAULT ""',
+                                                        'Description'   : 'VARCHAR(128) NOT NULL DEFAULT ""',
                                                       },
                                            'PrimaryKey' : 'TaskHistoryID',
                                            'Indexes': { 'TaskHistoryIDIndex' : [ 'TaskHistoryID' ],
@@ -70,7 +68,7 @@ class TaskDB( DB ):
     self.__tablesDesc[ 'TaskJob' ] = { 'Fields' : { 'TaskJobID'    : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                                                     'TaskID'       : 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
                                                     'JobID'        : 'BIGINT UNSIGNED UNIQUE NOT NULL DEFAULT 0',
-                                                    'Info'         : 'TEXT NOT NULL DEFAULT "{}"',
+                                                    'Info'         : 'TEXT NOT NULL',
                                                   },
                                        'PrimaryKey' : 'TaskJobID',
                                        'Indexes': { 'TaskJobIDIndex' : [ 'TaskJobID' ],
@@ -88,7 +86,7 @@ class TaskDB( DB ):
 ################################################################################
 
   def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo = {} ):
-    taskAttrNames = ['TaskName', 'CreationTime', 'UpdateTime', 'Status', 'Active', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
+    taskAttrNames = ['TaskName', 'CreationTime', 'UpdateTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
     taskAttrValues = [taskName, Time.dateTime(), Time.dateTime(), status, int(False), owner, ownerDN, ownerGroup, json.dumps(taskInfo, separators=(',',':'))]
 
     result = self.insertFields( 'Task', taskAttrNames, taskAttrValues )
@@ -126,9 +124,9 @@ class TaskDB( DB ):
 
     return result
 
-  def insertTaskHistory( self, taskID, status, discription = '' ):
-    taskHistoryAttrNames = ['TaskID', 'Status', 'StatusTime', 'Discription']
-    taskHistoryAttrValues = [taskID, status, Time.dateTime(), discription]
+  def insertTaskHistory( self, taskID, status, description = '' ):
+    taskHistoryAttrNames = ['TaskID', 'Status', 'StatusTime', 'Description']
+    taskHistoryAttrValues = [taskID, status, Time.dateTime(), description]
 
     result = self.insertFields( 'TaskHistory', taskHistoryAttrNames, taskHistoryAttrValues )
     if not result['OK']:
@@ -211,6 +209,16 @@ class TaskDB( DB ):
       return result
 
     return S_OK( json.loads( result['Value'][0] ) )
+
+  def getTaskHistories( self, taskID ):
+    condDict = { 'TaskID': taskID }
+    outFields = ( 'Status', 'StatusTime', 'Description' )
+    result = self.getFields( 'TaskHistory', outFields, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not get task histories for task %s' % taskID, result['Message'] )
+      return result
+
+    return S_OK( [ i[0] for i in  result['Value'] ] )
 
   def getTaskJobs( self, taskID ):
     condDict = { 'TaskID': taskID }

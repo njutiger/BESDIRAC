@@ -24,30 +24,40 @@ class TaskAgent( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-    condDict = { 'Status': [ 'Created', 'Waiting', 'Running', 'Empty' ] }
-    result = self.__taskManager.getTasks( [ 'TaskID' ], condDict, 0 )
+    condDict = { 'Status': ['Ready', 'Processing', 'Finished'] }
+    result = self.__taskManager.getTasks( [ 'TaskID', 'Status' ], condDict, -1, '' )
     if not result['OK']:
       return result
 
     tasks = result['Value']
 
-    gLogger.info( '%d tasks will be refreshed' % len(tasks) )
+    self.log.info( '%d tasks will be refreshed' % len(tasks) )
 
     for task in tasks:
       taskID = task[0]
+      status = task[1]
 
-      result = self.__taskManager.refreshTask( taskID )
-      if not result['OK']:
-        return result
-
-      result = self.__taskManager.refreshTaskSites( taskID )
-      if not result['OK']:
-        return result
-
-      result = self.__taskManager.refreshTaskJobGroup( taskID )
-      if not result['OK']:
-        return result
-
-      gLogger.info( 'Task %d is refreshed' % taskID )
+      if status in ['Ready', 'Processing', 'Finished']:
+        self.__refreshTask( taskID )
 
     return S_OK()
+
+
+  def __refreshTask( self, taskID ):
+    result = self.__taskManager.refreshTaskSites( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d site is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d site refresh failed: %s' % ( taskID, result['Message'] ) )
+
+    result = self.__taskManager.refreshTaskJobGroups( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d job group is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d job group refresh failed: %s' % ( taskID, result['Message'] ) )
+
+    result = self.__taskManager.refreshTaskStatus( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d status is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d status refresh failed: %s' % ( taskID, result['Message'] ) )

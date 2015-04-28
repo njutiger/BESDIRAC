@@ -6,6 +6,7 @@ import time
 # DIRAC
 from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
 from DIRAC.Core.DISET.RequestHandler      import RequestHandler, getServiceOption
+from DIRAC.Core.DISET.RPCClient           import RPCClient
 from DIRAC.Core.Security                  import Properties
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB  import JobDB
@@ -68,20 +69,32 @@ class TaskManagerHandler( RequestHandler ):
 
     return self.__updateTaskStatus( taskID, 'Ready', 'Task is activated' )
 
+  types_removeTask = [ [IntType, LongType] ]
+  def export_removeTask( self, taskID ):
+    """ Delete the task
+    """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to remove task %s' % taskID )
+
+    return self.__updateTaskStatus( taskID, 'Removed', 'Task is removed' )
+
   types_addTaskJob = [ [IntType, LongType], [IntType, LongType], DictType ]
   def export_addTaskJob( self, taskID, jobID, jobInfo ):
     """ Add a job to the task
     """
     if not self.__hasTaskAccess( taskID ):
-      return S_ERROR( 'Access denied to add job to task %s' % taskID )
+      return S_ERROR( 'Access denied for task %s: Can not add job %s to task' % ( taskID, jobID ) )
+    if not self.__hasJobAccess( jobID ):
+      return S_ERROR( 'Access denied for job %s: Can not add job to task %s' % ( jobID, taskID ) )
 
-    result = gTaskDB.getTask( taskID, ['Active'] )
+    result = gTaskDB.getTaskStatus( taskID )
     if not result['OK']:
       return result
+    status = result['Value']
 
-    if result['Value'][0]:
-      self.log.error( 'Can not add job to an active task' % taskID )
-      return S_ERROR( 'Can not add job to an active task' % taskID )
+    if status != 'Init':
+      self.log.error( 'Can only add job to "Init" status: task %s' % taskID )
+      return S_ERROR( 'Can only add job to "Init" status: task %s' % taskID )
 
     return gTaskDB.addTaskJob( taskID, jobID, jobInfo )
 
@@ -115,7 +128,7 @@ class TaskManagerHandler( RequestHandler ):
       condDict['OwnerGroup'] = self.ownerGroup
 
       if 'Status' not in condDict:
-        condDict['Status'] = [ 'Init', 'Ready', 'Processing', 'Finished', 'Expired', 'Rescheduling', 'Deleting' ]
+        condDict['Status'] = [ 'Init', 'Ready', 'Processing', 'Finished', 'Expired' ]
       else:
         condDict['Status'] = list( condDict['Status'] )
         condDict['Status'] = [ v for v in condDict['Status'] if v != 'Removed' ]
@@ -173,12 +186,18 @@ class TaskManagerHandler( RequestHandler ):
   def export_getTaskIDFromJob( self, jobID ):
     """ Get task ID from job ID
     """
+    if not self.__hasJobAccess( jobID ):
+      return S_ERROR( 'Access denied to get task ID from job %s' % jobID )
+
     return gTaskDB.getTaskIDFromJob( jobID )
 
   types_getJobInfo = [ [IntType, LongType] ]
   def export_getJobInfo( self, jobID ):
     """ Get job info
     """
+    if not self.__hasJobAccess( jobID ):
+      return S_ERROR( 'Access denied to get job info for job %s' % jobID )
+
     return gTaskDB.getJobInfo( jobID )
 
 
@@ -261,8 +280,8 @@ class TaskManagerHandler( RequestHandler ):
       self.log.error( 'Task ID %s not found' % taskID )
       return False
 
-    jobOwnerDN, jobOwnerGroup = result['Value']
-    if self.ownerDN == jobOwnerDN and self.ownerGroup == jobOwnerGroup:
+    taskOwnerDN, taskOwnerGroup = result['Value']
+    if self.ownerDN == taskOwnerDN and self.ownerGroup == taskOwnerGroup:
       return True
 
     return False
@@ -273,6 +292,34 @@ class TaskManagerHandler( RequestHandler ):
 
     if Properties.NORMAL_USER in self.userProperties:
       if self.__isSameDNGroup( taskID ):
+        result = gTaskDB.getTaskStatus( taskID )
+        if result['OK'] and result['Value'] != 'Removed':
+          return True
+
+    return False
+
+  def __isSameDNGroupForJob( self, jobID ):
+    result = gJobDB.getAttributesForJobList( [jobID], ['OwnerDN', 'OwnerGroup'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return False
+    if not result['Value']:
+      self.log.error( 'Job %s not found' % jobID )
+      return False
+    jobOwnerDN = result['Value'][jobID]['OwnerDN']
+    jobOwnerGroup = result['Value'][jobID]['OwnerGroup']
+
+    if self.ownerDN == jobOwnerDN and self.ownerGroup == jobOwnerGroup:
+      return True
+
+    return False
+
+  def __hasJobAccess( self, jobID ):
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      return True
+
+    if Properties.NORMAL_USER in self.userProperties:
+      if self.__isSameDNGroupForJob( jobID ):
         return True
 
     return False
@@ -375,6 +422,7 @@ class TaskManagerHandler( RequestHandler ):
 
     return status
 
+
   def __refreshTaskStatus( self, taskID ):
     """ Refresh the task status
     """
@@ -397,15 +445,12 @@ class TaskManagerHandler( RequestHandler ):
     # get current task status from the progress
     newStatus = self.__analyseTaskStatus( progress )
     self.log.debug( 'Task %d new status: %s' % ( taskID, newStatus ) )
-    if newStatus == 'Expired':
-      gTaskDB.updateTaskActive( taskID, False )
     if newStatus != status:
       self.__updateTaskStatus( taskID, newStatus, 'Status refreshed' )
       if not result['OK']:
         return result
 
     return S_OK( newStatus )
-
 
   def __refreshTaskStringAttribute( self, taskID, attributeType ):
     """ Refresh the task attribute. The attribute type must be string and seperated by comma

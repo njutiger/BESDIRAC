@@ -24,7 +24,7 @@ class TaskAgent( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-    condDict = { 'Status': ['Ready', 'Processing', 'Finished', 'Rescheduling', 'Deleting'] }
+    condDict = { 'Status': ['Ready', 'Processing', 'Finished'] }
     result = self.__taskManager.getTasks( [ 'TaskID', 'Status' ], condDict, -1, '' )
     if not result['OK']:
       return result
@@ -38,30 +38,26 @@ class TaskAgent( AgentModule ):
       status = task[1]
 
       if status in ['Ready', 'Processing', 'Finished']:
-        result = self.__refreshTask( taskID )
-        if not result['OK']:
-          return result
-        self.log.info( 'Task %d status is refreshed' % taskID )
-
-      elif status in ['Rescheduling']:
-        result = self.__rescheduleTask( taskID )
-        if not result['OK']:
-          return result
-        self.log.info( 'Task %d is being rescheduled' % taskID )
-
-      elif status in ['Deleting']:
-        result = self.__deleteTask( taskID )
-        if not result['OK']:
-          return result
-        self.log.info( 'Task %d is being deleted' % taskID )
+        self.__refreshTask( taskID )
 
     return S_OK()
 
+
   def __refreshTask( self, taskID ):
-    return self.__taskManager.refreshTaskStatus( taskID )
+    result = self.__taskManager.refreshTaskSites( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d site is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d site refresh failed: %s' % ( taskID, result['Message'] ) )
 
-  def __rescheduleTask( self, taskID ):
-    return self.__taskManager.rescheduleTask( taskID )
+    result = self.__taskManager.refreshTaskJobGroups( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d job group is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d job group refresh failed: %s' % ( taskID, result['Message'] ) )
 
-  def __deleteTask( self, taskID ):
-    return self.__taskManager.deleteTask( taskID )
+    result = self.__taskManager.refreshTaskStatus( taskID )
+    if result['OK']:
+      self.log.info( 'Task %d status is refreshed' % taskID )
+    else:
+      self.log.warn( 'Task %d status refresh failed: %s' % ( taskID, result['Message'] ) )

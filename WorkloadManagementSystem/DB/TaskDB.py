@@ -87,7 +87,7 @@ class TaskDB( DB ):
 
   def createTask( self, taskName, status, owner, ownerDN, ownerGroup, taskInfo = {} ):
     taskAttrNames = ['TaskName', 'CreationTime', 'UpdateTime', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'Info']
-    taskAttrValues = [taskName, Time.dateTime(), Time.dateTime(), status, int(False), owner, ownerDN, ownerGroup, json.dumps(taskInfo, separators=(',',':'))]
+    taskAttrValues = [taskName, Time.dateTime(), Time.dateTime(), status, owner, ownerDN, ownerGroup, json.dumps(taskInfo, separators=(',',':'))]
 
     result = self.insertFields( 'Task', taskAttrNames, taskAttrValues )
     if not result['OK']:
@@ -102,17 +102,6 @@ class TaskDB( DB ):
     self.log.info( 'TaskDB: New TaskID served "%s"' % taskID )
 
     return S_OK( taskID )
-
-  def updateTaskActive( self, taskID, active ):
-    condDict = { 'TaskID': taskID }
-    taskAttrNames = ['Active']
-    taskAttrValues = [int(active)]
-
-    result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
-    if not result['OK']:
-      self.log.error( 'Can not update task active for task %s' % taskID, result['Message'] )
-
-    return result
 
   def addTaskJob( self, taskID, jobID, jobInfo ):
     taskJobAttrNames = ['TaskID', 'JobID', 'Info']
@@ -218,7 +207,7 @@ class TaskDB( DB ):
       self.log.error( 'Can not get task histories for task %s' % taskID, result['Message'] )
       return result
 
-    return S_OK( [ i[0] for i in  result['Value'] ] )
+    return S_OK( result['Value'] )
 
   def getTaskJobs( self, taskID ):
     condDict = { 'TaskID': taskID }

@@ -2,6 +2,7 @@
 from types import DictType, FloatType, IntType, ListType, LongType, StringTypes, TupleType, UnicodeType
 
 import time
+import json
 
 # DIRAC
 from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
@@ -116,8 +117,8 @@ class TaskManagerHandler( RequestHandler ):
 
 ################################################################################
 
-  types_getTasks = [ ListType, DictType, [IntType, LongType], StringTypes ]
-  def export_getTasks( self, outFields, condDict, limit, orderAttribute ):
+  types_getTasks = [ DictType, [IntType, LongType], [IntType, LongType], StringTypes, [IntType, LongType] ]
+  def export_getTasks( self, condDict, limit, offset, orderAttribute, realTimeProgress ):
     """ Get task list
     """
     if Properties.NORMAL_USER not in self.userProperties and Properties.JOB_ADMINISTRATOR not in self.userProperties:
@@ -133,18 +134,53 @@ class TaskManagerHandler( RequestHandler ):
         condDict['Status'] = list( condDict['Status'] )
         condDict['Status'] = [ v for v in condDict['Status'] if v != 'Removed' ]
 
-    newLimit = limit if limit >= 0 else False
-    newOrderAttribute = orderAttribute if orderAttribute else None
-    return gTaskDB.getTasks( outFields, condDict, newLimit, newOrderAttribute )
+    if limit < 0:
+      limit = False
+    outFields = ['TaskID', 'TaskName', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'CreationTime', 'UpdateTime', 'JobGroup', 'Site']
+    if not realTimeProgress:
+      outFields.append( 'Progress' )
+    result = gTaskDB.getTasks( outFields, condDict, limit, offset, orderAttribute )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return S_ERROR( result['Message'] )
 
-  types_getTask = [ [IntType, LongType], ListType ]
-  def export_getTask( self, taskID, outFields ):
+    tasks = []
+    for outValues in result['Value']:
+      progress = {}
+      if realTimeProgress:
+        result = self.__getTaskProgress( outValues[0] )
+        if not result['OK']:
+          self.log.error( result['Message'] )
+          return result
+        progress = result['Value']
+      tasks.append( self.__generateTaskResult( outFields, outValues, progress ) )
+
+    return S_OK( tasks )
+
+  types_getTask = [ [IntType, LongType], [IntType, LongType] ]
+  def export_getTask( self, taskID, realTimeProgress ):
     """ Get task
     """
     if not self.__hasTaskAccess( taskID ):
       return S_ERROR( 'Access denied to get task for task %s' % taskID )
 
-    return gTaskDB.getTask( taskID, outFields )
+    outFields = ['TaskID', 'TaskName', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'CreationTime', 'UpdateTime', 'JobGroup', 'Site', 'Info']
+    if not realTimeProgress:
+      outFields.append( 'Progress' )
+    result = gTaskDB.getTask( taskID, outFields )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return S_ERROR( result['Message'] )
+    outValues = result['Value']
+
+    progress = {}
+    if realTimeProgress:
+      result = self.__getTaskProgress( taskID )
+      if not result['OK']:
+        self.log.error( result['Message'] )
+        return result
+      progress = result['Value']
+    return S_OK( self.__generateTaskResult( outFields, outValues, progress ) )
 
   types_getTaskStatus = [ [IntType, LongType] ]
   def export_getTaskStatus( self, taskID ):
@@ -181,6 +217,14 @@ class TaskManagerHandler( RequestHandler ):
       return S_ERROR( 'Access denied to get task jobs for task %s' % taskID )
 
     return gTaskDB.getTaskJobs( taskID )
+
+  types_getJobs = [ ListType, ListType ]
+  def export_getJobs( self, jobIDs, outFields ):
+    """ Get jobs
+    """
+    jobsIDs = self.__filterJobAccess( jobIDs, outFields ):
+
+    return gTaskDB.getJobs( jobIDs )
 
   types_getTaskIDFromJob = [ [IntType, LongType] ]
   def export_getTaskIDFromJob( self, jobID ):
@@ -323,6 +367,40 @@ class TaskManagerHandler( RequestHandler ):
         return True
 
     return False
+
+  def __filterSameDNGroupForJob( self, jobIDs ):
+    result = gJobDB.getAttributesForJobList( jobIDs, ['OwnerDN', 'OwnerGroup'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return []
+    if not result['Value']:
+      self.log.error( 'Job %s not found' % jobIDs )
+      return []
+
+    return [ jobID for jobID in result['Value'].keys() if self.ownerDN == result['Value'][jobID]['OwnerDN'] and self.ownerGroup == result['Value'][jobID]['OwnerGroup'] ]
+
+  def __filterJobAccess( self, jobIDs ):
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      return jobIDs
+
+    if Properties.NORMAL_USER in self.userProperties:
+      return self.__filterSameDNGroupForJob( jobIDs )
+
+    return []
+
+
+  def __generateTaskResult( self, outFields, outValues, progress ):
+    taskResult = {}
+    for k,v in zip(outFields, outValues):
+      if k in ['Progress', 'Info']:
+        taskResult[k] = json.loads( v )
+      else:
+        taskResult[k] = v
+
+    if progress:
+      taskResult['Progress'] = progress
+
+    return taskResult
 
 
   def __getTaskJobAttributes( self, taskID, outFields ):

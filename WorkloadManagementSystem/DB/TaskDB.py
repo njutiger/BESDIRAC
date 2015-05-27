@@ -160,8 +160,8 @@ class TaskDB( DB ):
 
 ################################################################################
 
-  def getTasks( self, outFields, condDict, limit, orderAttribute = None ):
-    result = self.getFields( 'Task', outFields, condDict, limit = limit, orderAttribute = orderAttribute )
+  def getTasks( self, outFields, condDict, limit, offset, orderAttribute = None ):
+    result = self.getFields( 'Task', outFields, condDict, limit = limit, orderAttribute = orderAttribute, offset = offset )
     if not result['OK']:
       self.log.error( 'Can not get task list', result['Message'] )
       return result
@@ -219,12 +219,22 @@ class TaskDB( DB ):
 
     return S_OK( [ i[0] for i in  result['Value'] ] )
 
-  def getTaskIDFromJob( self, jobID ):
-    condDict = { 'JobID': jobID }
+  def getJobs( self, jobIDs, outFields ):
+    condDict = { 'JobID': jobIDs }
     outFields = ( 'TaskID', )
     result = self.getFields( 'TaskJob', outFields, condDict )
     if not result['OK']:
-      self.log.error( 'Can not get task ID from job ID %s' % jobID, result['Message'] )
+      self.log.error( 'Can not get task ID from job ID %s' % jobIDs, result['Message'] )
+      return result
+
+    return S_OK( result['Value'] )
+
+  def getTaskIDFromJob( self, jobIDs ):
+    condDict = { 'JobID': jobIDs }
+    outFields = ( 'TaskID', )
+    result = self.getFields( 'TaskJob', outFields, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not get task ID from job ID %s' % jobIDs, result['Message'] )
       return result
 
     return S_OK( [ i[0] for i in  result['Value'] ] )

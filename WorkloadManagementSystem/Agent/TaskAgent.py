@@ -1,8 +1,9 @@
 __RCSID__ = "8f34a5d (2015-01-12 13:07:33 +0000) Xianghu Zhao <zhaoxh@ihep.ac.cn>"
 
-from DIRAC                                import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule          import AgentModule
-from DIRAC.Core.DISET.RPCClient           import RPCClient
+from DIRAC                                            import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                      import AgentModule
+from DIRAC.Core.DISET.RPCClient                       import RPCClient
+from BESDIRAC.WorkloadManagementSystem.DB.TaskDB      import TaskDB
 
 import time
 
@@ -19,13 +20,14 @@ class TaskAgent( AgentModule ):
 
   def initialize( self ):
     self.__taskManager = RPCClient( 'WorkloadManagement/TaskManager' )
+    self.__taskDB = TaskDB()
     return S_OK()
 
   def execute( self ):
     """ Main execution method
     """
     condDict = { 'Status': ['Ready', 'Processing', 'Finished'] }
-    result = self.__taskManager.getTasks( [ 'TaskID', 'Status' ], condDict, -1, '' )
+    result = self.__taskDB.getTasks( [ 'TaskID', 'Status' ], condDict )
     if not result['OK']:
       return result
 

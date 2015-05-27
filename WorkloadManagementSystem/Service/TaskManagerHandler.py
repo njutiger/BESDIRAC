@@ -68,6 +68,15 @@ class TaskManagerHandler( RequestHandler ):
     if not self.__hasTaskAccess( taskID ):
       return S_ERROR( 'Access denied to activate task %s' % taskID )
 
+    result = gTaskDB.getTaskStatus( taskID )
+    if not result['OK']:
+      return result
+    status = result['Value']
+
+    if status != 'Init':
+      self.log.error( 'Can only activate task with "Init" status: task %s' % taskID )
+      return S_ERROR( 'Can only activate task with "Init" status: task %s' % taskID )
+
     return self.__updateTaskStatus( taskID, 'Ready', 'Task is activated' )
 
   types_removeTask = [ [IntType, LongType] ]
@@ -222,9 +231,9 @@ class TaskManagerHandler( RequestHandler ):
   def export_getJobs( self, jobIDs, outFields ):
     """ Get jobs
     """
-    jobsIDs = self.__filterJobAccess( jobIDs, outFields ):
+    jobsIDs = self.__filterJobAccess( jobIDs )
 
-    return gTaskDB.getJobs( jobIDs )
+    return gTaskDB.getJobs( jobIDs, outFields )
 
   types_getTaskIDFromJob = [ [IntType, LongType] ]
   def export_getTaskIDFromJob( self, jobID ):

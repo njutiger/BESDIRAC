@@ -160,8 +160,8 @@ class TaskDB( DB ):
 
 ################################################################################
 
-  def getTasks( self, outFields, condDict, limit, offset, orderAttribute = None ):
-    result = self.getFields( 'Task', outFields, condDict, limit = limit, orderAttribute = orderAttribute, offset = offset )
+  def getTasks( self, outFields, condDict, limit = None, offset = None, orderAttribute = None ):
+    result = self.getFields( 'Task', outFields, condDict, limit = (limit, offset), orderAttribute = orderAttribute )
     if not result['OK']:
       self.log.error( 'Can not get task list', result['Message'] )
       return result
@@ -221,7 +221,6 @@ class TaskDB( DB ):
 
   def getJobs( self, jobIDs, outFields ):
     condDict = { 'JobID': jobIDs }
-    outFields = ( 'TaskID', )
     result = self.getFields( 'TaskJob', outFields, condDict )
     if not result['OK']:
       self.log.error( 'Can not get task ID from job ID %s' % jobIDs, result['Message'] )

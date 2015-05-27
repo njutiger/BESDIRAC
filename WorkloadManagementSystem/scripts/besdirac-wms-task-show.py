@@ -44,17 +44,21 @@ def showTask(taskID):
 def showTaskJobs(taskID):
   result = taskClient.getTaskJobs(taskID)
   if not result['OK']:
-    print 'Get task error: %s' % result['Message']
+    print 'Get task jobs error: %s' % result['Message']
     return
   jobIDs = result['Value']
   print '== Jobs =='
+  if not jobIDs:
+    print 'No jobs found'
+    return
+
   for jobID in jobIDs:
     print jobID,
   print ''
 
   result = jobmonClient.getJobs( { 'JobID': jobIDs, 'Status': ['Failed'] } )
   if not result['OK']:
-    print 'Get jobs of status %s error: %s' % (status, result['Message'])
+    print 'Get task failed jobs error: %s' % result['Message']
     return
   print '\n== Jobs (Failed) =='
   for jobID in result['Value']:

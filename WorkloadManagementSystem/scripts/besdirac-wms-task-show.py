@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import json
-
 import DIRAC
 from DIRAC import S_OK, S_ERROR
 
@@ -20,29 +18,32 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
 options = Script.getPositionalArgs()
 
+from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
+taskClient = TaskClient()
+
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
-taskClient = RPCClient('WorkloadManagement/TaskManager')
 jobmonClient = RPCClient('WorkloadManagement/JobMonitoring')
 
 def showTask(taskID):
-  outFields = ['TaskID','TaskName','Status','Owner','OwnerDN','OwnerGroup','CreationTime','JobGroup','Site','Progress','Info']
-  result = taskClient.getTask(taskID, outFields)
+  outFields = ['TaskID','TaskName','Status','Owner','OwnerDN','OwnerGroup','CreationTime','UpdateTime','JobGroup','Site','Progress','Info']
+  result = taskClient.showTask(taskID)
   if not result['OK']:
     print 'Get task error: %s' % result['Message']
     return
+  task = result['Value']
 
-  for k,v in zip(outFields, result['Value']):
+  for k in outFields:
     if k in ['Progress', 'Info']:
       print '\n== %s ==' % k
-      for kp,vp in sorted(json.loads(v).iteritems(), key=lambda d:d[0]):
+      for kp,vp in sorted(task[k].iteritems(), key=lambda d:d[0]):
         if type(vp) == type([]):
           vp = ', '.join(vp)
         print '%s : %s' % (kp, vp)
     else:
-      print '%s : %s' % (k, v)
+      print '%s : %s' % (k, task[k])
 
 def showTaskJobs(taskID):
-  result = taskClient.getTaskJobs(taskID)
+  result = taskClient.showTaskJobs(taskID)
   if not result['OK']:
     print 'Get task jobs error: %s' % result['Message']
     return
@@ -65,7 +66,7 @@ def showTaskJobs(taskID):
     print jobID,
 
 def showTaskHistories(taskID):
-  result = taskClient.getTaskHistories(taskID)
+  result = taskClient.showTaskHistories(taskID)
   if not result['OK']:
     print 'Get task histories error: %s' % result['Message']
     return

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import json
-
 import DIRAC
 from DIRAC import S_OK, S_ERROR
 
@@ -26,9 +24,9 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
 options = Script.getPositionalArgs()
 
-from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-taskClient = RPCClient('WorkloadManagement/TaskManager')
+from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
+from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
+taskClient = TaskClient()
 
 fieldFormat = {
   'TaskID'      : ('%-8s',  '%-8s',  8,  'TaskID'),
@@ -38,6 +36,7 @@ fieldFormat = {
   'OwnerDN'     : ('%-12s', '%-12s', 12, 'OwnerDN'),
   'OwnerGroup'  : ('%-12s', '%-12s', 12, 'OwnerGroup'),
   'CreationTime': ('%-20s', '%-20s', 20, 'CreationTime'),
+  'UpdateTime'  : ('%-20s', '%-20s', 20, 'UpdateTime'),
   'Progress'    : ('%-24s', '%-24s', 24, 'Progress(T/(D,F,R,W,O))'),
   'Site'        : ('%-16s', '%-16s', 16, 'Site'),
   'JobGroup'    : ('%-16s', '%-16s', 16, 'JobGroup'),
@@ -53,15 +52,15 @@ def showTitle(fields):
   print ''
 
 def showTask(fields, task):
-  for field, value in zip(fields, task):
+  for field in fields:
     if field == 'Progress':
-      prog = json.loads(value)
+      prog = task[field]
       progStr = '%s/(%s,%s,%s,%s,%s)' \
         % (prog.get('Total', 0), prog.get('Done', 0), prog.get('Failed', 0),
            prog.get('Running', 0), prog.get('Waiting', 0), prog.get('Deleted', 0))
       print fieldFormat[field][1] % progStr,
     else:
-      print fieldFormat[field][1] % value,
+      print fieldFormat[field][1] % task[field],
   print ''
 
 def main():
@@ -77,7 +76,7 @@ def main():
     if switch == 'f' or switch == 'field':
       fields = val.split(',')
     if switch == 'w' or switch == 'whole':
-      fields = ['Owner','OwnerGroup','CreationTime','Progress','JobGroup','Site']
+      fields = ['Owner','OwnerGroup','CreationTime','UpdateTime','Progress','JobGroup','Site']
     if switch == 'l' or switch == 'limit':
       limit = int(val)
     if switch == 'e' or switch == 'expired':
@@ -107,7 +106,7 @@ def main():
 
   orderAttribute = 'TaskID:DESC'
 
-  result = taskClient.getTasks(fields, condDict, limit, orderAttribute)
+  result = taskClient.listTask(condDict, limit, 0, orderAttribute)
   if not result['OK']:
     print 'Get task list error: %s' % result['Message']
     return

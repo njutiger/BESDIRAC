@@ -20,32 +20,15 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
 options = Script.getPositionalArgs()
 
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-taskClient = RPCClient('WorkloadManagement/TaskManager')
-jobClient = RPCClient('WorkloadManagement/JobManager')
-jobmonClient = RPCClient('WorkloadManagement/JobMonitoring')
+from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
+taskClient = TaskClient()
 
 def rescheduleTask(taskID, status=[]):
-  result = taskClient.getTaskJobs(taskID)
+  result = taskClient.rescheduleTask(taskID)
   if not result['OK']:
-    print 'Get task jobs error: %s' % result['Message']
+    print 'Reschedule task error: %s' % result['Message']
     return
-  jobIDs = result['Value']
-  print jobIDs
-
-  if status:
-    result = jobmonClient.getJobs( { 'JobID': jobIDs, 'Status': status } )
-    if not result['OK']:
-      print 'Get jobs of status %s error: %s' % (status, result['Message'])
-      return
-    jobIDs = result['Value']
-    print jobIDs
-
-  result = jobClient.rescheduleJob(jobIDs)
-  if not result['OK']:
-    print 'Reschedule jobs error: %s' % result['Message']
-    return
-  print '%s job(s) rescheduled' % len(result['Value'])
+  print 'Task %s rescheduled' % taskID
 
 def main():
   for taskID in options:

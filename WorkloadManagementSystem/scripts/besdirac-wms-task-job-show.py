@@ -18,43 +18,44 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
 options = Script.getPositionalArgs()
 
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-taskClient = RPCClient('WorkloadManagement/TaskManager')
+from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
+taskClient = TaskClient()
 
-def showJob(jobID):
-  result = taskClient.getTaskIDFromJob(jobID)
+def showJobs(jobIDs):
+  outFields = ['TaskID', 'JobID', 'Info']
+  result = taskClient.showJobs(jobIDs, outFields)
   if not result['OK']:
-    print 'Get task ID error: %s' % result['Message']
+    print 'Show jobs error: %s' % result['Message']
     return
 
   if not result['Value']:
-    print 'No task ID found for job: %s' % jobID
-    return
-  taskID = result['Value'][0]
-
-  result = taskClient.getJobInfo(jobID)
-  if not result['OK']:
-    print 'Get job info error: %s' % result['Message']
+    print 'No task found for jobs: %s' % jobIDs
     return
 
-  jobInfo = result['Value']
+  for v in result['Value']:
+    taskID = v[0]
+    jobID = v[1]
+    jobInfo = json.loads(v[2])
 
-  print 'JobID : %s' % jobID
+    print 'JobID : %s' % jobID
 
-  print '- TaskID : %s' % taskID
+    print '- TaskID : %s' % taskID
 
-  for k,v in jobInfo.items():
-    if type(v) == type([]):
-      v = ', '.join(v)
-    print '- %s : %s' % (k, v)
+    for k,v in sorted(jobInfo.iteritems(), key=lambda d:d[0]):
+      if type(v) == type([]):
+        v = ', '.join(v)
+      print '- %s : %s' % (k, v)
+
+    print ''
 
 def main():
+  jobIDs = []
   for jobID in options:
-    jobID = int(jobID)
-    showJob(jobID)
-    print '\n'
+    jobIDs.append(int(jobID))
 
-  print 'Totally %s job(s) displayed' % len(options)
+  showJobs(jobIDs)
+
+  print 'Totally %s job(s) displayed' % len(jobIDs)
 
 if __name__ == '__main__':
   main()

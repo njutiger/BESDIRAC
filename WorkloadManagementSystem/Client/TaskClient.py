@@ -7,22 +7,28 @@ class TaskClient( object ):
       The task manager client
   """
 
-  def __init__():
+  def __init__( self ):
     self.__taskManager = RPCClient('WorkloadManagement/TaskManager')
     self.__jobManager = RPCClient('WorkloadManagement/JobManager')
     self.__jobMonitor = RPCClient('WorkloadManagement/JobMonitoring')
 
 
   def listTask( self, condDict, limit, offset, orderAttribute ):
-    return self.__taskManager.getTasks( condDict, limit, offset, orderAttribute, True )
+    return self.__taskManager.getTasks( condDict, limit, offset, orderAttribute, 1 )
 
 
   def showTask( self, taskID ):
-    return self.__taskManager.getTask( TaskID, True )
+    return self.__taskManager.getTask( taskID, 1 )
+
+  def showTaskJobs( self, taskID ):
+    return self.__taskManager.getTaskJobs( taskID )
+
+  def showTaskHistories( self, taskID ):
+    return self.__taskManager.getTaskHistories( taskID )
 
 
-  def showJob( self, JobIDs, outFields ):
-    return self.__taskManager.getJobs( jobsIDs, outFields )
+  def showJobs( self, jobIDs, outFields ):
+    return self.__taskManager.getJobs( jobIDs, outFields )
 
 
   def rescheduleTask( self, taskID, jobStatus=[] ):

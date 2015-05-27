@@ -20,28 +20,15 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
 options = Script.getPositionalArgs()
 
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-taskClient = RPCClient('WorkloadManagement/TaskManager')
-jobClient = RPCClient('WorkloadManagement/JobManager')
+from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
+taskClient = TaskClient()
 
 def deleteTask(taskID):
-  result = taskClient.getTaskJobs(taskID)
+  result = taskClient.deleteTask(taskID)
   if not result['OK']:
-    print 'Get task jobs error: %s' % result['Message']
+    print 'Delete task error: %s' % result['Message']
     return
-  jobIDs = result['Value']
-
-  result = jobClient.deleteJob(jobIDs)
-  if not result['OK']:
-    print 'Delete jobs error: %s' % result['Message']
-    return
-#  print '%s job(s) deleted' % len(result['Value'])
-
-  result = taskClient.removeTask(taskID)
-  if not result['OK']:
-    print 'Remove task error: %s' % result['Message']
-    return
-  print 'Task %s removed' % taskID
+  print 'Task %s deleted' % taskID
 
 def main():
   for taskID in options:

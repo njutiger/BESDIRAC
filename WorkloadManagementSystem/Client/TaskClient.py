@@ -13,30 +13,45 @@ class TaskClient( object ):
     self.__jobMonitor = RPCClient('WorkloadManagement/JobMonitoring')
 
 
+  def getTaskCount( self, condDict ):
+    return self.__taskManager.getTaskCount( condDict )
+
   def listTask( self, condDict, limit, offset, orderAttribute ):
     return self.__taskManager.getTasks( condDict, limit, offset, orderAttribute, 1 )
 
 
-  def showTask( self, taskID ):
+  def renameTask( self, taskID, newName ):
+    return self.__taskManager.renameTask( taskID, newName )
+
+  def activateTask( self, taskID ):
+    return self.__taskManager.activateTask( taskID )
+
+  def getTask( self, taskID ):
     return self.__taskManager.getTask( taskID, 1 )
 
-  def showTaskJobs( self, taskID ):
+  def getTaskProgress( self, taskID ):
+    return self.__taskManager.getTaskProgress( taskID )
+
+  def getTaskInfo( self, taskID ):
+    return self.__taskManager.getTaskInfo( taskID )
+
+  def getTaskJobs( self, taskID ):
     return self.__taskManager.getTaskJobs( taskID )
 
-  def showTaskHistories( self, taskID ):
+  def getTaskHistories( self, taskID ):
     return self.__taskManager.getTaskHistories( taskID )
 
 
-  def showJobs( self, jobIDs, outFields ):
+  def getJobs( self, jobIDs, outFields ):
     return self.__taskManager.getJobs( jobIDs, outFields )
 
 
   def rescheduleTask( self, taskID, jobStatus=[] ):
-    return self.__manageTask( taskID, self.__jobManager.rescheduleJob )
+    return self.__manageTask( taskID, self.__jobManager.rescheduleJob, jobStatus )
 
 
   def deleteTask( self, taskID, jobStatus=[] ):
-    result = self.__manageTask( taskID, self.__jobManager.deleteJob )
+    result = self.__manageTask( taskID, self.__jobManager.deleteJob, jobStatus )
     if not result['OK']:
       return result
     jobIDs = result['Value']['JobID']
@@ -60,8 +75,9 @@ class TaskClient( object ):
         return S_ERROR( 'Get jobs of status %s error: %s' % (status, result['Message']) )
       jobIDs = result['Value']
 
-    result = action( jobIDs )
-    if not result['OK']:
-      return S_ERROR( 'Manage jobs error (%s): %s' % result['Message'] )
+    if jobIDs:
+      result = action( jobIDs )
+      if not result['OK']:
+        return S_ERROR( 'Manage jobs error (%s): %s' % (action.__name__, result['Message']) )
 
     return S_OK( {'TaskID': taskID, 'JobID': jobIDs} )

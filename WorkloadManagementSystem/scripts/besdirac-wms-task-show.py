@@ -26,7 +26,7 @@ jobmonClient = RPCClient('WorkloadManagement/JobMonitoring')
 
 def showTask(taskID):
   outFields = ['TaskID','TaskName','Status','Owner','OwnerDN','OwnerGroup','CreationTime','UpdateTime','JobGroup','Site','Progress','Info']
-  result = taskClient.showTask(taskID)
+  result = taskClient.getTask(taskID)
   if not result['OK']:
     print 'Get task error: %s' % result['Message']
     return
@@ -43,7 +43,7 @@ def showTask(taskID):
       print '%s : %s' % (k, task[k])
 
 def showTaskJobs(taskID):
-  result = taskClient.showTaskJobs(taskID)
+  result = taskClient.getTaskJobs(taskID)
   if not result['OK']:
     print 'Get task jobs error: %s' % result['Message']
     return
@@ -66,7 +66,7 @@ def showTaskJobs(taskID):
     print jobID,
 
 def showTaskHistories(taskID):
-  result = taskClient.showTaskHistories(taskID)
+  result = taskClient.getTaskHistories(taskID)
   if not result['OK']:
     print 'Get task histories error: %s' % result['Message']
     return

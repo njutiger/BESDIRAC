@@ -158,10 +158,51 @@ class TaskDB( DB ):
 
     return result
 
+  def renameTask( self, taskID, newName ):
+    condDict = { 'TaskID': taskID }
+    taskAttrNames = ['TaskName']
+    taskAttrValues = [newName]
+
+    result = self.updateFields( 'Task', taskAttrNames, taskAttrValues, condDict )
+    if not result['OK']:
+      self.log.error( 'Can not rename task %s' % taskID, result['Message'] )
+
+    return result
+
 ################################################################################
 
+  def getTaskCount( self, condDict ):
+    newer = None
+    if 'FromDate' in condDict:
+      newer = condDict['FromDate']
+      del condDict['FromDate']
+    older = None
+    if 'ToDate' in condDict:
+      older = condDict['ToDate']
+      del condDict['ToDate']
+
+    result = self.getCounters( 'Task', ['Status'], condDict, newer = newer, older = older, timeStamp = 'UpdateTime' )
+    if not result['OK']:
+      self.log.error( 'Can not get task count', result['Message'] )
+      return result
+
+    nTasks = 0
+    for stDict, count in result['Value']:
+      nTasks += count
+
+    return S_OK( nTasks )
+
   def getTasks( self, outFields, condDict, limit = None, offset = None, orderAttribute = None ):
-    result = self.getFields( 'Task', outFields, condDict, limit = (limit, offset), orderAttribute = orderAttribute )
+    newer = None
+    if 'FromDate' in condDict:
+      newer = condDict['FromDate']
+      del condDict['FromDate']
+    older = None
+    if 'ToDate' in condDict:
+      older = condDict['ToDate']
+      del condDict['ToDate']
+
+    result = self.getFields( 'Task', outFields, condDict, newer = newer, older = older, timeStamp = 'UpdateTime', limit = (limit, offset), orderAttribute = orderAttribute )
     if not result['OK']:
       self.log.error( 'Can not get task list', result['Message'] )
       return result

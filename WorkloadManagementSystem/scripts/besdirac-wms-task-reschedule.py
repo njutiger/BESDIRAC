@@ -24,7 +24,7 @@ from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
 
 def rescheduleTask(taskID, status=[]):
-  result = taskClient.rescheduleTask(taskID)
+  result = taskClient.rescheduleTask(taskID, status)
   if not result['OK']:
     print 'Reschedule task error: %s' % result['Message']
     return

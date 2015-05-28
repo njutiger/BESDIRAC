@@ -124,7 +124,35 @@ class TaskManagerHandler( RequestHandler ):
 
     return gTaskDB.updateTaskInfo( taskID, newTaskInfo )
 
+  types_renameTask = [ [IntType, LongType], StringTypes ]
+  def export_renameTask( self, taskID, newName ):
+    """ Rename the task
+    """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to rename task %s' % taskID )
+
+    return gTaskDB.renameTask( taskID, newName )
+
 ################################################################################
+
+  types_getTaskCount = [ DictType ]
+  def export_getTaskCount( self, condDict ):
+    """ Get task count
+    """
+    if Properties.NORMAL_USER not in self.userProperties and Properties.JOB_ADMINISTRATOR not in self.userProperties:
+      return S_ERROR( 'Access denied to get tasks' )
+
+    if Properties.NORMAL_USER in self.userProperties:
+      condDict['OwnerDN'] = self.ownerDN
+      condDict['OwnerGroup'] = self.ownerGroup
+
+      if 'Status' not in condDict:
+        condDict['Status'] = [ 'Init', 'Ready', 'Processing', 'Finished', 'Expired' ]
+      else:
+        condDict['Status'] = list( condDict['Status'] )
+        condDict['Status'] = [ v for v in condDict['Status'] if v != 'Removed' ]
+
+    return gTaskDB.getTaskCount( condDict )
 
   types_getTasks = [ DictType, [IntType, LongType], [IntType, LongType], StringTypes, [IntType, LongType] ]
   def export_getTasks( self, condDict, limit, offset, orderAttribute, realTimeProgress ):
@@ -145,9 +173,7 @@ class TaskManagerHandler( RequestHandler ):
 
     if limit < 0:
       limit = False
-    outFields = ['TaskID', 'TaskName', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'CreationTime', 'UpdateTime', 'JobGroup', 'Site']
-    if not realTimeProgress:
-      outFields.append( 'Progress' )
+    outFields = ['TaskID', 'TaskName', 'Status', 'Owner', 'OwnerDN', 'OwnerGroup', 'CreationTime', 'UpdateTime', 'JobGroup', 'Site', 'Progress']
     result = gTaskDB.getTasks( outFields, condDict, limit, offset, orderAttribute )
     if not result['OK']:
       self.log.error( result['Message'] )
@@ -156,7 +182,7 @@ class TaskManagerHandler( RequestHandler ):
     tasks = []
     for outValues in result['Value']:
       progress = {}
-      if realTimeProgress:
+      if realTimeProgress and outValues[2] in ['Init', 'Ready', 'Processing', 'Finished']:
         result = self.__getTaskProgress( outValues[0] )
         if not result['OK']:
           self.log.error( result['Message'] )
@@ -208,6 +234,23 @@ class TaskManagerHandler( RequestHandler ):
       return S_ERROR( 'Access denied to get task info for task %s' % taskID )
 
     return gTaskDB.getTaskInfo( taskID )
+
+  types_getTaskProgress = [ [IntType, LongType] ]
+  def export_getTaskProgress( self, taskID ):
+    """ Get task progress
+    """
+    if not self.__hasTaskAccess( taskID ):
+      return S_ERROR( 'Access denied to get task progress for task %s' % taskID )
+
+    result = self.__getTaskProgress( taskID )
+    if not result['OK']:
+      return result
+    progress = result['Value']
+    self.log.debug( 'Task %d Progress: %s' % ( taskID, progress ) )
+    result = gTaskDB.updateTaskProgress( taskID, progress )
+    if not result['OK']:
+      return result
+    return S_OK( progress )
 
   types_getTaskHistories = [ [IntType, LongType] ]
   def export_getTaskHistories( self, taskID ):

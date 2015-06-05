@@ -23,7 +23,7 @@ taskClient = TaskClient()
 
 def showJobs(jobIDs):
   outFields = ['TaskID', 'JobID', 'Info']
-  result = taskClient.showJobs(jobIDs, outFields)
+  result = taskClient.getJobs(jobIDs, outFields)
   if not result['OK']:
     print 'Show jobs error: %s' % result['Message']
     return

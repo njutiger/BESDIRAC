@@ -13,6 +13,10 @@ class TaskClient( object ):
     self.__jobMonitor = RPCClient('WorkloadManagement/JobMonitoring')
 
 
+  def createTask( self, taskName, taskInfo, jobInfos ):
+    return self.__taskManager.createTask( taskName, taskInfo, jobInfos )
+
+
   def getTaskCount( self, condDict ):
     return self.__taskManager.getTaskCount( condDict )
 
@@ -23,8 +27,11 @@ class TaskClient( object ):
   def renameTask( self, taskID, newName ):
     return self.__taskManager.renameTask( taskID, newName )
 
-  def activateTask( self, taskID ):
-    return self.__taskManager.activateTask( taskID )
+  def getTaskOwners( self ):
+    return self.__taskManager.getTaskOwners()
+
+  def getTaskOwnerGroups( self ):
+    return self.__taskManager.getTaskOwnerGroups()
 
   def getTask( self, taskID ):
     return self.__taskManager.getTask( taskID, 1 )
@@ -37,6 +44,9 @@ class TaskClient( object ):
 
   def getTaskJobs( self, taskID ):
     return self.__taskManager.getTaskJobs( taskID )
+
+  def getTaskJobsStatistics( self, taskID, statusType ):
+    return self.__taskManager.getTaskJobsStatistics( taskID, statusType )
 
   def getTaskHistories( self, taskID ):
     return self.__taskManager.getTaskHistories( taskID )

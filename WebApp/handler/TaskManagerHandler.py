@@ -15,7 +15,7 @@ STATUS_ICON_MAP = {
   'Removed' : 'Deleted'
 }
 
-class TaskHandler(WebHandler):
+class TaskManagerHandler(WebHandler):
 
     AUTH_PROPS = "authenticated"
 
@@ -23,9 +23,13 @@ class TaskHandler(WebHandler):
     def web_getSelectionData(self):
       sData = self.getSessionData()
 
+      taskClient = TaskClient()
+
       callback = {}
 
       user = sData["user"]["username"]
+      group = sData["user"]["group"]
+
       if user == "Anonymous":
         callback["status"] = [["Insufficient rights"]]
       elif 'JobAdministrator' in sData['user']['properties']:
@@ -35,13 +39,39 @@ class TaskHandler(WebHandler):
 
       if user == "Anonymous":
         callback["owner"] = [["Insufficient rights"]]
+      elif 'NormalUser' in sData['user']['properties']:
+        owner = [[user]]
       else:
-#        result = yield self.threadTask( RPC.getOwners )
-#        if result["OK"]:
-#          pass
-        callback["owner"] = [['user1']]
+        result = yield self.threadTask( taskClient.getTaskOwners )
+        if result["OK"]:
+          owner = []
+          if len( result["Value"] ) > 0:
+            for i in result["Value"]:
+              owner.append( [str( i )] )
+          else:
+            owner = [["Nothing to display"]]
+        else:
+            gLogger.error( "getTaskOwners() return error: %s" % result["Message"] )
+            owner = [["Error happened on service side"]]
+      callback["owner"] = owner
 
-      callback["ownerGroup"] = [['group1']]
+      if user == "Anonymous":
+        callback["ownerGroup"] = [["Insufficient rights"]]
+      elif 'NormalUser' in sData['user']['properties']:
+        ownerGroup = [[group]]
+      else:
+        result = yield self.threadTask( taskClient.getTaskOwnerGroups )
+        if result["OK"]:
+          ownerGroup = []
+          if len( result["Value"] ) > 0:
+            for i in result["Value"]:
+              ownerGroup.append( [str( i )] )
+          else:
+            ownerGroup = [["Nothing to display"]]
+        else:
+            gLogger.error( "getTaskOwnerGroups() return error: %s" % result["Message"] )
+            ownerGroup = [["Error happened on service side"]]
+      callback["ownerGroup"] = ownerGroup
 
       self.finish( callback )
 
@@ -54,7 +84,6 @@ class TaskHandler(WebHandler):
       limit = self.numberOfJobs
       offset = self.pageNumber
       orderAttribute = self.globalSort[0][0] + ':' + self.globalSort[0][1]
-      print '::::::::::::::::::: %s' % condDict;
 
       result = yield self.threadTask( taskClient.getTaskCount, condDict )
       if not result["OK"]:
@@ -77,8 +106,11 @@ class TaskHandler(WebHandler):
         value['IconStatus'] = STATUS_ICON_MAP[data['Status']]
         value['CreationTime'] = str( data['CreationTime'] )
         value['UpdateTime'] = str( data['UpdateTime'] )
-        value['Total'] = data['Progress'].get('Total', 0)
         value['Progress'] = data['Progress']
+
+        totalJobs = data['Progress'].get('Total', 0)
+        deletedJobs = data['Progress'].get('Deleted', 0)
+        value['Total'] = '%s/%s' % (totalJobs-deletedJobs, totalJobs)
 
         values.append( value )
 
@@ -139,20 +171,6 @@ class TaskHandler(WebHandler):
       self.finish( callback )
 
     @asyncGen
-    def web_activateTask( self ):
-      taskClient = TaskClient()
-
-      taskID = int( self.request.arguments["TaskID"][0] )
-
-      result = yield self.threadTask( taskClient.activateTask, taskID )
-      if not result["OK"]:
-        self.finish( {"success":"false", "result":'', "error":result["Message"]} )
-        return
-
-      callback = {"success":"true", "result":result['Value']}
-      self.finish( callback )
-
-    @asyncGen
     def web_getTaskProgress( self ):
       taskClient = TaskClient()
 
@@ -163,7 +181,13 @@ class TaskHandler(WebHandler):
         self.finish( {"success":"false", "result":'', "error":result["Message"]} )
         return
 
-      callback = {"success":"true", "result":result['Value']}
+      statuses = ['Total', 'Done', 'Failed', 'Running', 'Waiting', 'Deleted']
+
+      allProgress = []
+      for status in statuses:
+        allProgress.append( [status, result['Value'].get( status, 0 )] )
+
+      callback = {"success":"true", "result":allProgress}
       self.finish( callback )
 
     @asyncGen
@@ -177,8 +201,109 @@ class TaskHandler(WebHandler):
         self.finish( {"success":"false", "result":'', "error":result["Message"]} )
         return
 
-      print '::::::::::: jobs: %s' % result['Value']
       callback = {"success":"true", "result":result['Value']}
+      self.finish( callback )
+
+    @asyncGen
+    def web_getTaskJobList( self ):
+      taskClient = TaskClient()
+
+      taskID = int( self.request.arguments["TaskID"][0] )
+
+      result = yield self.threadTask( taskClient.getTaskJobs, taskID )
+      if not result["OK"]:
+        self.finish( {"success":"false", "result":'', "error":result["Message"]} )
+        return
+
+      jobIDs = result['Value']
+
+      RPC = RPCClient( "WorkloadManagement/JobMonitoring" )
+      result = RPC.getJobsStatus( result['Value'] )
+      if not result["OK"]:
+        self.finish( {"success":"false", "result":'', "error":result["Message"]} )
+        return
+
+      jobStatuses = result['Value']
+      jobList = []
+      for jobID in jobIDs:
+        if jobID in jobStatuses:
+          jobList.append( [jobID, jobStatuses[jobID]['Status']] )
+        else:
+          jobList.append( [jobID, 'Deleted'] )
+
+      callback = {"success":"true", "result":jobList}
+      self.finish( callback )
+
+    @asyncGen
+    def web_getTaskJobsStatistics( self ):
+      taskClient = TaskClient()
+
+      taskID = int( self.request.arguments["TaskID"][0] )
+
+      statistics = []
+
+      statistics.append( ['==== Status ====', ''] )
+      result = yield self.threadTask( taskClient.getTaskJobsStatistics, taskID, 'Status' )
+      if result["OK"]:
+        for s in result['Value']:
+          statistics.append( [s, result['Value'].get( s, 0 )] )
+
+      statistics.append( ['', ''] )
+
+      statistics.append( ['==== Minor Status ====', ''] )
+      result = yield self.threadTask( taskClient.getTaskJobsStatistics, taskID, 'MinorStatus' )
+      if result["OK"]:
+        for s in result['Value']:
+          statistics.append( [s, result['Value'].get( s, 0 )] )
+
+      statistics.append( ['', ''] )
+
+      statistics.append( ['==== Application Status ====', ''] )
+      result = yield self.threadTask( taskClient.getTaskJobsStatistics, taskID, 'ApplicationStatus' )
+      if result["OK"]:
+        for s in result['Value']:
+          statistics.append( [s, result['Value'].get( s, 0 )] )
+
+      statistics.append( ['', ''] )
+
+      statistics.append( ['==== Site ====', ''] )
+      result = yield self.threadTask( taskClient.getTaskJobsStatistics, taskID, 'Site' )
+      if result["OK"]:
+        for s in result['Value']:
+          statistics.append( [s, result['Value'].get( s, 0 )] )
+
+      statistics.append( ['', ''] )
+
+      statistics.append( ['==== Job Group ====', ''] )
+      result = yield self.threadTask( taskClient.getTaskJobsStatistics, taskID, 'JobGroup' )
+      if result["OK"]:
+        for s in result['Value']:
+          statistics.append( [s, result['Value'].get( s, 0 )] )
+
+      callback = {"success":"true", "result":statistics}
+      self.finish( callback )
+
+    @asyncGen
+    def web_getTaskJobInfo( self ):
+      taskClient = TaskClient()
+
+      jobID = int( self.request.arguments["JobID"][0] )
+
+      outFields = ['Info']
+      result = yield self.threadTask( taskClient.getJobs, [jobID], outFields )
+      if not ( result["OK"] and result['Value'] ):
+        self.finish( {"success":"false", "result":'', "error":result["Message"]} )
+        return
+
+      info = json.loads( result['Value'][0][0] )
+
+      allInfo = []
+      for name, value in sorted(info.iteritems(), key=lambda d:d[0]):
+        if type( value ) == type([]):
+          value = ', '.join( value )
+        allInfo.append( [name, str(value)] )
+
+      callback = {"success":"true", "result":allInfo}
       self.finish( callback )
 
     @asyncGen

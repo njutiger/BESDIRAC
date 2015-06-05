@@ -136,6 +136,16 @@ class TaskDB( DB ):
 
     return result
 
+  def updateTaskStatus( self, taskID, status, description ):
+    result = self.updateTask( taskID, ['Status'], [status] )
+    if not result['OK']:
+      return result
+    result = self.insertTaskHistory( taskID, status, description )
+    if not result['OK']:
+      return result
+
+    return S_OK( status )
+
   def updateTaskProgress( self, taskID, progress ):
     condDict = { 'TaskID': taskID }
     taskAttrNames = ['Progress']
@@ -170,6 +180,13 @@ class TaskDB( DB ):
     return result
 
 ################################################################################
+
+  def getDistinctTaskAttributes( self, attribute, condDict = None, older = None,
+                                newer = None, timeStamp = 'UpdateTime' ):
+    """ Get distinct values of the task attribute under specified conditions
+    """
+    return self.getDistinctAttributeValues( 'Task', attribute, condDict = condDict,
+                                              older = older, newer = newer, timeStamp = timeStamp )
 
   def getTaskCount( self, condDict ):
     newer = None

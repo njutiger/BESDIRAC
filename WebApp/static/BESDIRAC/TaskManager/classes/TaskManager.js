@@ -1,10 +1,20 @@
-Ext.define('BESDIRAC.Task.classes.Task', {
+Ext.define('BESDIRAC.TaskManager.classes.TaskManager', {
 
     extend : 'Ext.dirac.core.Module',
 
     requires : ['Ext.util.*', 'Ext.panel.Panel', "Ext.form.field.Text", "Ext.button.Button", "Ext.menu.CheckItem", "Ext.menu.Menu", "Ext.form.field.ComboBox", "Ext.layout.*", "Ext.toolbar.Paging", "Ext.grid.Panel", "Ext.form.field.Date", "Ext.form.field.TextArea",
         "Ext.dirac.utils.DiracToolButton", "Ext.dirac.utils.DiracGridPanel", 'Ext.dirac.utils.DiracIdListButton', 'Ext.dirac.utils.DiracPageSizeCombo', "Ext.dirac.utils.DiracPagingToolbar", "Ext.dirac.utils.DiracApplicationContextMenu", "Ext.dirac.utils.DiracBaseSelector",
         "Ext.dirac.utils.DiracAjaxProxy", "Ext.data.ArrayStore", "Ext.dirac.utils.DiracJsonStore", "Ext.dirac.utils.DiracArrayStore"],
+
+    loadState : function(data) {
+
+      var me = this;
+
+      me.grid.loadState(data);
+
+      data.leftMenu.selectors['status'].data_selected = ['Init', 'Ready', 'Processing', 'Finished'];
+      me.leftPanel.loadState(data);
+    },
 
     dataFields : [{
           name : 'TaskIDcheckBox',
@@ -92,6 +102,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
           }
         };
 
+        var properties = [["NormalUser", "JobSharing", "owner"]];
         var map = [["status", "status"], ["owner", "owner"], ["ownerGroup", "ownerGroup"]];
 
         me.leftPanel = Ext.create('Ext.dirac.utils.DiracBaseSelector', {
@@ -99,8 +110,41 @@ Ext.define('BESDIRAC.Task.classes.Task', {
             cmbSelectors : selectors,
             textFields : textFields,
             datamap : map,
-            url : "Task/getSelectionData",
+            url : me.applicationName + '/getSelectionData',
+            properties : properties
         });
+
+//        // all of the following does not functional
+//
+//        me.leftPanel.cmbSelectors['status'].afterRender = function() {
+//            // not functional
+//            me.leftPanel.cmbSelectors['status'].setValue(['Init', 'Ready', 'Processing', 'Finished']);
+//        };
+//
+//        me.leftPanel.cmbSelectors['status'].addListener('load', function() {
+//            me.leftPanel.cmbSelectors['status'].setValue(['Init', 'Ready', 'Processing', 'Finished']);
+//          },
+//          me
+//        );
+//
+//        var oHeartbeat = new Ext.util.TaskRunner();
+//
+//        var oTask = {
+//          run : function() {
+//            if (!me.leftPanel.cmbSelectors['status'].isHidden()) {
+//              console.log(me.leftPanel.cmbSelectors['status'].isVisible());
+//              console.log(me.leftPanel.cmbSelectors['status']);
+//              console.log(me.leftPanel.cmbSelectors['status'].getValue());
+//              console.log(me.leftPanel.cmbSelectors['status'].setValue(['Init', 'Ready', 'Processing', 'Finished']));
+//              console.log(me.leftPanel.cmbSelectors['status'].getValue());
+//              oHeartbeat.stopAll()
+//            }
+//          },
+//          interval : 0
+//        };
+//
+//        oHeartbeat.start(Ext.apply(oTask, {interval : 1000}));
+
 
         /*
          * -----------------------------------------------------------------------------------------------------------
@@ -127,7 +171,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
           "checkBox" : {
             "dataIndex" : "TaskIDcheckBox"
           },
-          "TaskId" : {
+          "TaskID" : {
             "dataIndex" : "TaskID",
             "properties" : {
               width : 60
@@ -156,7 +200,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
           "Jobs" : {
             "dataIndex" : "Total",
             "properties" : {
-              width : 60
+              width : 80
             },
           },
           "Progress (D|F|R|W|O)" : {
@@ -209,22 +253,25 @@ Ext.define('BESDIRAC.Task.classes.Task', {
         // menu
         var menuitems = {
           'Visible' : [{
-                "text" : "Jobs",
-                "handler" : me.__getTaskJobs,
-                "properties" : {
-                  tooltip : 'Click to show task job IDs'
-                }
-              }, {
                 "text" : "Progress",
                 "handler" : me.__getTaskProgress,
                 "properties" : {
                   tooltip : 'Click to show task progress'
                 }
               }, {
-                "text" : "Infomation",
+                "text" : "Jobs Statistics",
+                "handler" : me.__getTaskJobsStatistics,
+                "properties" : {
+                  tooltip : 'Click to show task jobs statistics'
+                }
+              }, {
+                "text" : "-"
+              },// separator
+              {
+                "text" : "Information",
                 "handler" : me.__getTaskInfo,
                 "properties" : {
-                  tooltip : 'Click to show task attributes'
+                  tooltip : 'Click to show task information'
                 }
               }, {
                 "text" : "History",
@@ -236,12 +283,21 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                 "text" : "-"
               },// separator
               {
-                "text" : "Activate",
-                "handler" : me.__activateTask,
+                "text" : "Show Jobs",
+                "handler" : me.__getTaskJobs,
                 "properties" : {
-                  tooltip : 'Click to activate the task'
+                  tooltip : 'Click to show task jobs in job monitor page'
                 }
               }, {
+                "text" : "Jobs Information",
+                "handler" : me.__getJobsInfo,
+                "properties" : {
+                  tooltip : 'Click to show task jobs information'
+                }
+              }, {
+                "text" : "-"
+              },// separator
+              {
                 "text" : "Rename",
                 "handler" : me.__renameTask,
                 "properties" : {
@@ -259,7 +315,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                   iconCls : "dirac-icon-reschedule"
                 }
               }, {
-                "text" : "Reschedule All",
+                "text" : "Reschedule All Jobs",
                 "handler" : me.__rescheduleTask,
                 "arguments" : [[], true],
                 "properties" : {
@@ -271,7 +327,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                 "handler" : me.__deleteTask,
                 "arguments" : [true],
                 "properties" : {
-                  tooltip : 'Click to delete the task',
+                  tooltip : 'Click to delete the task and all jobs',
                   iconCls : "dirac-icon-delete"
                 }
               }]
@@ -289,7 +345,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                 "handler" : me.__rescheduleTask,
                 "arguments" : [["Failed"], ""],
                 "properties" : {
-                  tooltip : "Reschedule",
+                  tooltip : "Reschedule Failed Jobs in the Task",
                   iconCls : "dirac-icon-reschedule"
                 }
               }, {
@@ -297,7 +353,7 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                 "handler" : me.__deleteTask,
                 "arguments" : [""],
                 "properties" : {
-                  tooltip : "Delete",
+                  tooltip : "Delete the Task and all jobs",
                   iconCls : "dirac-icon-delete"
                 }
               }]
@@ -383,40 +439,12 @@ Ext.define('BESDIRAC.Task.classes.Task', {
 
     },
 
-    __activateTask : function() {
-
-        var me = this;
-        var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
-
-        Ext.MessageBox.confirm('Confirm', 'Are you sure you want to activate task ' + oId + '?',
-              function(btn) {
-                if (btn != 'yes')
-                  return;
-
-                Ext.Ajax.request({
-                      url : GLOBAL.BASE_URL + me.applicationName + '/activateTask',
-                      method : 'POST',
-                      params : {
-                        TaskID : oId
-                      },
-                      success : function(response) {
-                        var jsonData = Ext.JSON.decode(response.responseText);
-                        if (jsonData['success'] == 'false') {
-                          GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
-                          return;
-                        }
-
-                        me.leftPanel.oprLoadGridData();
-                      }
-                  });
-              });
-
-    },
-
     __getTaskProgress : function() {
 
         var me = this;
         var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
+
+        me.getContainer().body.mask("Wait ...");
 
         Ext.Ajax.request({
               url : GLOBAL.BASE_URL + me.applicationName + '/getTaskProgress',
@@ -425,13 +453,30 @@ Ext.define('BESDIRAC.Task.classes.Task', {
                 TaskID : oId
               },
               success : function(response) {
+
+                me.getContainer().body.unmask();
                 var jsonData = Ext.JSON.decode(response.responseText);
                 if (jsonData['success'] == 'false') {
                   GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
                   return;
                 }
 
+                me.getContainer().oprPrepareAndShowWindowGrid(jsonData['result'], "Progress for task " + oId, ["status", "jobnum"], [{
+                          text : 'Job Status',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'status'
+                        }, {
+                          text : 'Job Number',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'jobnum'
+                        }]);
+
                 me.leftPanel.oprLoadGridData();
+              },
+              failure : function(response) {
+                me.getContainer().body.unmask();
               }
           });
 
@@ -524,6 +569,231 @@ Ext.define('BESDIRAC.Task.classes.Task', {
           });
 
     },
+
+    __getTaskJobs : function() {
+
+        var me = this;
+        var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
+
+        Ext.Ajax.request({
+              url : GLOBAL.BASE_URL + me.applicationName + '/getTaskJobs',
+              method : 'POST',
+              params : {
+                TaskID : oId
+              },
+              success : function(response) {
+
+                var jsonData = Ext.JSON.decode(response.responseText);
+                if (jsonData['success'] == 'false') {
+                  GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
+                  return;
+                }
+
+                var jobIDs = jsonData['result'];
+
+                var oSetupData = {};
+                if (GLOBAL.VIEW_ID == "desktop") { // we needs these
+                  // information only
+                  // for the desktop
+                  // layout.
+
+                  var oDimensions = GLOBAL.APP.MAIN_VIEW.getViewMainDimensions();
+                  oSetupData.x = 0;
+                  oSetupData.y = 0;
+                  oSetupData.width = oDimensions[0];
+                  oSetupData.height = oDimensions[1];
+                  oSetupData.currentState = "";
+
+                  oSetupData.desktopStickMode = 0;
+                  oSetupData.hiddenHeader = 1;
+                  oSetupData.i_x = 0;
+                  oSetupData.i_y = 0;
+                  oSetupData.ic_x = 0;
+                  oSetupData.ic_y = 0;
+
+                }
+
+                oSetupData.data = {
+
+                  leftMenu : {
+                    JobID : jobIDs.join(',')
+                  }
+                };
+
+                GLOBAL.APP.MAIN_VIEW.createNewModuleContainer({
+                      objectType : "app",
+                      moduleName : 'DIRAC.JobMonitor.classes.JobMonitor',
+                      setupData : oSetupData
+                    });
+              }
+
+          });
+    },
+
+    __getTaskJobsStatistics : function() {
+
+        var me = this;
+        var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
+
+        me.getContainer().body.mask("Wait ...");
+
+        Ext.Ajax.request({
+              url : GLOBAL.BASE_URL + me.applicationName + '/getTaskJobsStatistics',
+              method : 'POST',
+              params : {
+                TaskID : oId
+              },
+              success : function(response) {
+
+                me.getContainer().body.unmask();
+                var jsonData = Ext.JSON.decode(response.responseText);
+                if (jsonData['success'] == 'false') {
+                  GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
+                  return;
+                }
+
+                me.getContainer().oprPrepareAndShowWindowGrid(jsonData['result'], "Statistics for task " + oId, ["status", "jobnum"], [{
+                          text : 'Status Type',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'status'
+                        }, {
+                          text : 'Job Number',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'jobnum'
+                        }]);
+              },
+              failure : function(response) {
+                me.getContainer().body.unmask();
+              }
+          });
+
+    },
+
+    __getJobsInfo : function() {
+
+        var me = this;
+        var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
+
+        me.getContainer().body.mask("Wait ...");
+
+        Ext.Ajax.request({
+              url : GLOBAL.BASE_URL + me.applicationName + '/getTaskJobList',
+              method : 'POST',
+              params : {
+                TaskID : oId
+              },
+              success : function(response) {
+
+                me.getContainer().body.unmask();
+                var jsonData = Ext.JSON.decode(response.responseText);
+                if (jsonData['success'] == 'false') {
+                  GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
+                  return;
+                }
+
+                var oWindow = me.getContainer().createChildWindow('Jobs Information (click to show details)', false, 500, 400);
+
+                var oFields = ['jobID', 'status'];
+
+                var oData = jsonData['result'];
+
+                var oStore = new Ext.data.ArrayStore({
+                      fields : oFields,
+                      data : oData
+                    });
+
+                var oColumns = [{
+                          text : 'JobID',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'jobID'
+                        }, {
+                          text : 'Status',
+                          flex : 1,
+                          sortable : true,
+                          dataIndex : 'status'
+                        }];
+
+                var oGrid = Ext.create('Ext.grid.Panel', {
+                      store : oStore,
+                      region : 'west',
+                      columns : oColumns,
+                      width : '200',
+                      height : '200',
+                      viewConfig : {
+                        stripeRows : true,
+                        enableTextSelection : true
+                      },
+                      listeners : {
+
+                        select : function(oTable, record, index, eOpts) {
+                          var oId = record.get("jobID");
+
+                          me.getContainer().body.mask("Wait ...");
+
+                          Ext.Ajax.request({
+                                url : GLOBAL.BASE_URL + me.applicationName + '/getTaskJobInfo',
+                                method : 'POST',
+                                params : {
+                                  JobID : oId
+                                },
+                                success : function(response) {
+
+                                  me.getContainer().body.unmask();
+                                  var jsonData = Ext.JSON.decode(response.responseText);
+                                  if (jsonData['success'] == 'false') {
+                                    GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
+                                    return;
+                                  }
+
+                                  me.getContainer().oprPrepareAndShowWindowGrid(jsonData['result'], "Job information " + oId, ["name", "value"], [{
+                                            text : 'Name',
+                                            flex : 1,
+                                            sortable : true,
+                                            dataIndex : 'name'
+                                          }, {
+                                            text : 'Value',
+                                            flex : 1,
+                                            sortable : true,
+                                            dataIndex : 'value'
+                                          }]);
+                                },
+                                failure : function(response) {
+                                  me.getContainer().body.unmask();
+                                }
+                            });
+                          return false;
+                        }
+
+                      }
+                    });
+
+                var oInfoGrid = Ext.create('Ext.grid.Panel', {
+//                      store : oStore,
+                      region : 'east',
+                      columns : oColumns,
+                      viewConfig : {
+                        stripeRows : true,
+                        enableTextSelection : true
+                      },
+                      listeners : {
+                      }
+                    });
+
+//                oWindow.add([oGrid, oInfoGrid]);
+                oWindow.add(oGrid);
+                oWindow.show();
+
+              },
+              failure : function(response) {
+                me.getContainer().body.unmask();
+              }
+          });
+
+    },
+
 
     __rescheduleTask : function(jobStatus, useSelectedTaskId) {
 
@@ -641,65 +911,5 @@ Ext.define('BESDIRAC.Task.classes.Task', {
               });
 
     },
-
-    __getTaskJobs : function() {
-
-        var me = this;
-        var oId = GLOBAL.APP.CF.getFieldValueFromSelectedRow(me.grid, "TaskID");
-
-        Ext.Ajax.request({
-              url : GLOBAL.BASE_URL + me.applicationName + '/getTaskJobs',
-              method : 'POST',
-              params : {
-                TaskID : oId
-              },
-              success : function(response) {
-
-                var jsonData = Ext.JSON.decode(response.responseText);
-                if (jsonData['success'] == 'false') {
-                  GLOBAL.APP.CF.alert('Error: ' + jsonData['error'], "error");
-                  return;
-                }
-
-                var jobIDs = jsonData['result'];
-
-                var oSetupData = {};
-                if (GLOBAL.VIEW_ID == "desktop") { // we needs these
-                  // information only
-                  // for the desktop
-                  // layout.
-
-                  var oDimensions = GLOBAL.APP.MAIN_VIEW.getViewMainDimensions();
-                  oSetupData.x = 0;
-                  oSetupData.y = 0;
-                  oSetupData.width = oDimensions[0];
-                  oSetupData.height = oDimensions[1];
-                  oSetupData.currentState = "";
-
-                  oSetupData.desktopStickMode = 0;
-                  oSetupData.hiddenHeader = 1;
-                  oSetupData.i_x = 0;
-                  oSetupData.i_y = 0;
-                  oSetupData.ic_x = 0;
-                  oSetupData.ic_y = 0;
-
-                }
-
-                oSetupData.data = {
-
-                  leftMenu : {
-                    JobID : jobIDs.join(',')
-                  }
-                };
-
-                GLOBAL.APP.MAIN_VIEW.createNewModuleContainer({
-                      objectType : "app",
-                      moduleName : 'DIRAC.JobMonitor.classes.JobMonitor',
-                      setupData : oSetupData
-                    });
-              }
-
-          });
-    }
 
 });

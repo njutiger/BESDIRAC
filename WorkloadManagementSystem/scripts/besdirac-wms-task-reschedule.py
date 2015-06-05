@@ -8,13 +8,13 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
-Show task detailed info
+Reschedule jobs in the task. Only reschedule failed jobs by default
 
 Usage:
    %s [option] ... [TaskID] ...
 """ % Script.scriptName )
 
-#Script.registerSwitch( "p",  "progress",        "Show task progress" )
+Script.registerSwitch( "a",  "all",        "Reschdule all jobs in the task" )
 
 Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
@@ -31,9 +31,19 @@ def rescheduleTask(taskID, status=[]):
   print 'Task %s rescheduled' % taskID
 
 def main():
+  if len(options) < 1:
+    Script.showHelp()
+    return
+
+  status = ['Failed']
+  for arg in args:
+    (switch, val) = arg
+    if switch == 'a' or switch == 'all':
+      status = []
+
   for taskID in options:
     taskID = int(taskID)
-    rescheduleTask(taskID, ['Failed'])
+    rescheduleTask(taskID, status)
     print ''
 
 if __name__ == '__main__':

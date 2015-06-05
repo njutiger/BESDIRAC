@@ -6,13 +6,11 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
-Show task detailed info
+Show task detailed information
 
 Usage:
    %s [option] ... [TaskID] ...
 """ % Script.scriptName )
-
-#Script.registerSwitch( "p",  "progress",        "Show task progress" )
 
 Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
@@ -24,23 +22,37 @@ taskClient = TaskClient()
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
 jobmonClient = RPCClient('WorkloadManagement/JobMonitoring')
 
+def showPairs(pairs):
+  width = 0
+  for pair in pairs:
+    width = max(width, len(pair[0]))
+  format = '%%-%ds : %%s' % width
+  for k,v in pairs:
+    print format % (k, v)
+
 def showTask(taskID):
   outFields = ['TaskID','TaskName','Status','Owner','OwnerDN','OwnerGroup','CreationTime','UpdateTime','JobGroup','Site','Progress','Info']
   result = taskClient.getTask(taskID)
   if not result['OK']:
     print 'Get task error: %s' % result['Message']
-    return
+    return False
   task = result['Value']
 
+  pairsDict = {'Task':[], 'Progress':[], 'Info':[]}
   for k in outFields:
     if k in ['Progress', 'Info']:
-      print '\n== %s ==' % k
       for kp,vp in sorted(task[k].iteritems(), key=lambda d:d[0]):
         if type(vp) == type([]):
           vp = ', '.join(vp)
-        print '%s : %s' % (kp, vp)
+        pairsDict[k].append([kp, vp])
     else:
-      print '%s : %s' % (k, task[k])
+      pairsDict['Task'].append([k, task[k]])
+
+  showPairs(pairsDict['Task'])
+  print '\n== Progress =='
+  showPairs(pairsDict['Progress'])
+  print '\n== Information =='
+  showPairs(pairsDict['Info'])
 
 def showTaskJobs(taskID):
   result = taskClient.getTaskJobs(taskID)
@@ -76,14 +88,18 @@ def showTaskHistories(taskID):
     print '%-16s %-24s %s' % (status, statusTime, description)
 
 def main():
+  if len(options) < 1:
+    Script.showHelp()
+    return
+
   for taskID in options:
     print '='*80
     taskID = int(taskID)
     showTask(taskID)
     print ''
-    showTaskJobs(taskID)
-    print ''
     showTaskHistories(taskID)
+    print ''
+    showTaskJobs(taskID)
     print ''
 
 if __name__ == '__main__':

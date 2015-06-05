@@ -8,13 +8,11 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
-Show task detailed info
+Delete task and all jobs in the task
 
 Usage:
    %s [option] ... [TaskID] ...
 """ % Script.scriptName )
-
-#Script.registerSwitch( "p",  "progress",        "Show task progress" )
 
 Script.parseCommandLine( ignoreErrors = False )
 args = Script.getUnprocessedSwitches()
@@ -31,6 +29,10 @@ def deleteTask(taskID):
   print 'Task %s deleted' % taskID
 
 def main():
+  if len(options) < 1:
+    Script.showHelp()
+    return
+
   for taskID in options:
     taskID = int(taskID)
     deleteTask(taskID)

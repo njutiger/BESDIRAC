@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( """
-List all the tasks
+Show job information
 
 Usage:
    %s [option] ... [JobID] ...
@@ -20,6 +20,14 @@ options = Script.getPositionalArgs()
 
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
+
+def showPairs(pairs):
+  width = 0
+  for pair in pairs:
+    width = max(width, len(pair[0]))
+  format = '- %%-%ds : %%s' % width
+  for k,v in pairs:
+    print format % (k, v)
 
 def showJobs(jobIDs):
   outFields = ['TaskID', 'JobID', 'Info']
@@ -37,18 +45,23 @@ def showJobs(jobIDs):
     jobID = v[1]
     jobInfo = json.loads(v[2])
 
-    print 'JobID : %s' % jobID
-
-    print '- TaskID : %s' % taskID
-
+    pairs = []
+    pairs.append(['TaskID', str(taskID)])
     for k,v in sorted(jobInfo.iteritems(), key=lambda d:d[0]):
       if type(v) == type([]):
         v = ', '.join(v)
-      print '- %s : %s' % (k, v)
+      pairs.append([k, v])
+
+    print 'JobID : %s' % jobID
+    showPairs(pairs)
 
     print ''
 
 def main():
+  if len(options) < 1:
+    Script.showHelp()
+    return
+
   jobIDs = []
   for jobID in options:
     jobIDs.append(int(jobID))

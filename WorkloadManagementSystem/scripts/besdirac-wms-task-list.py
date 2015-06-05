@@ -28,40 +28,73 @@ from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
 
-fieldFormat = {
-  'TaskID'      : ('%-8s',  '%-8s',  8,  'TaskID'),
-  'TaskName'    : ('%-24s', '%-24s', 24, 'TaskName'),
-  'Status'      : ('%-12s', '%-12s', 12, 'Status'),
-  'Owner'       : ('%-12s', '%-12s', 12, 'Owner'),
-  'OwnerDN'     : ('%-12s', '%-12s', 12, 'OwnerDN'),
-  'OwnerGroup'  : ('%-12s', '%-12s', 12, 'OwnerGroup'),
-  'CreationTime': ('%-20s', '%-20s', 20, 'CreationTime'),
-  'UpdateTime'  : ('%-20s', '%-20s', 20, 'UpdateTime'),
-  'Progress'    : ('%-24s', '%-24s', 24, 'Progress(T/(D,F,R,W,O))'),
-  'Site'        : ('%-16s', '%-16s', 16, 'Site'),
-  'JobGroup'    : ('%-16s', '%-16s', 16, 'JobGroup'),
+fieldTitle = {
+  'TaskID'      : 'TaskID',
+  'TaskName'    : 'TaskName',
+  'Status'      : 'Status',
+  'Owner'       : 'Owner',
+  'OwnerDN'     : 'OwnerDN',
+  'OwnerGroup'  : 'OwnerGroup',
+  'CreationTime': 'CreationTime',
+  'UpdateTime'  : 'UpdateTime',
+  'Progress'    : 'Progress(T/(D|F|R|W|O))',
+  'Site'        : 'Site',
+  'JobGroup'    : 'JobGroup',
 }
 
-def showTitle(fields):
-  for field in fields:
-    print fieldFormat[field][0] % fieldFormat[field][3],
+def showTable(title, content):
+  widths = []
+  column = 0
+  for t in title:
+    width = len(t)
+    for c in content:
+      width = max(width, len(c[column]))
+    widths.append(width+1)
+    column += 1
+
+  showTitle(title, widths)
+  showLine(widths)
+  showContent(content, widths)
+
+def showTitle(title, widths):
+  for t,w in zip(title, widths):
+    format = '%%-%ds' % w
+    print format % t,
   print ''
 
-  for field in fields:
-    print '-'*fieldFormat[field][2],
+def showLine(widths):
+  for w in widths:
+    print '-'*w,
   print ''
 
-def showTask(fields, task):
+def showContent(content, widths):
+  for con in content:
+    for c,w in zip(con, widths):
+      format = '%%-%ds' % w
+      print format % c,
+    print ''
+
+def getTitle(fields):
+  title = []
   for field in fields:
-    if field == 'Progress':
-      prog = task[field]
-      progStr = '%s/(%s,%s,%s,%s,%s)' \
-        % (prog.get('Total', 0), prog.get('Done', 0), prog.get('Failed', 0),
-           prog.get('Running', 0), prog.get('Waiting', 0), prog.get('Deleted', 0))
-      print fieldFormat[field][1] % progStr,
-    else:
-      print fieldFormat[field][1] % task[field],
-  print ''
+    title.append(fieldTitle[field])
+  return title
+
+def getTasks(fields, tasks):
+  content = []
+  for task in tasks:
+    line = []
+    for field in fields:
+      if field == 'Progress':
+        prog = task[field]
+        progStr = '%s/(%s|%s|%s|%s|%s)' \
+          % (prog.get('Total', 0), prog.get('Done', 0), prog.get('Failed', 0),
+             prog.get('Running', 0), prog.get('Waiting', 0), prog.get('Deleted', 0))
+        line.append(progStr)
+      else:
+        line.append(str(task[field]))
+    content.append(line)
+  return content
 
 def main():
   basicFields = ['TaskID','TaskName','Status']
@@ -111,14 +144,13 @@ def main():
     print 'Get task list error: %s' % result['Message']
     return
 
-  # Title
-  showTitle(fields)
-
   # Task value
   taskList = list(result['Value'])
   taskList.reverse()
-  for task in taskList:
-    showTask(fields, task)
+
+  title = getTitle(fields)
+  content = getTasks(fields, taskList)
+  showTable(title, content)
 
 if __name__ == '__main__':
   main()

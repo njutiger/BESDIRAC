@@ -278,20 +278,23 @@ class TaskDB( DB ):
     return S_OK( [ i[0] for i in  result['Value'] ] )
 
   def getJobs( self, jobIDs, outFields ):
+    if not jobIDs:
+      return S_OK( [] )
+
     condDict = { 'JobID': jobIDs }
     result = self.getFields( 'TaskJob', outFields, condDict )
     if not result['OK']:
-      self.log.error( 'Can not get task ID from job ID %s' % jobIDs, result['Message'] )
+      self.log.error( 'Can not get task ID for job ID %s' % jobIDs, result['Message'] )
       return result
 
     return S_OK( result['Value'] )
 
-  def getTaskIDFromJob( self, jobIDs ):
-    condDict = { 'JobID': jobIDs }
+  def getTaskIDFromJob( self, jobID ):
+    condDict = { 'JobID': jobID }
     outFields = ( 'TaskID', )
     result = self.getFields( 'TaskJob', outFields, condDict )
     if not result['OK']:
-      self.log.error( 'Can not get task ID from job ID %s' % jobIDs, result['Message'] )
+      self.log.error( 'Can not get task ID for job %s' % jobID, result['Message'] )
       return result
 
     return S_OK( [ i[0] for i in  result['Value'] ] )

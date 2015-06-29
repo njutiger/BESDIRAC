@@ -23,7 +23,7 @@ import time
 import datetime
 import tempfile
 import subprocess
-from DIRAC import S_OK, S_ERROR, gLogger, exit
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig, exit
 from DIRAC.Core.Base import Script
 
 
@@ -45,7 +45,8 @@ destDir = '.'    #localdir that file download to
 #  destDir = args[1]
 ##print destDir
 
-rsync_url = 'rsync://vmdirac04.ihep.ac.cn/bes-srm'
+rsync_se = 'IHEPD-USER'
+rsync_url = gConfig.getValue('/Resources/RsyncEndpoints/%s/Url'%rsync_se, 'rsync://localhost/bes-srm')
 
 method = 'rsync'
 output_dir = '.'

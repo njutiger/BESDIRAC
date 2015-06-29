@@ -21,8 +21,8 @@ Script.registerSwitch( "u",  "users",           "Include other users' tasks (onl
 Script.registerSwitch( "a",  "all",             "Show all tasks" )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
@@ -104,8 +104,8 @@ def main():
   showExpired = False
   showOtherUser = False
   showRemoved = False
-  for arg in args:
-    (switch, val) = arg
+  for option in options:
+    (switch, val) = option
     if switch == 'f' or switch == 'field':
       fields = val.split(',')
     if switch == 'w' or switch == 'whole':

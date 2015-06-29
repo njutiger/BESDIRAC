@@ -15,8 +15,8 @@ Usage:
 """ % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
@@ -29,11 +29,11 @@ def deleteTask(taskID):
   print 'Task %s deleted' % taskID
 
 def main():
-  if len(options) < 1:
+  if len(args) < 1:
     Script.showHelp()
     return
 
-  for taskID in options:
+  for taskID in args:
     taskID = int(taskID)
     deleteTask(taskID)
     print ''

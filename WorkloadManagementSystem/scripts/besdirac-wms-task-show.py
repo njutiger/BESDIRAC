@@ -13,8 +13,8 @@ Usage:
 """ % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
@@ -88,11 +88,11 @@ def showTaskHistories(taskID):
     print '%-16s %-24s %s' % (status, statusTime, description)
 
 def main():
-  if len(options) < 1:
+  if len(args) < 1:
     Script.showHelp()
     return
 
-  for taskID in options:
+  for taskID in args:
     print '='*80
     taskID = int(taskID)
     showTask(taskID)

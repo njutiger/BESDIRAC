@@ -15,8 +15,8 @@ Usage:
 """ % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 from BESDIRAC.WorkloadManagementSystem.Client.TaskClient   import TaskClient
 taskClient = TaskClient()
@@ -58,12 +58,12 @@ def showJobs(jobIDs):
     print ''
 
 def main():
-  if len(options) < 1:
+  if len(args) < 1:
     Script.showHelp()
     return
 
   jobIDs = []
-  for jobID in options:
+  for jobID in args:
     jobIDs.append(int(jobID))
 
   showJobs(jobIDs)

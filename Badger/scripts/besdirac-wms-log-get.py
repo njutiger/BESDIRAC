@@ -17,8 +17,8 @@ Script.registerSwitch( "f:", "file-catalog=", "Catalog client type to use (defau
 Script.registerSwitch( "l:", "lfn=",          "File lfn" )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 
 from DIRAC.Interfaces.API.Dirac import Dirac
@@ -73,8 +73,8 @@ def getLog(loglfn):
 
 def main():
     lfns = []
-    for arg in args:
-        (switch, val) = arg
+    for option in options:
+        (switch, val) = option
         if switch == 'l' or switch == 'lfn':
             lfns.append(val)
 
@@ -83,8 +83,8 @@ def main():
     if lfns:
         jobIds += getJobId(lfns)
 
-    if options:
-        jobIds += options
+    if args:
+        jobIds += args
 
     loglfns = findFiles(jobIds)
     print '%s log(s) found' % len(loglfns)

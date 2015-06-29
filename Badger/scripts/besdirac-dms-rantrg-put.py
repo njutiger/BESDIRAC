@@ -19,7 +19,7 @@ Script.registerSwitch( "e:", "se=",      "SE name" )
 Script.registerSwitch( "b:", "basedir=", "Base directory for random trigger file" )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
+options = Script.getUnprocessedSwitches()
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac()
@@ -140,8 +140,8 @@ def main():
     listfile = ''
     se = 'IHEPD-USER'
     basedir = '/bes/File/randomtrg'
-    for arg in args:
-        (switch, val) = arg
+    for option in options:
+        (switch, val) = option
         if switch == 'r' or switch == 'runmin':
             runmin = int(val)
         if switch == 'R' or switch == 'runmax':

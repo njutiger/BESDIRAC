@@ -15,8 +15,8 @@ Usage:
 fcType = 'FileCatalog'
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
-options = Script.getPositionalArgs()
+options = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac()
@@ -37,7 +37,7 @@ def getMeta(lfn, metaname):
         return result['Value'][metaname]
 
 def main():
-    lfns = options
+    lfns = args
 
     for lfn in lfns:
         print '================================================================================'

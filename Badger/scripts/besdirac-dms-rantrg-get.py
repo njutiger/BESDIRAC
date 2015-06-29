@@ -20,7 +20,7 @@ Script.registerSwitch( "R:", "runmax=", "Maximum run number" )
 Script.registerSwitch( "e:", "se=",     "SE name" )
 
 Script.parseCommandLine( ignoreErrors = False )
-args = Script.getUnprocessedSwitches()
+options = Script.getUnprocessedSwitches()
 
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
@@ -195,8 +195,8 @@ def main():
     runmin = 0
     runmax = 0
     se = ''
-    for arg in args:
-        (switch, val) = arg
+    for option in options:
+        (switch, val) = option
         if switch == 'j' or switch == 'jopts':
             jfile = val
         if switch == 'r' or switch == 'runmin':

@@ -23,7 +23,8 @@ Script.parseCommandLine( ignoreErrors = False )
 options = Script.getUnprocessedSwitches()
 
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
+from DIRAC.Resources.Storage.StorageElement              import StorageElement
 from DIRAC.Resources.Catalog.FileCatalogFactory          import FileCatalogFactory
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
 
@@ -76,7 +77,7 @@ def determineSe():
     return determineSeFromDomain()
 
 def getFile(lfn, se=''):
-    rm = ReplicaManager()
+    dm = DataManager()
 
     download_ok = 0
     get_active_replicas_ok = False
@@ -84,7 +85,7 @@ def getFile(lfn, se=''):
     error_msg = ''
     if se:
         for i in range(0, 5):
-            result = rm.getActiveReplicas(lfn)
+            result = dm.getActiveReplicas(lfn)
             if result['OK'] and result['Value']['Successful']:
                 get_active_replicas_ok = True
                 lfnReplicas = result['Value']['Successful']
@@ -98,19 +99,19 @@ def getFile(lfn, se=''):
             return S_ERROR('Get replicas error: %s' % lfn)
 
     if lfn_on_se:
-        pfn = lfnReplicas[lfn][se]
+        se = StorageElement(se)
         # try 5 times
         for j in range(0, 5):
-            result = rm.getStorageFile(pfn, se)
-            if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
+            result = se.getFile(lfn)
+            if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 break
             time.sleep(random.randint(180, 600))
-            print '- %s getStorageFile(%s, %s) failed, try again' % (lfn, pfn, se)
+            print '- %s getStorageFile(%s) failed, try again' % (lfn, se)
         if result['OK']:
-            if result['Value']['Successful'] and result['Value']['Successful'].has_key(pfn):
+            if result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 download_ok = 1
             else:
-                error_msg = 'Downloading %s(%s) from SE %s error!' % (lfn, pfn, se)
+                error_msg = 'Downloading %s from SE %s error!' % (lfn, se)
         else:
             error_msg = result['Message']
     else:
@@ -118,7 +119,7 @@ def getFile(lfn, se=''):
             print 'File %s not found on SE "%s" after %s tries, trying other SE' % (lfn, se, i+1)
         # try 5 times
         for j in range(0, 5):
-            result = rm.getFile(lfn)
+            result = dm.getFile(lfn)
             if result['OK'] and result['Value']['Successful'] and result['Value']['Successful'].has_key(lfn):
                 break
             time.sleep(random.randint(180, 600))

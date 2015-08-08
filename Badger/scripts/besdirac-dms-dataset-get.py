@@ -46,7 +46,7 @@ destDir = '.'    #localdir that file download to
 ##print destDir
 
 rsync_se = 'IHEPD-USER'
-rsync_url = gConfig.getValue('/Resources/RsyncEndpoints/%s/Url'%rsync_se, 'rsync://localhost/bes-srm')
+rsync_url = gConfig.getValue('/Resources/Applications/RsyncEndpoints/%s/Url'%rsync_se, 'rsync://localhost/bes-srm')
 
 method = 'rsync'
 output_dir = '.'

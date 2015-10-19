@@ -297,7 +297,7 @@ class TaskManagerHandler( RequestHandler ):
   def export_getJobs( self, jobIDs, outFields ):
     """ Get jobs
     """
-    jobIDs = self.__filterJobAccess( jobIDs )
+    jobIDs = self.__filterJobOfTaskAccess( jobIDs )
 
     return gTaskDB.getJobs( jobIDs, outFields )
 
@@ -305,16 +305,17 @@ class TaskManagerHandler( RequestHandler ):
   def export_getTaskIDFromJob( self, jobID ):
     """ Get task ID from job ID
     """
-    if not self.__hasJobAccess( jobID ):
-      return S_ERROR( 'Access denied to get task ID from job %s' % jobID )
+    result = gTaskDB.getTaskIDFromJob( jobID )
+    if not result['OK']:
+      return result
 
-    return gTaskDB.getTaskIDFromJob( jobID )
+    return S_OK( self.__filterTaskAccess( result['Value'] ) )
 
   types_getJobInfo = [ [IntType, LongType] ]
   def export_getJobInfo( self, jobID ):
     """ Get job info
     """
-    if not self.__hasJobAccess( jobID ):
+    if not self.__hasJobForTaskAccess( jobID ):
       return S_ERROR( 'Access denied to get job info for job %s' % jobID )
 
     return gTaskDB.getJobInfo( jobID )
@@ -333,7 +334,7 @@ class TaskManagerHandler( RequestHandler ):
 ################################################################################
 # private functions
 
-  def __isSameDNGroup( self, taskID ):
+  def __isSameDNGroupForTask( self, taskID ):
     result = gTaskDB.getTask( taskID, ['OwnerDN', 'OwnerGroup'] )
     if not result['OK']:
       self.log.error( result['Message'] )
@@ -353,12 +354,13 @@ class TaskManagerHandler( RequestHandler ):
       return True
 
     if Properties.NORMAL_USER in self.userProperties:
-      if self.__isSameDNGroup( taskID ):
+      if self.__isSameDNGroupForTask( taskID ):
         result = gTaskDB.getTaskStatus( taskID )
         if result['OK'] and result['Value'] != 'Removed':
           return True
 
     return False
+
 
   def __isSameDNGroupForJob( self, jobID ):
     result = gJobDB.getAttributesForJobList( [jobID], ['OwnerDN', 'OwnerGroup'] )
@@ -386,6 +388,41 @@ class TaskManagerHandler( RequestHandler ):
 
     return False
 
+  def __hasJobForTaskAccess( self, jobID ):
+    result = gTaskDB.getTaskIDFromJob( jobID )
+    if not result['OK']:
+      return result
+
+    taskIDs = self.__filterTaskAccess( result['Value'] )
+
+    for taskID in taskIDs:
+      if self.__hasTaskAccess( taskID ):
+        return True
+
+    return False
+
+
+  def __filterSameDNGroupForTask( self, taskIDs ):
+    result = gTaskDB.getAttributesForTaskList( taskIDs, ['OwnerDN', 'OwnerGroup'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return []
+    if not result['Value']:
+      self.log.error( 'Task %s not found' % taskIDs )
+      return []
+
+    return [ taskID for taskID in result['Value'].keys() if self.ownerDN == result['Value'][taskID]['OwnerDN'] and self.ownerGroup == result['Value'][taskID]['OwnerGroup'] ]
+
+  def __filterTaskAccess( self, taskIDs ):
+    if Properties.JOB_ADMINISTRATOR in self.userProperties:
+      return taskIDs
+
+    if Properties.NORMAL_USER in self.userProperties:
+      return self.__filterSameDNGroupForTask( taskIDs )
+
+    return []
+
+
   def __filterSameDNGroupForJob( self, jobIDs ):
     result = gJobDB.getAttributesForJobList( jobIDs, ['OwnerDN', 'OwnerGroup'] )
     if not result['OK']:
@@ -405,6 +442,20 @@ class TaskManagerHandler( RequestHandler ):
       return self.__filterSameDNGroupForJob( jobIDs )
 
     return []
+
+
+  def __filterJobOfTaskAccess( self, jobIDs ):
+    """ Only filter jobs with right access to the related Task
+    """
+    result = gTaskDB.getJobs( jobIDs, ['JobID', 'TaskID'] )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return []
+    taskIDs = list( set( [ line[1] for line in result['Value'] ] ) )
+
+    newTaskIDs = self.__filterTaskAccess( taskIDs )
+
+    return [ line[0] for line in result['Value'] if line[1] in newTaskIDs ]
 
 
 ################################################################################

@@ -226,6 +226,44 @@ class TaskDB( DB ):
 
     return S_OK( result['Value'] )
 
+  def getAttributesForTaskList( self, taskIDs, attrList = None ):
+    """ Get attributes for the jobs in the the jobIDList.
+        Returns an S_OK structure with a dictionary of dictionaries as its Value:
+        ValueDict[jobID][attribute_name] = attribute_value
+    """
+    if not taskIDs:
+      return S_OK( {} )
+    if attrList:
+      attrNames = ',' + ','.join( [ str( x ) for x in attrList ] )
+      attr_tmp_list = attrList
+    else:
+      attrNames = ''
+      attr_tmp_list = []
+    taskList = ','.join( [str( x ) for x in taskIDs] )
+
+    # FIXME: need to check if the attributes are in the list of task Attributes
+
+    cmd = 'SELECT TaskID%s FROM Task WHERE TaskID in ( %s )' % ( attrNames, taskList )
+    res = self._query( cmd )
+    if not res['OK']:
+      return res
+    try:
+      retDict = {}
+      for retValues in res['Value']:
+        taskID = retValues[0]
+        taskDict = {}
+        taskDict[ 'TaskID' ] = taskID
+        attrValues = retValues[1:]
+        for i in range( len( attr_tmp_list ) ):
+          try:
+            taskDict[attr_tmp_list[i]] = attrValues[i].tostring()
+          except Exception:
+            taskDict[attr_tmp_list[i]] = str( attrValues[i] )
+        retDict[int( taskID )] = taskDict
+      return S_OK( retDict )
+    except Exception, x:
+      return S_ERROR( 'TaskDB.getAttributesForTaskList: Failed\n%s' % str( x ) )
+
   def getTask( self, taskID, outFields ):
     condDict = { 'TaskID': taskID }
     result = self.getFields( 'Task', outFields, condDict )

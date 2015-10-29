@@ -59,8 +59,9 @@ def getTaskEventProgress(taskID):
         progress['Total']['JobNum'] += 1
 
         if jobID in jobsInfo:
-            progress[status]['EventNum'] += jobsInfo[jobID]['EventNum']
-            progress['Total']['EventNum'] += jobsInfo[jobID]['EventNum']
+            evtNum = jobsInfo[jobID]['EventNum'] if 'EventNum' in jobsInfo[jobID] else 0
+            progress[status]['EventNum'] += evtNum
+            progress['Total']['EventNum'] += evtNum
 
     return progress
 

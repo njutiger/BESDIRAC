@@ -1,145 +1,116 @@
-#!/usr/bin/env python
-
 import os
-import datetime
-
-import pprint
+import time
+import imp
 
 from subprocess import call
 
-class GetOutputHandler():
-  def __init__(self, method, lfnList, outputDir, useChecksum, mergeFile, mergeSize, removeDownload):
-    self.__method = method
-    self.__lfnDict = {lfn: {} for lfn in lfnList}
-    self.__outputDir = outputDir
-    self.__useChecksum = useChecksum
-    self.__mergeFile = mergeFile
-    self.__mergeSize = mergeSize
-    self.__removeDownload = removeDownload
+from DIRAC import gLogger
+
+from BESDIRAC.Badger.private.output.MergeFile import MergeFile
+
+class GetOutputHandler(object):
+  def __init__(self, lfnList, method, localValidation, useChecksum):
+    self.__lfnList = lfnList
+
+    if type(method) is list:
+      self.__method = self.__decideBestMethod(method)
+    else:
+      self.__method = method
 
     self.__createGetFile()
+    self.__getFile.setUseChecksum(useChecksum)
+    self.__getFile.setLocalValidation(localValidation)
 
-  def run(self):
-    print 'There are %s files in the request' % len(self.__lfnDict)
+    self.__checkRemote()
 
-    self.__preparePath()
+    self.__mergeFile = MergeFile()
 
-    self.__prepareRemote()
+  def getMethod(self):
+    return self.__method
 
-    print 'There are %s files ready to be downloaded' % self.__remoteFileNumber()
+  def getAvailNumber(self):
+    return len(self.__lfnAvailList)
 
-    if self.__mergeFile and self.__getFile.directlyRead() and self.__removeDownload:
-      self.__mergeFromRemote(self.__mergeSize)
+  def download(self, downloadDir, downloadCallback=None):
+    count = {}
+
+    for lfn in self.__lfnAvailList:
+      result = self.__getFile.getFile(lfn, downloadDir)
+      if result['status'] in count:
+        count[result['status']] += 1
+      else:
+        count[result['status']] = 1
+
+      if downloadCallback is not None:
+        downloadCallback(lfn, result)
+
+    return count
+
+  def downloadAndMerge(self, downloadDir, mergeDir, mergeName, mergeExt, mergeSize, removeDownload,
+                       downloadCallback=None, mergeCallback=None, removeCallback=None):
+    if self.__getFile.directlyRead() and removeDownload:
+      mergeNumber = self.__mergeFromRemote(mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
     else:
-      downloadOk = self.__download()
-      if self.__mergeFile:
-        self.__mergeFromLocal(self.__mergeSize)
-        if downloadOk and self.__removeDownload:
-          self.__removeLocalDownloaded()
+      count = self.download(downloadDir, downloadCallback)
+      if mergeSize > 0:
+        if 'error' not in count or count['error'] == 0:
+          ret = self.__mergeFromLocal(downloadDir, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
+          if removeDownload and ret:
+            self.__removeLocalDownloaded(downloadDir, removeCallback)
+
+
+  def __checkRemote(self):
+    allRemoteAttributes = self.__getFile.getAllRemoteAttributes(self.__lfnList)
+    self.__lfnAvailList = [lfn for lfn in self.__lfnList if allRemoteAttributes[lfn]]
 
   def __createGetFile(self):
     getFileClassName = ''.join(w.capitalize() for w in self.__method.split('_')) + 'GetFile'
+    getFileModuleName = 'BESDIRAC.Badger.private.output.getfile.%s' % getFileClassName
 
-    m = __import__('BESDIRAC.Badger.private.output.%s' % getFileClassName,globals(),locals(),[getFileClassName])
-    self.__getFile = getattr(m, getFileClassName)()
+    try:
+      self.__getFile = self.__loadClass(getFileModuleName, getFileClassName)
+    except ImportError, e:
+      raise Exception('Could not find method %s' % self.__method)
 
-  def __preparePath(self):
-    pathDict = {}
-    for lfn in self.__lfnDict:
-      pathDict[lfn] = {'remote_path': self.__getFile.convertLfn(lfn),
-                       'local_path': os.path.join(self.__outputDir, os.path.basename(lfn)),
-                       'file_ext': os.path.splitext(lfn)[1]}
-    self.__updateDict(pathDict)
-#    pprint.pprint(self.__lfnDict)
+  def __decideBestMethod(self, methodList):
+    for method in methodList:
+      getFileClassName = ''.join(w.capitalize() for w in method.split('_')) + 'GetFile'
+      getFileModuleName = 'BESDIRAC.Badger.private.output.getfile.%s' % getFileClassName
 
-  def __prepareRemote(self):
-    remoteAttributes = self.__getFile.getRemoteAttributes(self.__lfnDict, self.__useChecksum)
-    self.__updateDict(remoteAttributes)
-#    pprint.pprint(self.__lfnDict)
+      try:
+        getFile = self.__loadClass(getFileModuleName, getFileClassName)
+      except ImportError, e:
+        raise Exception('Could not find method %s' % self.__method)
 
-  def __remoteFileNumber(self):
-    counter = 0
-    for lfn, value in self.__lfnDict.items():
-      if 'remote_size' in value:
-        counter += 1
-    return counter
+      if getFile.available():
+        return method
 
-  def __updateDict(self, newDict):
-    for lfn in newDict:
-      if lfn in self.__lfnDict:
-        self.__lfnDict[lfn].update(newDict[lfn])
-      else:
-        self.__lfnDict[lfn] = newDict[lfn]
-
-  def __download(self):
-    counter = 0
-    for lfn in self.__lfnDict:
-#      self.__getLocalAttributes(lfn)
-#      if not self.__localValid(lfn):
-#        self.__removeLocal(lfn)
-      result = self.__getFile.get(self.__lfnDict[lfn])
-      if result:
-        print 'Downloaded OK: %s' % lfn
-        counter += 1
-#      self.__setFileTime(lfn)
-      else:
-        print 'Downloaded failed: %s' % lfn
-    return counter
+    return 'dfc'
 
 
-  def __getLocalAttributes(self, lfn):
-    if lfn not in self.__lfnDict:
-      raise Exception('ERROR: Unknown lfn %s' % lfn)
-    localPath = self.__lfnDict[lfn]['local_path']
-    if not os.path.isfile(localPath):
-      print 'hehehhehehhe'
-      return
-    mtime = time.ctime(os.path.getmtime(f))
-    print mtime
-#    pprint.pprint(self.__lfnDict)
+  def __mergeFromLocal(self, downloadDir, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback):
+    mergeList = self.__lfnAvailList[:]
+    localMergeList = [self.__getFile.lfnToLocal(downloadDir, lfn) for lfn in mergeList]
+    localMergeList.sort()
+    return self.__mergeFile.merge(localMergeList, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
 
-  def __localValid(self, lfn):
-    return False
+  def __mergeFromRemote(self, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback):
+    mergeList = self.__lfnAvailList[:]
+    remoteMergeList = [self.__getFile.lfnToRemote(lfn) for lfn in mergeList]
+    remoteMergeList.sort()
+    return self.__mergeFile.merge(remoteMergeList, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
 
-  def __removeLocal(self, lfn):
-    return True
+  def __removeLocalDownloaded(self, downloadDir, removeCallback):
+    for lfn in self.__lfnAvailList:
+      localPath = self.__getFile.lfnToLocal(downloadDir, lfn)
+      if os.path.isfile(localPath):
+        os.remove(localPath)
+        if removeCallback is not None:
+          removeCallback(localPath)
 
-  def __setFileTime(self, lfn):
-    return True
-
-  def __getMergeLists(self):
-    mergeLists = []
-
-    mergeList = []
-    for lfn in self.__lfnDict:
-      mergeList.append(lfn)
-    mergeList.sort()
-
-    mergeLists.append(mergeList)
-    return mergeLists
-
-  def __doMerge(self, count, ext, fileList):
-    mergeFileName = 'merge_%04d%s'%(count,ext)
-    ret = call(['hadd', os.path.join(self.__outputDir, mergeFileName)] + fileList)
-    return ret == 0
-
-  def __doMergeList(self, lfnList, mergeSize):
-    count = 0
-    tempSize = 0
-    tempList = []
-#    for lfn in lfnList:
-    for i in range(len(lfnList)):
-      lfn = lfnList[i]
-      tempSize += self.__lfnDict[lfn]['remote_size']
-      tempList.append(self.__lfnDict[lfn]['local_path'])
-      if i == len(lfnList) - 1 or tempSize > mergeSize or tempSize + self.__lfnDict[lfnList[i+1]]['remote_size'] > mergeSize:
-        count += 1
-        self.__doMerge(count, self.__lfnDict[lfn]['file_ext'], tempList)
-        tempSize = 0
-        tempList = []
-
-  def __mergeFromLocal(self, mergeSize):
-    mergeLists = self.__getMergeLists()
-    for mergeList in mergeLists:
-      self.__doMergeList(mergeList, mergeSize)
-    return True
+  def __loadClass(self, moduleName, className):
+    try:
+      m = __import__(moduleName, globals(), locals(), [className])
+    except ImportError, e:
+      raise Exception('Could not from %s import %s' % (moduleName, className))
+    return getattr(m, className)()

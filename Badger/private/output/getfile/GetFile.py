@@ -132,7 +132,7 @@ class GetFile(object):
     attribute = {}
 
     if not os.path.isfile(localPath):
-      gLogger.debug('Not a valid file:', localPath)
+      gLogger.debug('File not exists for getting attribute:', localPath)
       return attribute
 
     size = os.path.getsize(localPath)
@@ -164,5 +164,5 @@ class GetFile(object):
 
   def __removeLocal(self, localPath):
     if os.path.isfile(localPath):
-      gLogger.debug('Remove old local file:', localPath)
+      gLogger.debug('Remove invalid local file:', localPath)
       os.remove(localPath)

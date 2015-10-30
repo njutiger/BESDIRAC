@@ -1,6 +1,7 @@
 import os
+import time
 
-from subprocess import call
+import subprocess
 
 from DIRAC import gLogger
 
@@ -9,7 +10,7 @@ class MergeFile(object):
     self._directlyRead = False
     self._localValidation = True
 
-  def merge(self, fileList, outputDir, mergeName, mergeExt, mergeSize, mergeCallback):
+  def merge(self, fileList, outputDir, mergeName, mergeExt, mergeMaxSize, mergeCallback):
     allFileSize = self.__getAllFileSize(fileList)
 
     count = 0
@@ -19,13 +20,16 @@ class MergeFile(object):
       fn = fileList[i]
       tempSize += allFileSize[fn]
       tempList.append(fn)
-      if i == len(fileList) - 1 or tempSize > mergeSize or tempSize + allFileSize[fileList[i+1]] > mergeSize:
+      if i == len(fileList) - 1 or tempSize > mergeMaxSize or tempSize + allFileSize[fileList[i+1]] > mergeMaxSize:
         count += 1
         mergePath = os.path.join(outputDir, '%s_%04d%s' % (mergeName, count, mergeExt))
 
+        startTime = time.time()
         ret = self.__doMerge(tempList, mergePath)
+        endTime = time.time()
+
         if mergeCallback is not None:
-          mergeCallback(tempList, mergePath, tempSize, ret)
+          mergeCallback(tempList, mergePath, tempSize, endTime-startTime, ret)
         if not ret:
           return False
 
@@ -40,8 +44,13 @@ class MergeFile(object):
       return False
 
     try:
-      ret = call(['hadd', mergePath] + fileList)
+      with open(os.devnull, 'w') as devnull:
+        args = ['hadd', mergePath] + fileList
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        ret = p.returncode
     except Exception, e:
+      gLogger.debug('hadd error:', e)
       gLogger.error('Command "hadd" not found. Can not merge files. Please check your environment!')
       return False
 

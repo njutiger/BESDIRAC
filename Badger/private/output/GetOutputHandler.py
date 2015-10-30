@@ -2,8 +2,6 @@ import os
 import time
 import imp
 
-from subprocess import call
-
 from DIRAC import gLogger
 
 from BESDIRAC.Badger.private.output.MergeFile import MergeFile
@@ -13,15 +11,13 @@ class GetOutputHandler(object):
     self.__lfnList = lfnList
 
     if type(method) is list:
-      self.__method = self.__decideBestMethod(method)
+      self.__method = self.__decideAvailableMethod(method)
     else:
       self.__method = method
 
     self.__createGetFile()
     self.__getFile.setUseChecksum(useChecksum)
     self.__getFile.setLocalValidation(localValidation)
-
-    self.__checkRemote()
 
     self.__mergeFile = MergeFile()
 
@@ -30,6 +26,10 @@ class GetOutputHandler(object):
 
   def getAvailNumber(self):
     return len(self.__lfnAvailList)
+
+  def checkRemote(self):
+    allRemoteAttributes = self.__getFile.getAllRemoteAttributes(self.__lfnList)
+    self.__lfnAvailList = [lfn for lfn in self.__lfnList if allRemoteAttributes[lfn]]
 
   def download(self, downloadDir, downloadCallback=None):
     count = {}
@@ -46,22 +46,20 @@ class GetOutputHandler(object):
 
     return count
 
-  def downloadAndMerge(self, downloadDir, mergeDir, mergeName, mergeExt, mergeSize, removeDownload,
+  def downloadAndMerge(self, downloadDir, mergeDir, mergeName, mergeExt, mergeMaxSize, removeDownload,
                        downloadCallback=None, mergeCallback=None, removeCallback=None):
     if self.__getFile.directlyRead() and removeDownload:
-      mergeNumber = self.__mergeFromRemote(mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
+      ret = self.__mergeFromRemote(mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback)
+      if removeDownload and ret:
+        self.__removeLocalDownloaded(downloadDir, removeCallback)
     else:
       count = self.download(downloadDir, downloadCallback)
-      if mergeSize > 0:
+      if mergeMaxSize > 0:
         if 'error' not in count or count['error'] == 0:
-          ret = self.__mergeFromLocal(downloadDir, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
+          ret = self.__mergeFromLocal(downloadDir, mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback)
           if removeDownload and ret:
             self.__removeLocalDownloaded(downloadDir, removeCallback)
 
-
-  def __checkRemote(self):
-    allRemoteAttributes = self.__getFile.getAllRemoteAttributes(self.__lfnList)
-    self.__lfnAvailList = [lfn for lfn in self.__lfnList if allRemoteAttributes[lfn]]
 
   def __createGetFile(self):
     getFileClassName = ''.join(w.capitalize() for w in self.__method.split('_')) + 'GetFile'
@@ -72,7 +70,7 @@ class GetOutputHandler(object):
     except ImportError, e:
       raise Exception('Could not find method %s' % self.__method)
 
-  def __decideBestMethod(self, methodList):
+  def __decideAvailableMethod(self, methodList):
     for method in methodList:
       getFileClassName = ''.join(w.capitalize() for w in method.split('_')) + 'GetFile'
       getFileModuleName = 'BESDIRAC.Badger.private.output.getfile.%s' % getFileClassName
@@ -88,17 +86,17 @@ class GetOutputHandler(object):
     return 'dfc'
 
 
-  def __mergeFromLocal(self, downloadDir, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback):
+  def __mergeFromLocal(self, downloadDir, mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback):
     mergeList = self.__lfnAvailList[:]
     localMergeList = [self.__getFile.lfnToLocal(downloadDir, lfn) for lfn in mergeList]
     localMergeList.sort()
-    return self.__mergeFile.merge(localMergeList, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
+    return self.__mergeFile.merge(localMergeList, mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback)
 
-  def __mergeFromRemote(self, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback):
+  def __mergeFromRemote(self, mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback):
     mergeList = self.__lfnAvailList[:]
     remoteMergeList = [self.__getFile.lfnToRemote(lfn) for lfn in mergeList]
     remoteMergeList.sort()
-    return self.__mergeFile.merge(remoteMergeList, mergeDir, mergeName, mergeExt, mergeSize, mergeCallback)
+    return self.__mergeFile.merge(remoteMergeList, mergeDir, mergeName, mergeExt, mergeMaxSize, mergeCallback)
 
   def __removeLocalDownloaded(self, downloadDir, removeCallback):
     for lfn in self.__lfnAvailList:

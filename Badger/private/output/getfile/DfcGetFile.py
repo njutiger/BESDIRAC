@@ -37,9 +37,9 @@ class DfcGetFile(GetFile):
     for remotePath in remotePathList:
       attribute = {}
       if remotePath not in result['Value']['Successful']:
-        attribute.append({})
+        attributes.append({})
       else:
-        attribute.append(self.__parseMetadata(result['Value']['Successful'][remotePath]))
+        attributes.append(self.__parseMetadata(result['Value']['Successful'][remotePath]))
 
     return attributes
 
@@ -59,9 +59,10 @@ class DfcGetFile(GetFile):
     return attribute
 
   def __utc2Local(self, utc_st):
-    now_stamp = time.time()
-    local_time = datetime.datetime.fromtimestamp(now_stamp)
-    utc_time = datetime.datetime.utcfromtimestamp(now_stamp)
-    offset = local_time - utc_time
-    local_st = utc_st + offset
-    return time.mktime(local_st.utctimetuple())
+#    now_stamp = time.time()
+#    local_time = datetime.datetime.fromtimestamp(now_stamp)
+#    utc_time = datetime.datetime.utcfromtimestamp(now_stamp)
+#    offset = local_time - utc_time
+#    local_st = utc_st + offset
+#    return time.mktime(local_st.utctimetuple())
+    return time.mktime(utc_st.utctimetuple()) - time.timezone

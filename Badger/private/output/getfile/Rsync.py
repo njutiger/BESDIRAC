@@ -1,4 +1,4 @@
-from subprocess import call
+import subprocess
 
 from DIRAC import gLogger
 
@@ -11,5 +11,10 @@ class Rsync(object):
 
   def _downloadSingleFile(self, remotePath, localPath):
     gLogger.debug('rsync from %s to %s' % (remotePath, localPath))
-    ret = call(['rsync', '-z', remotePath, localPath])
+
+    args = ['rsync', '-z', remotePath, localPath]
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    ret = p.returncode
+
     return ret == 0

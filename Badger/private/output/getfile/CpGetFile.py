@@ -1,4 +1,4 @@
-from subprocess import call
+import subprocess
 
 from DIRAC import gLogger
 
@@ -11,5 +11,10 @@ class CpGetFile(LocalMount, GetFile):
 
   def _downloadSingleFile(self, remotePath, localPath):
     gLogger.debug('cp from %s to %s' % (remotePath, localPath))
-    ret = call(['cp', remotePath, localPath])
+
+    args = ['cp', remotePath, localPath]
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    ret = p.returncode
+
     return ret == 0

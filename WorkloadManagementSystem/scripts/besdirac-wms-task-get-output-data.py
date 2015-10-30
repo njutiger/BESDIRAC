@@ -52,7 +52,11 @@ taskClient = TaskClient()
 from BESDIRAC.Badger.private.output.GetOutputHandler   import GetOutputHandler
 
 
-downloadCounter = {}
+downloadCounter = {'total': 0, 'ok': 0, 'error': 0, 'skip': 0, 'notexist': 0}
+downloadSpeed = {'size': 0, 'span': 0}
+mergeCounter = {'total': 0, 'ok': 0, 'error': 0}
+mergeSpeed = {'size': 0, 'span': 0}
+removeCounter = {'ok': 0, 'error': 0}
 
 
 def sizeConvert(sizeString):
@@ -76,14 +80,14 @@ def getTaskOutput(taskID):
 
   result = taskClient.getTaskJobs(taskID)
   if not result['OK']:
-    print result['Message']
+    gLogger.error(result['Message'])
     return lfnList
   jobIDs = result['Value']
 
   outFields = ['Info']
   result = taskClient.getJobs(jobIDs, outFields)
   if not result['OK']:
-    print result['Message']
+    gLogger.error(result['Message'])
     return lfnList
   jobsInfo = [json.loads(info[0]) for info in result['Value']]
   for jobInfo in jobsInfo:
@@ -119,12 +123,40 @@ def downloadCallback(lfn, result):
   status = result['status']
   size = result['size'] if 'size' in result else 0
   span = result['span'] if 'span' in result else 0
+
+  size /= (1024*1024.)
+  speed = 0
+  if span != 0 and status == 'ok':
+    speed = size / span
+    downloadSpeed['size'] += size
+    downloadSpeed['span'] += span
+
   if status not in downloadCounter:
-    downloadCounter[status] = 1
+    downloadCounter[status] = 0
+  downloadCounter[status] += 1
+  downloadCounter['total'] += 1
+
+  if status != 'skip':
+    gLogger.always('[Downloaded] %-8s  %9.2f MB  %7.2f MB/s  %s' % (status, size, speed, os.path.basename(lfn)))
   else:
-    downloadCounter[status] += 1
-  if True or status != 'skip':
-    print '%-10s %10s %10s %s' % (status, size, span, os.path.basename(lfn))
+    gLogger.debug('[Downloaded] %-8s  %9.2f MB  %7.2f MB/s  %s' % (status, size, speed, os.path.basename(lfn)))
+
+def mergeCallback(fileList, mergePath, mergeSize, mergeSpan, ret):
+  status = 'ok' if ret else 'error'
+  size = mergeSize / (1024*1024.)
+
+  if status not in mergeCounter:
+    mergeCounter[status] = 0
+  mergeCounter[status] += 1
+  mergeCounter['total'] += 1
+
+  mergeSpeed['size'] += size
+  mergeSpeed['span'] += mergeSpan
+
+  gLogger.always('[Merged]     %-8s  %9.2f MB  %6d files  %s' % (status, size, len(fileList), mergePath))
+
+def removeCallback(localPath):
+  removeCounter['ok'] += 1
 
 
 def main():
@@ -134,7 +166,7 @@ def main():
   localValidation = True
   outputDir = '.'
   pattern = None
-  mergeSize = 0
+  mergeMaxSize = 0
   removeDownload = True
   useChecksum = False
 
@@ -153,21 +185,21 @@ def main():
     if switch == 'u' or switch == 'checksum':
       useChecksum = True
     if switch == 'g' or switch == 'merge':
-      mergeSize = sizeConvert(val)
-      if mergeSize < 0:
-        print 'ERROR: Invalid merge size format: %s' % val
+      mergeMaxSize = sizeConvert(val)
+      if mergeMaxSize < 0:
+        gLogger.error('Invalid merge size format: %s' % val)
         return 1
     if switch == 'k' or switch == 'keep':
       removeDownload = False
 
   if len(args) != 1:
-    print 'ERROR: There must be one and only one task ID specified'
+    gLogger.error('There must be one and only one task ID specified')
     return 1
 
   try:
     taskID = int(args[0])
   except:
-    print 'ERROR: Invalid task ID: %s' % args[0]
+    gLogger.error('Invalid task ID: %s' % args[0])
     return 1
 
   lfnList = getTaskOutput(taskID)
@@ -184,25 +216,31 @@ def main():
   # lfnList is ready now
   taskFileNumber = len(lfnList)
 
+  gLogger.always('- Files in the request :', taskFileNumber)
+
 
   handler = GetOutputHandler(lfnList, method, localValidation, useChecksum)
   realMethod = handler.getMethod()
   gLogger.info('- Using download method:', realMethod)
 
+
+  gLogger.always('- Checking available files...')
+  handler.checkRemote()
+
   remoteFileNumber = handler.getAvailNumber()
-  gLogger.always(' Files in the request :', len(lfnList))
-  gLogger.always(' Available files      :', remoteFileNumber)
+  gLogger.always('- Available files      :', remoteFileNumber)
+  gLogger.always('')
 
   if remoteFileNumber == 0:
     return 0
 
 
+  # Download and merge
   downloadDir = os.path.join(outputDir, 'output_task_%s/download' % taskID)
   if not os.path.exists(downloadDir):
     os.makedirs(downloadDir)
 
-  # Check whether all the remote files are there
-  if mergeSize == 0:
+  if mergeMaxSize == 0:
     handler.download(downloadDir, downloadCallback)
   else:
     if remoteFileNumber < taskFileNumber:
@@ -230,17 +268,42 @@ def main():
         if f.endswith(ext):
           os.remove(os.path.join(mergeDir, f))
 
-    handler.downloadAndMerge(downloadDir, mergeDir, 'task_%s_merge' % taskID, ext, mergeSize, removeDownload, downloadCallback)
+    handler.downloadAndMerge(downloadDir, mergeDir, 'task_%s_merge' % taskID, ext, mergeMaxSize, removeDownload,
+                             downloadCallback, mergeCallback, removeCallback)
 
-  print '\n'
-  print 'Total:         %s' % len(lfnList)
-  print 'Avail:         %s' % remoteFileNumber
-  print 'Download:      %s' % len(lfnList)
-  print 'Average Speed: %s' % len(lfnList)
-  print downloadCounter
 
-#  print Md5CheckSum.checksum('/besfs2/offline/data/665-1/rscan/dst/140101/run_0034530_All_file001_SFO-2.dst')
-#  print Adler32CheckSum.checksum('/workfs/bes/zhaoxh/664p03_jpsi_rhopi_stream105_9975_9975_file0001.rec')
+  # Result
+  gLogger.always('')
+  gLogger.always('Total:         %s' % taskFileNumber)
+  gLogger.always('Available:     %s' % remoteFileNumber)
+
+  gLogger.always('')
+  gLogger.always('Download:      %s' % downloadCounter['total'])
+  gLogger.always(' - OK:         %s' % downloadCounter['ok'])
+  gLogger.always(' - Skipped:    %s' % downloadCounter['skip'])
+  gLogger.always(' - Error:      %s' % downloadCounter['error'])
+  totalDownloadSpeed = downloadSpeed['size']/downloadSpeed['span'] if downloadSpeed['span'] != 0 else 0
+  gLogger.always('Average Speed: %.2f MB/s' % totalDownloadSpeed)
+
+  gLogger.always('Files downloaded in:', downloadDir)
+
+  if mergeMaxSize > 0:
+    gLogger.always('')
+    gLogger.always('Merge:         %s' % mergeCounter['total'])
+    gLogger.always(' - OK:         %s' % mergeCounter['ok'])
+    gLogger.always(' - Error:      %s' % mergeCounter['error'])
+    totalMergeSpeed = mergeSpeed['size']/mergeSpeed['span'] if mergeSpeed['span'] != 0 else 0
+    gLogger.always('Merge Speed: %.2f MB/s' % totalMergeSpeed)
+
+    gLogger.always('Files merged in:', mergeDir)
+
+  gLogger.debug('')
+  gLogger.debug('Download counter:', downloadCounter)
+  gLogger.debug('Merge counter:', mergeCounter)
+
+  if removeCounter['ok'] > 0:
+    gLogger.always('')
+    gLogger.always('%s downloaded files removed from:'%removeCounter['ok'], downloadDir)
 
   return 0
 

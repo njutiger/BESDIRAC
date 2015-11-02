@@ -12,6 +12,8 @@ Usage:
    %s [option] ... [TaskID] ...
 """ % Script.scriptName )
 
+Script.registerSwitch( "j",  "job",             "Show job numbers" )
+
 Script.parseCommandLine( ignoreErrors = False )
 options = Script.getUnprocessedSwitches()
 args = Script.getPositionalArgs()
@@ -92,15 +94,25 @@ def main():
     Script.showHelp()
     return
 
+  showJobNumber = False
+  for option in options:
+    (switch, val) = option
+    if switch == 'j' or switch == 'job':
+      showJobNumber = True
+
   for taskID in args:
     print '='*80
     taskID = int(taskID)
+
     showTask(taskID)
     print ''
+
     showTaskHistories(taskID)
     print ''
-    showTaskJobs(taskID)
-    print ''
+
+    if showJobNumber:
+      showTaskJobs(taskID)
+      print ''
 
 if __name__ == '__main__':
   main()

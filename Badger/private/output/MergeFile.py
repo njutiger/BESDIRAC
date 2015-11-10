@@ -44,11 +44,10 @@ class MergeFile(object):
       return False
 
     try:
-      with open(os.devnull, 'w') as devnull:
-        args = ['hadd', mergePath] + fileList
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        ret = p.returncode
+      args = ['hadd', mergePath] + fileList
+      p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      out, err = p.communicate()
+      ret = p.returncode
     except Exception, e:
       gLogger.debug('hadd error:', e)
       gLogger.error('Command "hadd" not found. Can not merge files. Please check your environment!')

@@ -1,7 +1,11 @@
 import os
+import sys
 import time
+import datetime
 
 from DIRAC import gLogger
+
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 class GetFile(object):
   def __init__(self):
@@ -24,22 +28,11 @@ class GetFile(object):
   def _downloadSingleFile(self, remotePath, localPath):
     raise Exception('not implemented')
 
-  def _retrieveRemoteAttribute(self, remotePath):
-    ''' Get size, time and optional checksum
-    '''
-    raise Exception('not implemented')
-
 
 # These methods could be implemented optionally
 
   def _lfnToRemote(self, lfn):
     return lfn
-
-  def _retrieveAllRemoteAttributes(self, remotePathList):
-    attributes = []
-    for remotePath in remotePathList:
-      attributes.append(self.__getRemoteAttribute(remotePath))
-    return attributes
 
 
 ################################################################################
@@ -64,13 +57,10 @@ class GetFile(object):
     return self._directlyRead
 
   def getAllRemoteAttributes(self, lfnList):
-    remotePathList = [self._lfnToRemote(lfn) for lfn in lfnList]
-    attributes = self._retrieveAllRemoteAttributes(remotePathList)
-    return {lfn: attribute for lfn, attribute in zip(lfnList, attributes)}
+    return self.__getAllRemoteAttribute(lfnList)
 
   def getRemoteAttribute(self, lfn):
-    remotePath = self._lfnToRemote(lfn)
-    return self.__getRemoteAttribute(remotePath)
+    return self.__getRemoteAttribute(lfn)
 
   def getFile(self, lfn, dir):
     return self.__getFile(lfn, dir)
@@ -88,7 +78,7 @@ class GetFile(object):
     remotePath = self._lfnToRemote(lfn)
     localPath = os.path.join(dir, os.path.basename(lfn))
 
-    remoteAttribute = self.getRemoteAttribute(lfn)
+    remoteAttribute = self.__getRemoteAttribute(lfn)
     if not remoteAttribute:
       gLogger.debug('Remote file does not exist:', remotePath)
       result['status'] = 'notexist'
@@ -97,7 +87,7 @@ class GetFile(object):
     result['size'] = remoteAttribute['size']
 
     if self._localValidation:
-      if self.__localValid(remotePath, localPath):
+      if self.__localValid(lfn, localPath):
         gLogger.debug('Skip downloading %s. %s already exists' % (remotePath, localPath))
         result['status'] = 'skip'
         return result
@@ -120,12 +110,36 @@ class GetFile(object):
     return result
 
 
-  def __getRemoteAttribute(self, remotePath):
-    if remotePath in self._remoteAttributes:
-      return self._remoteAttributes[remotePath]
+  # not used
+  def __retrieveRemoteAttribute(self, remotePath):
+    ''' Get size, time and optional checksum
+    '''
+    raise Exception('not implemented')
+
+  def __retrieveAllRemoteAttributes(self, lfnList):
+    fc = FileCatalogClient('DataManagement/FileCatalog')
+    result = fc.getFileMetadata(lfnList)
+    if not result['OK']:
+      raise Exception('getFileMetadata failed: %s' % result['Message'])
+
+    attributes = {}
+    for lfn in lfnList:
+      if lfn in result['Value']['Successful']:
+        attributes[lfn] = self.__parseMetadata(result['Value']['Successful'][lfn])
+
+    return attributes
+
+
+  def __getAllRemoteAttribute(self, lfnList):
+    self._remoteAttributes = self.__retrieveAllRemoteAttributes(lfnList)
+    return self._remoteAttributes
+
+  def __getRemoteAttribute(self, lfn):
+    if lfn in self._remoteAttributes:
+      return self._remoteAttributes[lfn]
 
     attribute = self._retrieveRemoteAttribute(remotePath)
-    self._remoteAttributes[remotePath] = attribute
+    self._remoteAttributes[lfn] = attribute
     return attribute
 
   def __getLocalAttribute(self, localPath):
@@ -144,8 +158,8 @@ class GetFile(object):
     return attribute
 
 
-  def __localValid(self, remotePath, localPath):
-    remoteAttribute = self.__getRemoteAttribute(remotePath)
+  def __localValid(self, lfn, localPath):
+    remoteAttribute = self.__getRemoteAttribute(lfn)
     localAttribute = self.__getLocalAttribute(localPath)
 
     if not (remoteAttribute and localAttribute):
@@ -166,3 +180,15 @@ class GetFile(object):
     if os.path.isfile(localPath):
       gLogger.debug('Remove invalid local file:', localPath)
       os.remove(localPath)
+
+  def __parseMetadata(self, metadata):
+    attribute = {}
+    attribute['size'] = metadata.get('Size', 0)
+    attribute['time'] = self.__utc2Local(metadata.get('ModificationDate', datetime.datetime(1900,1,1,0,0,0)))
+    if self._useChecksum:
+      attribute[lfn]['checksum'] = metadata.get('Checksum', '')
+      attribute[lfn]['checksum_type'] = metadata.get('ChecksumType', '')
+    return attribute
+
+  def __utc2Local(self, utc_st):
+    return time.mktime(utc_st.utctimetuple()) - time.timezone

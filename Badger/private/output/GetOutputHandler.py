@@ -15,7 +15,11 @@ class GetOutputHandler(object):
     else:
       self.__method = method
 
-    self.__createGetFile()
+    try:
+      self.__createGetFile()
+    except Exception, e:
+      raise Exception('Method could not be imported: %s' % self.__method)
+
     self.__getFile.setUseChecksum(useChecksum)
     self.__getFile.setLocalValidation(localValidation)
 
@@ -78,7 +82,8 @@ class GetOutputHandler(object):
       try:
         getFile = self.__loadClass(getFileModuleName, getFileClassName)
       except ImportError, e:
-        raise Exception('Could not find method %s' % self.__method)
+        gLogger.debug('Could not find method:', self.__method)
+        continue
 
       if getFile.available():
         return method

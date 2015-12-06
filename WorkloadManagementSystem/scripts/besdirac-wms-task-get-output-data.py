@@ -160,14 +160,13 @@ def removeCallback(localPath):
 
 
 def main():
-#  method = 'local_rsync'
-  method = ['cp', 'local_rsync', 'daemon_rsync', 'dfc']
+  method = ['http', 'dfc', 'daemon_rsync', 'cp', 'local_rsync']
   listFile = False
   localValidation = True
   outputDir = '.'
   pattern = None
   mergeMaxSize = 0
-  removeDownload = True
+  removeDownload = False
   useChecksum = False
 
   for option in options:
@@ -218,8 +217,16 @@ def main():
 
   gLogger.always('- Files in the request :', taskFileNumber)
 
+  if taskFileNumber == 0:
+    return 0
 
-  handler = GetOutputHandler(lfnList, method, localValidation, useChecksum)
+
+  try:
+    handler = GetOutputHandler(lfnList, method, localValidation, useChecksum)
+  except Exception, e:
+    gLogger.error(' Could not initialize get output handler from:', method)
+    return 1
+
   realMethod = handler.getMethod()
   gLogger.info('- Using download method:', realMethod)
 

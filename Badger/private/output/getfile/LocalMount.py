@@ -13,12 +13,5 @@ class LocalMount(object):
   def _available(self):
     return os.path.isdir(self.__mountPoint)
 
-  def _retrieveRemoteAttribute(self, remotePath):
-    attribute = {}
-    if os.path.isfile(remotePath):
-      attribute['size'] = os.path.getsize(remotePath)
-      attribute['time'] = os.path.getmtime(remotePath)
-    return attribute
-
   def _lfnToRemote(self, lfn):
     return self.__mountPoint + lfn

@@ -21,20 +21,5 @@ class DaemonRsyncGetFile(Rsync, GetFile):
 
     return ret == 0 and out
 
-  def _retrieveRemoteAttribute(self, remotePath):
-    attribute = {}
-
-    args = ['rsync', remotePath]
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-    ret = p.returncode
-
-    if ret == 0 and out:
-      attribute['size'] = int(out.split()[1].replace(',', ''))
-      time_str = '%s %s' % (out.split()[2], out.split()[3])
-      attribute['time'] = time.mktime(time.strptime(time_str, '%Y/%m/%d %H:%M:%S'))
-
-    return attribute
-
   def _lfnToRemote(self, lfn):
     return self.__rsyncUrl + lfn

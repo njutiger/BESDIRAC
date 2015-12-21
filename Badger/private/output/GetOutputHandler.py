@@ -12,12 +12,14 @@ class GetOutputHandler(object):
 
     if type(method) is list:
       self.__method = self.__decideAvailableMethod(method)
+      gLogger.debug('Decide available method:', (method, self.__method))
     else:
       self.__method = method
 
     try:
       self.__createGetFile()
     except Exception, e:
+      gLogger.error('CreateGetFile error:', self.__method)
       raise Exception('Method could not be imported: %s' % self.__method)
 
     self.__getFile.setUseChecksum(useChecksum)
@@ -33,7 +35,7 @@ class GetOutputHandler(object):
 
   def checkRemote(self):
     allRemoteAttributes = self.__getFile.getAllRemoteAttributes(self.__lfnList)
-    self.__lfnAvailList = [lfn for lfn in self.__lfnList if allRemoteAttributes[lfn]]
+    self.__lfnAvailList = [lfn for lfn in self.__lfnList if lfn in allRemoteAttributes and allRemoteAttributes[lfn]]
 
   def download(self, downloadDir, downloadCallback=None):
     count = {}

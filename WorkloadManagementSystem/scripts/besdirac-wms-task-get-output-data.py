@@ -115,7 +115,7 @@ def filterOutput(lfnList, pattern):
 
 
 def listOutput(lfnList):
-  for lfn in sorted(lfnList):
+  for lfn in lfnList:
     print lfn
 
 
@@ -206,6 +206,7 @@ def main():
   if pattern is not None:
     lfnList = filterOutput(lfnList, pattern)
 
+  lfnList = sorted(lfnList)
 
   if listFile:
     listOutput(lfnList)

@@ -160,7 +160,7 @@ def removeCallback(localPath):
 
 
 def main():
-  method = ['http', 'dfc', 'daemon_rsync', 'cp', 'local_rsync']
+  method = ['dfc', 'http', 'daemon_rsync', 'cp', 'local_rsync']
   listFile = False
   localValidation = True
   outputDir = '.'

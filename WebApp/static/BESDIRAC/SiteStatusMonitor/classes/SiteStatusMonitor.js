@@ -1,4 +1,4 @@
-Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
+Ext.define('BESDIRAC.SiteStatusMonitor.classes.SiteStatusMonitor', {
 	extend : 'Ext.dirac.core.Module',
 	requires : [],
 
@@ -18,7 +18,7 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 			}, {
 				name : 'SEStatus'
 			}, {
-				name : 'SAMStatus'
+				name : 'SEOccupied'
 			}, {
 				name : 'Running'
 			}, {
@@ -38,7 +38,7 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 	initComponent : function() {
 		var me = this;
 
-		me.launcher.title = 'My First Application';
+		me.launcher.title = 'Site Status Monitor';
 		me.launcher.maximized = false;
 		var oDimensions = GLOBAL.APP.MAIN_VIEW.getViewMainDimensions();
 		me.launcher.width = oDimensions[0];
@@ -118,64 +118,64 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 			'CE-Test' : {
 				'dataIndex' : 'CEStatus',
 				'properties' : {
-					width : 70
+					width : 60
 				},
 				'renderer' : me.__renderSAMStatus
 			},
 			'SE-Test' : {
 				'dataIndex' : 'SEStatus',
 				'properties' : {
-					width : 70
+					width : 60
 				},
 				'renderer' : me.__renderSAMStatus
 			},
-			'SAMStatus' : {
-				'dataIndex' : 'SAMStatus',
+			'SE Occupied' : {
+				'dataIndex' : 'SEOccupied',
 				'properties' : {
 					width : 80
 				},
 				'renderer' : me.__renderSAMStatus
 			},
-			'Running' : {
+			'R' : {
 				'dataIndex' : 'Running',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
-			'Waiting' : {
+			'W' : {
 				'dataIndex' : 'Waiting',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
-			'Done' : {
+			'D' : {
 				'dataIndex' : 'Done',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
-			'Failed' : {
+			'F' : {
 				'dataIndex' : 'Failed',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
-			'Completed' : {
+			'C' : {
 				'dataIndex' : 'Completed',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
-			'Stalled' : {
+			'S' : {
 				'dataIndex' : 'Stalled',
 				'properties' : {
-					width : 50
+					width : 20
 				}
 			},
 			'Efficiency' : {
 				'dataIndex' : 'Efficiency',
 				'properties' : {
-					width : 50
+					width : 60
 				}
 			}
 		};
@@ -265,8 +265,8 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 									'SAM Information - ' + oSite, false, 500,
 									300);
 
-							var oFields = ['ElementName', 'ElementType', 'WMS', 'CVMFS',
-									'BOSS'];
+							var oFields = ['ElementName', 'ElementType',
+									'WMS-Test', 'CVMFS-Test', 'BOSS-Test', 'SE-Test'];
 							var oData = jsonData.result;
 							var oStore = new Ext.data.Store({
 										fields : oFields,
@@ -284,15 +284,23 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 									}, {
 										text : 'WMS',
 										flex : 1,
-										dataIndex : 'WMS'
+										dataIndex : 'WMS-Test',
+										renderer : me.__renderSAMStatus
 									}, {
 										text : 'CVMFS',
 										flex : 1,
-										dataIndex : 'CVMFS'
+										dataIndex : 'CVMFS-Test',
+										renderer : me.__renderSAMStatus
 									}, {
 										text : 'BOSS',
 										flex : 1,
-										dataIndex : 'BOSS'
+										dataIndex : 'BOSS-Test',
+										renderer : me.__renderSAMStatus
+									}, {
+										text : 'SE',
+										flex : 1,
+										dataIndex : 'SE-Test',
+										renderer : me.__renderSAMStatus
 									}];
 
 							var oGrid = Ext.create('Ext.grid.Panel', {
@@ -304,6 +312,7 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 											enableTextSelection : true
 										}
 									});
+							oGrid.on('cellclick', me.__showSAMDetail, me);
 
 							oWindow.add(oGrid);
 							oWindow.show();
@@ -313,6 +322,97 @@ Ext.define('DIRAC.SiteStatusMonitoring.classes.SiteStatusMonitoring', {
 						GLOBAL.APP.CF.showAjaxErrorMessage(response);
 					}
 				});
+	},
+
+	__showSAMDetail : function(view, td, cellIndex, record, tr, rowIndex, e) {
+		var me = this;
+
+		if (cellIndex >= 2) {
+			var oGrid = view.up('gridpanel');
+			var oTestType = oGrid.columns[cellIndex].dataIndex;
+			var oElementName = record.get(oGrid.columns[0].dataIndex);
+
+			if (record.get(oTestType)) {
+				Ext.Ajax.request({
+					url : GLOBAL.BASE_URL + me.applicationName + '/getSAMDetail',
+					params : {
+						elementName : oElementName,
+						testType : oTestType
+					},
+					method : 'POST',
+					scope : me,
+					success : function(response) {
+						var jsonData = Ext.JSON.decode(response.responseText);
+
+						if (jsonData.success == 'false') {
+							GLOBAL.APP.CF.msg("error", jsonData.error);
+						} else {
+							var oData = jsonData.result;
+							var oWindow = me.getContainer().createChildWindow(
+									oElementName + ' - ' + oTestType, false,
+									500, 300);
+							var oForm = Ext.create('Ext.form.Panel', {
+										title : 'SAM Detail Information',
+										defaults : {
+											labelAlign : 'right',
+											margin : '5 10 5 10',
+											anchor : '100%',
+											readOnly : true
+										},
+										items : [{
+													xtype : 'textfield',
+													name : 'testType',
+													fieldLabel : 'TestType',
+													value : oData.TestType
+												}, {
+													xtype : 'textfield',
+													name : 'elementName',
+													fieldLabel : 'ElementName',
+													value : oData.ElementName
+												}, {
+													xtype : 'textfield',
+													name : 'elementType',
+													fieldLabel : 'ElementType',
+													value : oData.ElementType
+												}, {
+													xtype : 'textfield',
+													name : 'submissionTime',
+													fieldLabel : 'SubmissionTime',
+													value : oData.SubmissionTime
+												}, {
+													xtype : 'textfield',
+													name : 'completionTime',
+													fieldLabel : 'CompletionTime',
+													value : oData.CompletionTime
+												}, {
+													xtype : 'textfield',
+													name : 'applicationTime',
+													fieldLabel : 'ApplicationTime',
+													value : oData.ApplicationTime
+												}, {
+													xtype : 'textfield',
+													name : 'status',
+													fieldLabel : 'Status',
+													value : oData.Status
+												}, {
+													xtype : 'textareafield',
+													name : 'log',
+													fieldLabel : 'Log',
+													anchor : '100% -190',
+													value : oData.Log
+												}]
+									});
+
+							oWindow.add(oForm);
+							oWindow.show();
+						}
+					},
+					failure : function(response) {
+						GLOBAL.APP.CF.showAjaxErrorMessage(response);
+					}
+				});
+			}
+		}
 	},
 
 	__oprShowHostInformation : function(grid, record) {

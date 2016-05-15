@@ -1,4 +1,4 @@
-Ext.define('DIRAC.SAMHistory.classes.SAMHistory', {
+Ext.define('BESDIRAC.SAMHistory.classes.SAMHistory', {
 	extend : 'Ext.dirac.core.Module',
 
 	initComponent : function() {

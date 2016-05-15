@@ -1,13 +1,18 @@
 ''' SAMTestAgent
 
-  This agent sends SAM tests to sites and evaluates test results.
+  This agent executes SAM tests and evaluates resources and sites SAM status.
 
 '''
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.Core.DISET.RPCClient                                      import RPCClient
-from DIRAC.ResourceStatusSystem.SAMSystem.StatusEvaluator import StatusEvaluator
+from DIRAC                                             import S_OK, gLogger
+from DIRAC.Core.Base.AgentModule                       import AgentModule
+from DIRAC.Core.DISET.RPCClient                        import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities              import CSHelpers
+from DIRAC.Interfaces.API.Dirac                        import Dirac
+from DIRAC.DataManagementSystem.Client.DataManager                 import DataManager
+from BESDIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from BESDIRAC.ResourceStatusSystem.SAM.TestExecutor                import TestExecutor
+from BESDIRAC.ResourceStatusSystem.SAM.StatusEvaluator             import StatusEvaluator
 
 
 __RCSID__ = '$Id:  $'
@@ -15,108 +20,72 @@ AGENT_NAME = 'ResourceStatus/SAMTestAgent'
 
 
 class SAMTestAgent(AgentModule):
+  """ SAMTestAgent
+  
+    The SAMTestAgent is used to execute SAM tests and evaluate SAM status
+    periodically. It executes tests with TestExecutor and evaluates status with
+    StatusEvaluator.
+  """
     
-    def __init__(self, *args, **kwargs):
-        AgentModule.__init__(self, *args, **kwargs)
+  def __init__(self, *args, **kwargs):
+    AgentModule.__init__(self, *args, **kwargs)
         
-        self.tests = {}
-        self.apis = {}
+    self.tests = {}
+    self.apis = {}
          
          
-    def initialize(self):
-        self.tests[ 'WMS-Test' ] = { 'module' : 'WMSTest', 'executable' : [ '/usr/bin/python', 'wms_test.py' ], 'timeout' : 900 }
-        self.tests[ 'CVMFS-Test' ] = { 'module' : 'CVMFSTest', 'executable' : [ '/usr/bin/python', 'cvmfs_test.py' ], 'timeout' : 900 }
+  def initialize(self):
+    """ 
+      specify the tests which need to be executed.
+    """
+    
+    self.tests[ 'WMS-Test' ] = { 'module' : 'WMSTest', 'args' : { 'executable' : [ '/usr/bin/python', 'wms_test.py' ], 'timeout' : 1800 } }
+    self.tests[ 'CVMFS-Test' ] = { 'module' : 'CVMFSTest', 'args' : { 'executable' : [ '/usr/bin/python', 'cvmfs_test.py' ], 'timeout' : 1800 } }
+    self.tests[ 'BOSS-Test' ] = { 'module' : 'BOSSTest', 'args' : { 'executable' : [ '/usr/bin/python', 'boss_test.py' ], 'timeout' : 1800 } }
+    self.tests[ 'SE-Test' ] = { 'module' : 'SETest', 'args' : { 'timeout' : 60 } }
+    
+    self.apis[ 'Dirac' ] = Dirac()
+    self.apis[ 'DataManager' ] = DataManager()
+    self.apis[ 'ResourceManagementClient' ] = ResourceManagementClient()
+    
+    return S_OK()
         
         
-    def execute(self):
-        sites = [ { 'SiteName' : 'CLUSTER.CHENJ.cn',
-                   'SiteType' : 'CLUSTER',
-                   'ComputingElement' : [ 'chenj01.ihep.ac.cn' ],
-                   'StorageElement' : [ 'IHEPD-USER' ] } ]
-        
-        evaluator = StatusEvaluator(sites, self.tests)
-        result = evaluator.evaluate()
-        
-        if not result[ 'OK' ]:
-            gLogger.error(result[ 'Message' ])
-            gLogger.error('SAMTest Agent execute failed.')
+  def execute(self):
+    """ 
+      The main method of the agent. It get elements which need to be tested and 
+      evaluated from CS. Then it instantiates TestExecutor and StatusEvaluate and 
+      calls their main method to finish all the work.
+    """
+    
+#     sites = [ { 'SiteName' : 'CLUSTER.CHENJ.cn',
+#                'SiteType' : 'CLUSTER',
+#                'ComputingElement' : [ 'chenj01.ihep.ac.cn' ],
+#                'StorageElement' : [ 'IHEPD-USER' ] } ]
+#         
+#     ces = CSHelpers.getComputingElements()
+#     ses = CSHelpers.getStorageElements()
+#     sites = CSHelpers.getDomainSites()
+#     if not sites[ 'OK' ]:
+#       gLogger.error(sites[ 'Message' ])
+#       return sites
+    sites = { 'CLUSTER' : [ 'CLUSTER.CHENJ.cn' ], 'GRID' : [], 'CLOUD' : [] }
+    ces = [ 'chenj01.ihep.ac.cn' ]
+    ses = [ 'IHEPD-USER' ]
+    clouds = sites[ 'CLOUD' ]
+    elements = { 'ComputingElement' : ces, 'StorageElement' : ses, 'CLOUD' : clouds }
+    
+    executor = TestExecutor(self.tests, elements)
+    testRes = executor.execute()
+    if not testRes[ 'OK' ]:
+      gLogger.error(testRes[ 'Message' ])
+      return testRes
+    testRes = testRes[ 'Value' ]
+    
+    evaluator = StatusEvaluator(sites)
+    result = evaluator.evaluate(testRes)
+    if not result[ 'OK' ]:
+      gLogger.error(result[ 'Message' ])
+      return result
             
-        return S_OK()
-        
-    
-#     def __getSitesInfo(self):
-#         
-#         _basePath = 'Resources/Sites'
-#         
-#         sitesInfo = []
-#         
-#         domainNames = gConfig.getSections(_basePath)
-#         if not domainNames[ 'OK' ]:
-#             return domainNames
-#         domainNames = domainNames[ 'Value' ]
-#           
-#         for domainName in domainNames:
-#             domainSites = gConfig.getSections('%s/%s' % (_basePath, domainName))
-#             if not domainSites[ 'OK' ]:
-#                 return domainSites
-#             domainSites = domainSites[ 'Value' ]
-#               
-#             for domainSite in domainSites:
-#                 siteDict = {}
-#                 
-#                 siteDict[ 'Name' ] = domainSite
-#                 siteDict[ 'Type' ] = domainName
-#                 
-#                 ses = gConfig.getValue('%s/%s/%s/SE' % (_basePath, domainName, domainSite), 'nouse')
-#                 siteDict[ 'StorageElement' ] = ses
-#                   
-#                 ces = gConfig.getSections('%s/%s/%s/CEs' % (_basePath, domainName, domainSite))
-#                 if not ces[ 'OK' ]:
-#                     ces = []
-#                 else:
-#                     ces = ces[ 'Value' ]
-#                 siteDict[ 'ComputingElement' ] = ','.join(ces) or 'nouse'
-#                   
-#                 vos = gConfig.getValue('%s/%s/%s/VO' % (_basePath, domainName, domainSite))
-#                 if vos is None:
-#                     
-#                     for ce in ces:
-#                         vos = gConfig.getValue('%s/%s/%s/CEs/%s/VO' % (_basePath, domainName, domainSite, ce))                        
-#                         if vos is None:
-#                             
-#                             queues = gConfig.getSections('%s/%s/%s/CEs/%s/Queues' % (_basePath, domainName, domainSite, ce))
-#                             if not queues[ 'OK' ]:
-#                                 queues = []
-#                             else:
-#                                 queues = queues[ 'Value' ]
-#                                   
-#                             for queue in queues:
-#                                 vos = gConfig.getValue('%s/%s/%s/CEs/%s/Queues/%s/VO' % (_basePath, domainName, domainSite, ce, queue))
-#                                 if vos is not None:
-#                                     break
-#                             
-#                         if vos is not None:
-#                             break
-#                         
-#                 siteDict[ 'VO' ] = vos or 'novos'
-#                 
-#                 wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-#                 results = wmsAdmin.getSiteSummaryWeb({ 'Site' : domainSite }, [], 0, 0)
-#                 if not results[ 'OK' ]:
-#                     return results
-#                 results = results[ 'Value' ]
-#                 
-#                 if not 'ParameterNames' in results:
-#                     return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
-#                 params = results[ 'ParameterNames' ]
-#     
-#                 if not 'Records' in results:
-#                     return S_ERROR('Wrong formed result dictionary, missing "Records"')
-#                 records = results[ 'Records' ]
-#                 
-#                 siteDict[ 'MaskStatus' ] = dict(zip(params , records[ 0 ]))[ 'MaskStatus' ]
-#                 
-#                 sitesInfo.append(siteDict)
-#                 
-#         return sitesInfo
-        
+    return S_OK()

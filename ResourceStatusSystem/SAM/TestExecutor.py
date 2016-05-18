@@ -101,7 +101,7 @@ class TestExecutor( object ):
     """
     for testDict in results:
       testDict[ 'CompletionTime' ] = testDict[ 'CompletionTime' ] or '0000-0-0'
-      testDict[ 'AppliactionTime' ] = testDict[ 'ApplicationTime' ] or 0
+      testDict[ 'ApplicationTime' ] = testDict[ 'ApplicationTime' ] or 0
 
       resQuery = self.rmClient.addOrModifySAMResult(
                                                          testDict[ 'ElementName' ],

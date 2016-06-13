@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+__RCSID__ = "$Id: $"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule

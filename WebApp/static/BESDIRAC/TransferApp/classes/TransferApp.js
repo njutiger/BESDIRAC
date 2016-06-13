@@ -52,6 +52,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // main panel -> me.main_panel
         me.build_mainpanel();
 
+        // + requests
+        me.build_panel_requests();
+        // + datasets
+        me.build_panel_datasets();
+
         me.add([me.main_panel]);
         console.log("hello");
     }, 
@@ -68,6 +73,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                    xtype: "button",
                    text: "Requests",
                    handler : function() {
+                      me.main_panel.getLayout().setActiveItem(0);
                    },
                    toggleGroup : me.id + "-ids-submodule",
                    allowDepress : false
@@ -75,6 +81,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                    xtype: "button",
                    text: "Datasets",
                    handler : function() {
+                      me.main_panel.getLayout().setActiveItem(1);
                    },
                    toggleGroup : me.id + "-ids-submodule",
                    allowDepress : false
@@ -94,5 +101,29 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
               dockedItems : [me.top_toolbar]
             });
 
-    }
+    }, 
+
+    build_panel_requests : function() {
+        var me = this;
+        // TODO
+        me.panel_requests = new Ext.create('Ext.form.field.TextArea', {
+            fieldLabel : "Value",
+            labelAlign : "top",
+            flex : 1
+        });
+
+        me.main_panel.add([me.panel_requests]);
+    },
+
+    build_panel_datasets : function() {
+        var me = this;
+        // TODO
+        me.panel_datasets = new Ext.create('Ext.form.field.TextArea', {
+            fieldLabel : "Value",
+            labelAlign : "top",
+            flex : 1
+        });
+
+        me.main_panel.add([me.panel_datasets]);
+    },
 });

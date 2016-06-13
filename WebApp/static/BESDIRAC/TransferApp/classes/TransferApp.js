@@ -16,6 +16,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 "Ext.data.Record", 
                 'Ext.Array', 
                 'Ext.data.TreeStore', 
+                'Ext.layout.container.Accordion',
                 "Ext.ux.form.MultiSelect"
                ],
     // = initComponent =
@@ -118,11 +119,27 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     build_panel_datasets : function() {
         var me = this;
         // TODO
-        me.panel_datasets = new Ext.create('Ext.form.field.TextArea', {
+        // + dataset list
+        me.panel_datasets_list = new Ext.create('Ext.form.field.TextArea', {
             fieldLabel : "Value",
             labelAlign : "top",
-            flex : 1
+            columnWidth: .25,
         });
+        // + file list in dataset
+        me.panel_files_in_dataset = new Ext.create('Ext.form.field.TextArea', {
+            fieldLabel : "Value",
+            labelAlign : "top",
+            columnWidth: .75,
+        });
+
+        me.panel_datasets = new Ext.create('Ext.panel.Panel', {
+              floatable : false,
+              // layout : 'accordion',
+              layout : 'column',
+              header : false,
+              border : false,
+              items : [me.panel_datasets_list, me.panel_files_in_dataset]
+            });
 
         me.main_panel.add([me.panel_datasets]);
     },

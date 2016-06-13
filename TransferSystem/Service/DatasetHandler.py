@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+__RCSID__ = "$Id: $"
+
 import datetime
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

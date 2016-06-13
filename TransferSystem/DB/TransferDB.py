@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR, Time
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.MySQL import _quotedList
 

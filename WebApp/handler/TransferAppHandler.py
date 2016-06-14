@@ -147,18 +147,32 @@ class TransferAppHandler(WebHandler):
     # == list ==
     def web_requestListFiles(self):
         self.log.debug(self.request.arguments)
-        value = 0
+        cache = []
         if self.request.arguments.get("reqid", None):
-            value = int(self.request.arguments["reqid"][0])
+            reqid = int(self.request.arguments["reqid"][0])
+            RPC = RPCClient("Transfer/TransferRequest")
+            cond = {"trans_req_id": reqid}
+            res = RPC.show(cond)
+            if res["OK"]:
+                cache = res["Value"]
+        #self.log.always(cache)
+        # (1L, 
+        #  '/path/does/not/exist', 
+        #  1L, # datasetid
+        #  datetime.datetime(2013, 8, 23, 3, 12, 37), 
+        #  datetime.datetime(2013, 8, 23, 3, 14, 37), 
+        #  'finish', 
+        #  'error'
+        # )
         data = []
-        for i in range(value):
+        for vv in cache:
             data.append({
-                "id": i,
-                "LFN": "/p/%d"%i,
-                "starttime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
-                "finishtime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
-                "status": "OK",
-                "error": "",
+                "id": vv[0],
+                "LFN": vv[1],
+                "starttime": vv[3].strftime("%Y-%m-%d %H:%M [UTC]"),
+                "finishtime": vv[4].strftime("%Y-%m-%d %H:%M [UTC]"),
+                "status": vv[5],
+                "error": vv[6],
             })
         self.write({"result": data})
 

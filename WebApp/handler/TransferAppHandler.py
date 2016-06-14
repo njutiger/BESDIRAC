@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from WebAppDIRAC.Lib.WebHandler import WebHandler
+from WebAppDIRAC.Lib.WebHandler import WebHandler, WErr
 from DIRAC.Core.DISET.RPCClient import RPCClient
 import datetime
 
@@ -52,6 +52,23 @@ class TransferAppHandler(WebHandler):
                 "status": "OK",
             })
         self.write({"result": data})
+
+    # == new ==
+    # create a new transfer request
+    def web_requestNew(self):
+        # validate
+        # * dataset
+        # * srcse
+        # * dstse
+        # * protocol
+        valid_list = ["dataset", "srcse", "dstse", "protocol"]
+        build_input_param = {}
+        for k in valid_list:
+            if not self.request.arguments.has_key(k):
+                raise WErr( 400, "Missing %s" % k )
+            build_input_param[k] = self.request.arguments[k]
+        self.set_status(200)
+        self.finish()
 
     # = file list of one request =
     # == list ==

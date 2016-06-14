@@ -61,14 +61,25 @@ class TransferAppHandler(WebHandler):
         # * srcse
         # * dstse
         # * protocol
+        self.log.debug(self.request.arguments)
         valid_list = ["dataset", "srcse", "dstse", "protocol"]
         build_input_param = {}
         for k in valid_list:
             if not self.request.arguments.has_key(k):
                 raise WErr( 400, "Missing %s" % k )
-            build_input_param[k] = self.request.arguments[k]
+            build_input_param[k] = self.request.arguments[k][0]
+        self.log.debug(build_input_param)
+        # check the data
+        ## SE
+        if build_input_param["dstse"] == build_input_param["srcse"]:
+            raise WErr( 400, "dstse and srcse are same" )
+        ## protocol
+        if build_input_param["protocol"] not in ["DIRACDMS", "DIRACFTS"]:
+            raise WErr( 400, "protocol %s is wrong"%build_input_param["protocol"] )
+
         self.set_status(200)
         self.finish()
+        self.log.debug("finish")
 
     # = file list of one request =
     # == list ==

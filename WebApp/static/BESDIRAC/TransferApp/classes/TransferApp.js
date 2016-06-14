@@ -423,7 +423,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             width: 350,
         
             // The form will submit an AJAX request to this URL when submitted
-            url: 'save-form.php',
+            url: GLOBAL.BASE_URL + 'TransferApp/requestNew',
         
             // Fields will be arranged vertically, stretched to full width
             layout: 'anchor',
@@ -434,12 +434,22 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             // The fields
             defaultType: 'textfield',
             items: [{
-                fieldLabel: 'First Name',
-                name: 'first',
+                fieldLabel: 'Dataset Name',
+                name: 'dataset',
                 allowBlank: false
             },{
-                fieldLabel: 'Last Name',
-                name: 'last',
+                fieldLabel: 'src SE',
+                name: 'srcse',
+                allowBlank: false
+            },{
+                fieldLabel: 'dst SE',
+                name: 'dstse',
+                allowBlank: false
+            },{
+                xtype: 'combo',
+                fieldLabel: 'Protocol',
+                name: 'protocol',
+                store: ["DIRACDMS", "DIRACFTS"],
                 allowBlank: false
             }],
         
@@ -458,10 +468,10 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     if (form.isValid()) {
                         form.submit({
                             success: function(form, action) {
-                               Ext.Msg.alert('Success', action.result.msg);
                             },
                             failure: function(form, action) {
-                                Ext.Msg.alert('Failed', action.result.msg);
+                                console.log(form);
+                                console.log(action);
                             }
                         });
                     }

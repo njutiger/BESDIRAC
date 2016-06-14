@@ -635,13 +635,13 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                         for (var i = 0; i < selectedRows.length; ++i) {
                             // console.log(selectedRows[i]);
                             // console.log(selectedRows[i].get("id"));
-                            var datasetid = selectedRows[i].get("id");
+                            var datasetid = selectedRows[i].get("dataset");
                             console.log(datasetid);
                             // after get the datasetid, 
                             // we need to show them in files list.
                             me.datastore_files_in_dataset.load({
                                 params: {
-                                    datasetid: datasetid,
+                                    dataset: datasetid,
                                 },
                             });
                         }

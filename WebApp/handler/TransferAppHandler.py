@@ -23,7 +23,7 @@ class TransferAppHandler(WebHandler):
         limit = res["Value"]
 
         res = transferRequest.show(condDict, orderby, start, limit)
-        self.log.always(res)
+        #self.log.always(res)
         # {'OK': True, 
         #  'rpcStub': (('Transfer/Dataset', {'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600, 'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'bes_user'}), 'show', ({}, [], 0, 68L)), 
         #  'Value': (
@@ -43,14 +43,30 @@ class TransferAppHandler(WebHandler):
         self.write({"result": data})
     def web_datasetListFiles(self):
         self.log.debug(self.request.arguments)
-        value = 0
-        if self.request.arguments.get("datasetid", None):
-            value = int(self.request.arguments["datasetid"][0])
+        dataset = None
+        if self.request.arguments.get("dataset", None):
+            dataset = self.request.arguments["dataset"][0]
         data = []
-        for i in range(value):
+        cache = []
+        if dataset:
+            RPC = RPCClient("Transfer/Dataset")
+            res = RPC.list(dataset)
+            #self.log.always(res)
+            # {'OK': True, 
+            #  'rpcStub': (('Transfer/Dataset', {'skipCACheck': False, 'keepAliveLapse': 150, 'delega tedGroup': 'bes_user', 'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600}), 'list', ('jpsi-all-ok',)), 
+            #  'Value': [
+            #   (176L, '/zhanggang_test/File/jpsi/6.6.4/mc/inclusive/round02/stream001/jpsi2009_stream001_run10005_file14', 7L), 
+            #   (177L, '/zhanggang_test/File/jpsi/6.6.4/mc/inclusive /round02/stream001/jpsi2009_stream001_run10137_file7', 7L), 
+            #  ]
+            # }
+            if res["OK"]:
+                cache = res["Value"]
+
+
+        for i,f,di in cache:
             data.append({
                 "id": i,
-                "file": "/p/%d"%i,
+                "file": f,
             })
         self.write({"result": data})
     # == create ==

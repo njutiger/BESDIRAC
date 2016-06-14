@@ -131,35 +131,112 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     // === requests: request list ===
 
+    create_datastore_requests_list : function() {
+        var me = this;
+        console.log(me);
+        me.datastore_request_list = new Ext.data.JsonStore({
+            proxy : {
+                type : 'ajax',
+                method : 'POST',
+                url : GLOBAL.BASE_URL + 'TransferApp/requestList',
+                reader : {
+                  type : 'json',
+                  root : 'result'
+                },
+                timeout : 1800000
+            },
+            autoLoad : true,
+            fields : [
+                {
+                    name: 'id',
+                    type: 'int',
+                },
+                {
+                    name: 'owner',
+                    type: 'string',
+                },
+                {
+                    name: 'dataset',
+                    type: 'string',
+                },
+                {
+                    name: 'srcSE',
+                    type: 'string',
+                },
+                {
+                    name: 'dstSE',
+                    type: 'string',
+                },
+                {
+                    name: 'protocol',
+                    type: 'string',
+                },
+                {
+                    name: 'submitTime',
+                    type: 'string',
+                },
+                {
+                    name: 'status',
+                    type: 'string',
+                },
+            ],
+            listeners: {
+                load : function(oStore, records, successful, eOpts) {
+                  var bResponseOK = (oStore.proxy.reader.rawData["success"] == "true");
+                  if (!bResponseOK) {
+                    GLOBAL.APP.CF.alert(oStore.proxy.reader.rawData["error"], "info");
+                    if (parseInt(oStore.proxy.reader.rawData["total"], 10) == 0) {
+                      me.dataStore.removeAll();
+                    }
+                  } else {
+                    console.log(records);
+                  }
+                },
+
+            },
+        });
+    },
     build_panel_requests_list : function() {
         var me = this;
         console.log(me);
 
+        // -> me.datastore_request_list
+        me.create_datastore_requests_list();
+        var sm = Ext.create('Ext.selection.RowModel');
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
+            store: me.datastore_request_list,
             columns: [
                 {
                     text: "id",
+                    dataIndex: "id",
                 },
                 {
                     text: "owner",
+                    dataIndex: "owner",
                 },
                 {
                     text: "dataset",
+                    dataIndex: "dataset",
                 },
                 {
                     text: "src SE",
+                    dataIndex: "srcSE",
                 },
                 {
                     text: "dst SE",
+                    dataIndex: "dstSE",
                 },
                 {
                     text: "protocol",
+                    dataIndex: "protocol",
                 },
                 {
                     text: "submit time",
+                    dataIndex: "submitTime",
                 },
                 {
                     text: "status",
+                    dataIndex: "status",
                 },
             ],
 

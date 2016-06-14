@@ -48,7 +48,8 @@ class TransferAppHandler(WebHandler):
                 "srcSE": "IHEP-USER",
                 "dstSE": "UCAS-USER",
                 "protocol": "DMS", 
-                "submitTime": datatime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
+                "submitTime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
+                "status": "OK",
             })
         self.write({"result": data})
 

@@ -415,7 +415,68 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     // === requests: new request ===
     build_panel_create_new_request: function() {
-         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+        // Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+        // Create a Form Panel
+        var panel = Ext.create('Ext.form.Panel', {
+            // title: 'Simple Form',
+            bodyPadding: 5,
+            width: 350,
+        
+            // The form will submit an AJAX request to this URL when submitted
+            url: 'save-form.php',
+        
+            // Fields will be arranged vertically, stretched to full width
+            layout: 'anchor',
+            defaults: {
+                anchor: '100%'
+            },
+        
+            // The fields
+            defaultType: 'textfield',
+            items: [{
+                fieldLabel: 'First Name',
+                name: 'first',
+                allowBlank: false
+            },{
+                fieldLabel: 'Last Name',
+                name: 'last',
+                allowBlank: false
+            }],
+        
+            // Reset and Submit buttons
+            buttons: [{
+                text: 'Reset',
+                handler: function() {
+                    this.up('form').getForm().reset();
+                }
+            }, {
+                text: 'Submit',
+                formBind: true, //only enabled once the form is valid
+                disabled: true,
+                handler: function() {
+                    var form = this.up('form').getForm();
+                    if (form.isValid()) {
+                        form.submit({
+                            success: function(form, action) {
+                               Ext.Msg.alert('Success', action.result.msg);
+                            },
+                            failure: function(form, action) {
+                                Ext.Msg.alert('Failed', action.result.msg);
+                            }
+                        });
+                    }
+                }
+            }],
+            renderTo: Ext.getBody()
+        });
+        // Create a window/Form
+        Ext.create('Ext.window.Window', {
+            title: 'New Transfer Request',
+            height: 200,
+            width: 400,
+            layout: 'fit',
+            items: [panel],
+        }).show(); 
     },
     // === requests: view request ===
     view_files_in_current_request: function() {

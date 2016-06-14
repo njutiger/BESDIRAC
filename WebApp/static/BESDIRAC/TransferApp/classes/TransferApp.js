@@ -273,20 +273,69 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     // === dataset: dataset list ===
 
+    create_datastore_datasets_list : function() {
+        var me = this;
+        me.datastore_dataset_list = new Ext.data.JsonStore({
+            proxy : {
+                type : 'ajax',
+                url : GLOBAL.BASE_URL + 'TransferApp/datasetList',
+                reader : {
+                  type : 'json',
+                  root : 'result'
+                },
+                timeout : 1800000
+            },
+            autoLoad : true,
+            fields : [
+                {
+                    name: 'id',
+                    type: 'int',
+                },
+                {
+                    name: 'owner',
+                    type: 'string',
+                },
+                {
+                    name: 'dataset',
+                    type: 'string',
+                },
+            ],
+            listeners: {
+                load : function(oStore, records, successful, eOpts) {
+                  var bResponseOK = (oStore.proxy.reader.rawData["success"] == "true");
+                  if (!bResponseOK) {
+                    GLOBAL.APP.CF.alert(oStore.proxy.reader.rawData["error"], "info");
+                    if (parseInt(oStore.proxy.reader.rawData["total"], 10) == 0) {
+                      me.dataStore.removeAll();
+                    }
+                  } else {
+                    console.log(records);
+                  }
+                },
+
+            },
+        });
+    },
     build_panel_datasets_list : function() {
         var me = this;
+        // -> me.datastore_dataset_list
+        me.create_datastore_datasets_list();
 
         me.panel_datasets_list = new Ext.create('Ext.grid.Panel', {
+            store: me.datastore_dataset_list,
             columnWidth: .25,
             columns: [
                 {
                     text: "id",
+                    dataIndex: "id",
                 },
                 {
                     text: "name",
+                    dataIndex: "dataset",
                 },
                 {
                     text: "owner",
+                    dataIndex: "owner",
                 },
             ],
             title: "Datasets list",

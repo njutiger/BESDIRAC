@@ -10,7 +10,15 @@ class TransferAppHandler(WebHandler):
     # = dataset management =
     # == list ==
     def web_datasetList(self):
-        self.write({"value": "dataset"})
+        # create dummy data
+        data = []
+        for i in range(10):
+            data.append({
+                "id": i,
+                "owner": "lintao", 
+                "dataset": "lintao%d"%i,
+            })
+        self.write({"result": data})
     # == create ==
     # == delete ==
 

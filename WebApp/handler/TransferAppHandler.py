@@ -138,6 +138,15 @@ class TransferAppHandler(WebHandler):
         ## protocol
         if build_input_param["protocol"] not in ["DIRACDMS", "DIRACFTS"]:
             raise WErr( 400, "protocol %s is wrong"%build_input_param["protocol"] )
+        # create
+        RPC = RPCClient("Transfer/TransferRequest")
+        res = RPC.create(build_input_param["dataset"],
+                         build_input_param["srcse"],
+                         build_input_param["dstse"],
+                         build_input_param["protocol"])
+        # TODO how to return error to the user?
+        if not res["OK"]:
+            self.log.error(res)
 
         self.set_status(200)
         self.finish()

@@ -110,7 +110,7 @@ class TransferAppHandler(WebHandler):
                 "srcSE": vv[3],
                 "dstSE": vv[4],
                 "protocol": vv[5], 
-                "submitTime": vv[6].strftime("%Y-%m-%d %H:%M [UTC]"),
+                "submitTime": vv[6].strftime("%Y-%m-%d %H:%M [UTC]") if vv[6] else "",
                 "status": vv[7],
             })
         self.write({"result": data})
@@ -169,8 +169,8 @@ class TransferAppHandler(WebHandler):
             data.append({
                 "id": vv[0],
                 "LFN": vv[1],
-                "starttime": vv[3].strftime("%Y-%m-%d %H:%M [UTC]"),
-                "finishtime": vv[4].strftime("%Y-%m-%d %H:%M [UTC]"),
+                "starttime": vv[3].strftime("%Y-%m-%d %H:%M [UTC]") if vv[3] else "",
+                "finishtime": vv[4].strftime("%Y-%m-%d %H:%M [UTC]") if vv[4] else "",
                 "status": vv[5],
                 "error": vv[6],
             })

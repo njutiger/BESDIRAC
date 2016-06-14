@@ -14,6 +14,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 "Ext.dirac.utils.DiracMultiSelect", 
                 "Ext.toolbar.Toolbar", 
                 "Ext.data.Record", 
+                // 'Ext.grid.PagingScroller',
                 'Ext.Array', 
                 'Ext.data.TreeStore', 
                 'Ext.layout.container.Accordion',
@@ -205,6 +206,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.create_datastore_requests_list();
         var sm = Ext.create('Ext.selection.RowModel');
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
+            // autoScroll: true,
+            // verticalScroller: {
+            //     xtype: 'paginggridscroller',
+            //     activePrefetch: false
+            // },
             id: "gPanelRequestsList",
             store: me.datastore_request_list,
             columns: [
@@ -370,6 +376,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.create_datastore_files_in_request();
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
             id: "gPanelFilesInRequests",
+            // autoScroll: true,
+            // verticalScroller: {
+            //     xtype: 'paginggridscroller',
+            //     activePrefetch: false
+            // },
             store: me.datastore_files_in_request,
             columns: [
                 {
@@ -538,8 +549,8 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.panel_datasets = new Ext.create('Ext.panel.Panel', {
               id : "gPanelDatasets",
               floatable : false,
-              // layout : 'accordion',
-              layout : 'column',
+              layout : 'accordion',
+              // layout : 'column',
               header : false,
               border : false,
               items : [me.panel_datasets_list, me.panel_files_in_dataset]
@@ -605,6 +616,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.panel_datasets_list = new Ext.create('Ext.grid.Panel', {
             id: "gPanelDatasetsList",
             store: me.datastore_dataset_list,
+            // autoScroll: true,
+            // verticalScroller: {
+            //     xtype: 'paginggridscroller',
+            //     activePrefetch: false
+            // },
             columnWidth: .25,
             selModel : sm,
             columns: [
@@ -701,6 +717,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.create_datastore_files_in_dataset();
         me.panel_files_in_dataset = new Ext.create('Ext.grid.Panel', {
             id: "gPanelFilesInDatasets",
+            // autoScroll: true,
+            // verticalScroller: {
+            //     xtype: 'paginggridscroller',
+            //     activePrefetch: false
+            // },
             store: me.datastore_files_in_dataset,
             columnWidth: .75,
             columns: [

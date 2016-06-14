@@ -166,7 +166,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "new",
                     tooltip: "create new transfer request",
-                    handler: me.build_panel_create_new_request
+                    handler: me.build_panel_create_new_request,
                 },
                 {
                     // xtype: 'tbseparator',
@@ -176,6 +176,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "view",
                     tooltip: "view files in current request",
+                    handler: me.view_files_in_current_request,
                 },
                 {
                     // xtype: 'tbseparator',
@@ -184,6 +185,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 {
                     xtype: "button",
                     text: "refresh",
+                    handler: me.refresh_requests_list,
                 },
                 ],
                 }
@@ -222,6 +224,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     {
                     xtype: "button",
                     text: "refresh",
+                    handler: me.refresh_requests_file_list,
                     }
                 ],
                 },
@@ -231,6 +234,18 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     // === requests: new request ===
     build_panel_create_new_request: function() {
+         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+    },
+    // === requests: view request ===
+    view_files_in_current_request: function() {
+         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+    },
+    // === requests: refresh request ===
+    refresh_requests_list: function() {
+         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+    },
+    // === requests: refresh file list in request ===
+    refresh_requests_file_list: function() {
          Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
     },
 

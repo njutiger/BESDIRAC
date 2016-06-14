@@ -118,6 +118,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // + file list in request
         me.build_panel_files_in_request();
         me.panel_requests = new Ext.create('Ext.panel.Panel', {
+              id : "gPanelRequests",
               floatable : false,
               layout : 'accordion',
               // layout : 'column',
@@ -204,6 +205,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.create_datastore_requests_list();
         var sm = Ext.create('Ext.selection.RowModel');
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
+            id: "gPanelRequestsList",
             store: me.datastore_request_list,
             columns: [
                 {
@@ -367,6 +369,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // -> me.datastore_files_in_request
         me.create_datastore_files_in_request();
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
+            id: "gPanelFilesInRequests",
             store: me.datastore_files_in_request,
             columns: [
                 {
@@ -439,6 +442,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.build_panel_files_in_dataset();
 
         me.panel_datasets = new Ext.create('Ext.panel.Panel', {
+              id : "gPanelDatasets",
               floatable : false,
               // layout : 'accordion',
               layout : 'column',
@@ -505,6 +509,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
         var sm = Ext.create('Ext.selection.RowModel');
         me.panel_datasets_list = new Ext.create('Ext.grid.Panel', {
+            id: "gPanelDatasetsList",
             store: me.datastore_dataset_list,
             columnWidth: .25,
             selModel : sm,
@@ -601,6 +606,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // -> me.datastore_files_in_dataset
         me.create_datastore_files_in_dataset();
         me.panel_files_in_dataset = new Ext.create('Ext.grid.Panel', {
+            id: "gPanelFilesInDatasets",
             store: me.datastore_files_in_dataset,
             columnWidth: .75,
             columns: [

@@ -466,14 +466,30 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 handler: function() {
                     var form = this.up('form').getForm();
                     if (form.isValid()) {
+                      try {
                         form.submit({
                             success: function(form, action) {
+                                // reload
+                                var panel_requests_list = Ext.getCmp("gPanelRequestsList");
+                                panel_requests_list.getStore().reload();
+                                // close
+                                var win = Ext.getCmp("gNewTransferRequest");
+                                win.close();
                             },
                             failure: function(form, action) {
                                 console.log(form);
                                 console.log(action);
+                                if (action.response.status == 400) {
+                                    Ext.Msg.alert("Failed", action.response.responseText);
+                                }
+                                // reload
+                                var panel_requests_list = Ext.getCmp("gPanelRequestsList");
+                                panel_requests_list.getStore().reload();
                             }
                         });
+                      } catch(e) {
+                        alert('Error: ' + e.name + ': ' + e.message);
+                      }
                     }
                 }
             }],
@@ -481,6 +497,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         });
         // Create a window/Form
         Ext.create('Ext.window.Window', {
+            id : "gNewTransferRequest",
             title: 'New Transfer Request',
             height: 200,
             width: 400,

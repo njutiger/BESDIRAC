@@ -22,6 +22,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     // = initComponent =
     initComponent: function() {
         var me = this;
+        console.log(me);
     
         //setting the title of the application
         me.launcher.title = "Transfer Application";
@@ -47,6 +48,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     // = buildUI =
     buildUI : function() {
         var me = this;
+        console.log(me);
 
         // top toolbar -> me.top_toolbar
         me.build_toolbar();
@@ -64,6 +66,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_toolbar : function() {
         var me = this;
+        console.log(me);
         me.top_toolbar = Ext.create('Ext.toolbar.Toolbar', {
               dock : 'top',
               border : false,
@@ -93,6 +96,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_mainpanel : function() {
         var me = this;
+        console.log(me);
         me.main_panel = new Ext.create('Ext.panel.Panel', {
               floatable : false,
               layout : 'card',
@@ -108,6 +112,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_panel_requests : function() {
         var me = this;
+        console.log(me);
         // + requests list
         me.build_panel_requests_list();
         // + file list in request
@@ -128,6 +133,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_panel_requests_list : function() {
         var me = this;
+        console.log(me);
 
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
             columns: [
@@ -195,6 +201,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_panel_files_in_request : function() {
         var me = this;
+        console.log(me);
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
             columns: [
                 {
@@ -253,6 +260,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     build_panel_datasets : function() {
         var me = this;
+        console.log(me);
         // TODO
         // + dataset list
         me.build_panel_datasets_list();
@@ -275,9 +283,11 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     create_datastore_datasets_list : function() {
         var me = this;
+        console.log(me);
         me.datastore_dataset_list = new Ext.data.JsonStore({
             proxy : {
                 type : 'ajax',
+                method : 'POST',
                 url : GLOBAL.BASE_URL + 'TransferApp/datasetList',
                 reader : {
                   type : 'json',
@@ -318,12 +328,15 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     },
     build_panel_datasets_list : function() {
         var me = this;
+        console.log(me);
         // -> me.datastore_dataset_list
         me.create_datastore_datasets_list();
 
+        var sm = Ext.create('Ext.selection.RowModel');
         me.panel_datasets_list = new Ext.create('Ext.grid.Panel', {
             store: me.datastore_dataset_list,
             columnWidth: .25,
+            selModel : sm,
             columns: [
                 {
                     text: "id",
@@ -344,21 +357,89 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "view",
                     tooltip: "view files in current dataset",
+                    // handler: me.view_files_in_current_dataset,
+                    handler: function() {
+                        console.log(me);
+                        var selectedRows = me.panel_datasets_list.getSelectionModel().getSelection();
+                        console.log(selectedRows);
+                        for (var i = 0; i < selectedRows.length; ++i) {
+                            // console.log(selectedRows[i]);
+                            // console.log(selectedRows[i].get("id"));
+                            var datasetid = selectedRows[i].get("id");
+                            console.log(datasetid);
+                            // after get the datasetid, 
+                            // we need to show them in files list.
+                            me.datastore_files_in_dataset.load({
+                                params: {
+                                    datasetid: datasetid,
+                                },
+                            });
+                        }
+
+                    }
                 },
             ],
         });
     },
 
+    create_datastore_files_in_dataset : function() {
+        var me = this;
+        console.log(me);
+        me.datastore_files_in_dataset = new Ext.data.JsonStore({
+            proxy : {
+                type : 'ajax',
+                url : GLOBAL.BASE_URL + 'TransferApp/datasetListFiles',
+                reader : {
+                  type : 'json',
+                  root : 'result'
+                },
+                method : 'POST',
+                timeout : 1800000
+            },
+            autoLoad : false,
+            autoSync : true,
+            fields : [
+                {
+                    name: 'id',
+                    type: 'int',
+                },
+                {
+                    name: 'file',
+                    type: 'string',
+                },
+            ],
+            listeners: {
+                load : function(oStore, records, successful, eOpts) {
+                  var bResponseOK = (oStore.proxy.reader.rawData["success"] == "true");
+                  if (!bResponseOK) {
+                    GLOBAL.APP.CF.alert(oStore.proxy.reader.rawData["error"], "info");
+                    if (parseInt(oStore.proxy.reader.rawData["total"], 10) == 0) {
+                      me.dataStore.removeAll();
+                    }
+                  } else {
+                    console.log(records);
+                  }
+                },
+
+            },
+        });
+    },
     build_panel_files_in_dataset : function() {
         var me = this;
+        console.log(me);
+        // -> me.datastore_files_in_dataset
+        me.create_datastore_files_in_dataset();
         me.panel_files_in_dataset = new Ext.create('Ext.grid.Panel', {
+            store: me.datastore_files_in_dataset,
             columnWidth: .75,
             columns: [
                 {
                     text: "id",
+                    dataIndex: "id",
                 },
                 {
                     text: "file",
+                    dataIndex: "file",
                 },
             ],
             title: "Files list",
@@ -369,5 +450,14 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
         });
+    },
+    // === dataset: view request ===
+    view_files_in_current_dataset: function() {
+        var me = this;
+        console.log(me);
+        console.log(me);
+        // Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+        var selectedRows = me.panel_datasets_list.getSelectionModel().getSelection();
+        console.log(selectedRows);
     },
 });

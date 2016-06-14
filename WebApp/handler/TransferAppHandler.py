@@ -18,7 +18,7 @@ class TransferAppHandler(WebHandler):
         start = 0
         limit = 50
         res = transferRequest.showtotal(condDict)
-        self.log.always(res)
+        #self.log.always(res)
         #  {'OK': True, 'rpcStub': (('Transfer/Dataset', {'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'bes_user', 'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600}), 'showtotal', ({},)), 'Value': 68L} 
         limit = res["Value"]
 
@@ -77,16 +77,41 @@ class TransferAppHandler(WebHandler):
     def web_requestList(self):
         # create dummy data
         data = []
-        for i in range(10):
+        # use RPCClient
+        RPC = RPCClient("Transfer/TransferRequest")
+        cond = {}
+        res = RPC.statustotal(cond)
+        #self.log.always(res)
+        # {'OK': True, 
+        #  'rpcStub': (('Transfer/TransferRequest', {'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'bes_user', 'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600}), 'statustotal', ({},)),
+        #  'Value': 159L}
+        start = 0
+        limit = res["Value"]
+        orderby = ["id:DESC"]
+        cache = []
+        res = RPC.statuslimit(cond, orderby, start, limit)
+        if res["OK"]:
+            cache = res["Value"]
+        #self.log.always(cache)
+        # (159L, 
+        #  'yant', 
+        #  'prod_rtg_r04_add_150104', 
+        #  'IHEPD-USER', 
+        #  'WHU-USER', 
+        #  'DIRACDMS', 
+        #  datetime.datetime(2015, 6, 12, 8, 41, 19), 
+        #  'finish'),
+
+        for vv in cache:
             data.append({
-                "id": i,
-                "owner": "lintao", 
-                "dataset": "lintao%d"%i,
-                "srcSE": "IHEP-USER",
-                "dstSE": "UCAS-USER",
-                "protocol": "DMS", 
-                "submitTime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
-                "status": "OK",
+                "id": vv[0],
+                "owner": vv[1], 
+                "dataset": vv[2],
+                "srcSE": vv[3],
+                "dstSE": vv[4],
+                "protocol": vv[5], 
+                "submitTime": vv[6].strftime("%Y-%m-%d %H:%M [UTC]"),
+                "status": vv[7],
             })
         self.write({"result": data})
 

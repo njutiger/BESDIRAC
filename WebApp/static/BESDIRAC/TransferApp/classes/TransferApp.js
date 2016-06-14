@@ -104,33 +104,71 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
     }, 
 
+    // == requests ==
+
     build_panel_requests : function() {
         var me = this;
-        // TODO
-        me.panel_requests = new Ext.create('Ext.form.field.TextArea', {
-            fieldLabel : "Value",
-            labelAlign : "top",
-            flex : 1
-        });
+        // + requests list
+        me.build_panel_requests_list();
+        // + file list in request
+        me.build_panel_files_in_request();
+        me.panel_requests = new Ext.create('Ext.panel.Panel', {
+              floatable : false,
+              // layout : 'accordion',
+              layout : 'column',
+              header : false,
+              border : false,
+              items : [me.panel_requests_list, me.panel_files_in_request]
+            });
 
         me.main_panel.add([me.panel_requests]);
     },
+
+    // === requests: request list ===
+
+    build_panel_requests_list : function() {
+        var me = this;
+
+        me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
+            columnWidth: .25,
+            columns: [
+                {
+                    text: "id",
+                },
+                {
+                    text: "name",
+                },
+                {
+                    text: "owner",
+                },
+            ],
+        });
+    },
+
+    build_panel_files_in_request : function() {
+        var me = this;
+        me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
+            columnWidth: .75,
+            columns: [
+                {
+                    text: "id",
+                },
+                {
+                    text: "file",
+                },
+            ],
+        });
+    },
+
+    // == dataset ==
 
     build_panel_datasets : function() {
         var me = this;
         // TODO
         // + dataset list
-        me.panel_datasets_list = new Ext.create('Ext.form.field.TextArea', {
-            fieldLabel : "Value",
-            labelAlign : "top",
-            columnWidth: .25,
-        });
+        me.build_panel_datasets_list();
         // + file list in dataset
-        me.panel_files_in_dataset = new Ext.create('Ext.form.field.TextArea', {
-            fieldLabel : "Value",
-            labelAlign : "top",
-            columnWidth: .75,
-        });
+        me.build_panel_files_in_dataset();
 
         me.panel_datasets = new Ext.create('Ext.panel.Panel', {
               floatable : false,
@@ -142,5 +180,41 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             });
 
         me.main_panel.add([me.panel_datasets]);
+    },
+
+    // === dataset: dataset list ===
+
+    build_panel_datasets_list : function() {
+        var me = this;
+
+        me.panel_datasets_list = new Ext.create('Ext.grid.Panel', {
+            columnWidth: .25,
+            columns: [
+                {
+                    text: "id",
+                },
+                {
+                    text: "name",
+                },
+                {
+                    text: "owner",
+                },
+            ],
+        });
+    },
+
+    build_panel_files_in_dataset : function() {
+        var me = this;
+        me.panel_files_in_dataset = new Ext.create('Ext.grid.Panel', {
+            columnWidth: .75,
+            columns: [
+                {
+                    text: "id",
+                },
+                {
+                    text: "file",
+                },
+            ],
+        });
     },
 });

@@ -130,16 +130,31 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         var me = this;
 
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
-            columnWidth: .25,
+            columnWidth: .60,
             columns: [
                 {
                     text: "id",
                 },
                 {
-                    text: "name",
+                    text: "owner",
                 },
                 {
-                    text: "owner",
+                    text: "dataset",
+                },
+                {
+                    text: "src SE",
+                },
+                {
+                    text: "dst SE",
+                },
+                {
+                    text: "protocol",
+                },
+                {
+                    text: "submit time",
+                },
+                {
+                    text: "status",
                 },
             ],
 
@@ -174,13 +189,25 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     build_panel_files_in_request : function() {
         var me = this;
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
-            columnWidth: .75,
+            columnWidth: .40,
             columns: [
                 {
                     text: "id",
                 },
                 {
-                    text: "file",
+                    text: "LFN",
+                },
+                {
+                    text: "start",
+                },
+                {
+                    text: "finish",
+                },
+                {
+                    text: "status",
+                },
+                {
+                    text: "error",
                 },
             ],
             title: "Files list",

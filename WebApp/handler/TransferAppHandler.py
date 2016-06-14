@@ -65,8 +65,8 @@ class TransferAppHandler(WebHandler):
             data.append({
                 "id": i,
                 "LFN": "/p/%d"%i,
-                "starttime": datatime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
-                "finishtime": datatime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
+                "starttime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
+                "finishtime": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M [UTC]"),
                 "status": "OK",
                 "error": "",
             })

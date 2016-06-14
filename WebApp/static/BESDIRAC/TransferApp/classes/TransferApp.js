@@ -259,7 +259,26 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "view",
                     tooltip: "view files in current request",
-                    handler: me.view_files_in_current_request,
+                    // handler: me.view_files_in_current_request,
+                    handler: function() {
+                        console.log(me);
+                        var selectedRows = me.panel_requests_list.getSelectionModel().getSelection();
+                        console.log(selectedRows);
+                        for (var i = 0; i < selectedRows.length; ++i) {
+                            // console.log(selectedRows[i]);
+                            // console.log(selectedRows[i].get("id"));
+                            var reqid = selectedRows[i].get("id");
+                            console.log(reqid);
+                            // after get the datasetid, 
+                            // we need to show them in files list.
+                            me.datastore_files_in_request.load({
+                                params: {
+                                    reqid: reqid,
+                                },
+                            });
+                        }
+                    }
+
                 },
                 {
                     // xtype: 'tbseparator',
@@ -276,28 +295,96 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         });
     },
 
+    create_datastore_files_in_request : function() {
+        var me = this;
+        console.log(me);
+        me.datastore_files_in_request = new Ext.data.JsonStore({
+            proxy : {
+                type : 'ajax',
+                url : GLOBAL.BASE_URL + 'TransferApp/requestListFiles',
+                reader : {
+                  type : 'json',
+                  root : 'result'
+                },
+                method : 'POST',
+                timeout : 1800000
+            },
+            autoLoad : false,
+            autoSync : true,
+            fields : [
+                {
+                    name: 'id',
+                    type: 'int',
+                },
+                {
+                    name: 'LFN',
+                    type: 'string',
+                },
+                {
+                    name: 'starttime',
+                    type: 'string',
+                },
+                {
+                    name: 'finishtime',
+                    type: 'string',
+                },
+                {
+                    name: 'status',
+                    type: 'string',
+                },
+                {
+                    name: 'error',
+                    type: 'string',
+                },
+
+            ],
+            listeners: {
+                load : function(oStore, records, successful, eOpts) {
+                  var bResponseOK = (oStore.proxy.reader.rawData["success"] == "true");
+                  if (!bResponseOK) {
+                    GLOBAL.APP.CF.alert(oStore.proxy.reader.rawData["error"], "info");
+                    if (parseInt(oStore.proxy.reader.rawData["total"], 10) == 0) {
+                      me.dataStore.removeAll();
+                    }
+                  } else {
+                    console.log(records);
+                  }
+                },
+
+            },
+        });
+    },
     build_panel_files_in_request : function() {
         var me = this;
         console.log(me);
+        // -> me.datastore_files_in_request
+        me.create_datastore_files_in_request();
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
+            store: me.datastore_files_in_request,
             columns: [
                 {
                     text: "id",
+                    dataIndex: "id",
                 },
                 {
                     text: "LFN",
+                    dataIndex: "LFN",
                 },
                 {
                     text: "start",
+                    dataIndex: "starttime",
                 },
                 {
                     text: "finish",
+                    dataIndex: "finishtime",
                 },
                 {
                     text: "status",
+                    dataIndex: "status",
                 },
                 {
                     text: "error",
+                    dataIndex: "error",
                 },
             ],
             title: "Files list",

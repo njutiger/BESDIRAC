@@ -514,7 +514,10 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     },
     // === requests: refresh request ===
     refresh_requests_list: function() {
-         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+        // Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
+        // reload
+        var panel_requests_list = Ext.getCmp("gPanelRequestsList");
+        panel_requests_list.getStore().reload();
     },
     // === requests: refresh file list in request ===
     refresh_requests_file_list: function() {

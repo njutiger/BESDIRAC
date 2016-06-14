@@ -374,8 +374,10 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         console.log(me);
         // -> me.datastore_files_in_request
         me.create_datastore_files_in_request();
+        var sm = Ext.create('Ext.selection.RowModel');
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
             id: "gPanelFilesInRequests",
+            selModel : sm,
             // autoScroll: true,
             // verticalScroller: {
             //     xtype: 'paginggridscroller',
@@ -425,7 +427,30 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "refresh",
                     handler: me.refresh_requests_file_list,
+                    },
+                    {
+                    xtype: "button",
+                    text: "show error",
+                    handler: function() {
+                        var selectedRows = me.panel_files_in_request.getSelectionModel().getSelection();
+                        // console.log(selectedRows);
+                        for (var i = 0; i < selectedRows.length; ++i) {
+                            //console.log(selectedRows[i].get("error"));
+                            plain_error = selectedRows[i].get("error");
+                            Ext.create('Ext.window.Window', {
+                                closable: true,
+                                width: 600,
+                                height: 400,
+                                //autoHeight: true,
+                                autoScroll: true,
+                                title: "Error Info",
+                                layout: "fit",
+                                html: "<pre>"+plain_error+"</pre>"
+                            }).show();
+                        }
+
                     }
+                    },
                 ],
                 },
             ],

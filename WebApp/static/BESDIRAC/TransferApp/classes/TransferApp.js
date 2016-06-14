@@ -452,6 +452,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 store: ["DIRACDMS", "DIRACFTS"],
                 forceSelect: true,
                 queryMode: 'local',
+                value: 'DIRACDMS',
                 allowBlank: false
             }],
         

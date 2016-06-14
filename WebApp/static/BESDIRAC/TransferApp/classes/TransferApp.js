@@ -158,11 +158,15 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             ],
 
             title: "Requests list",
-            tools: [
+            dockedItems: [
+                {
+                xtype: "toolbar",
+                items: [
                 {
                     xtype: "button",
                     text: "new",
                     tooltip: "create new transfer request",
+                    handler: me.build_panel_create_new_request
                 },
                 {
                     // xtype: 'tbseparator',
@@ -181,6 +185,8 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     xtype: "button",
                     text: "refresh",
                 },
+                ],
+                }
             ],
         });
     },
@@ -209,13 +215,23 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Files list",
-            tools: [
+            dockedItems: [
                 {
+                xtype: "toolbar",
+                items: [
+                    {
                     xtype: "button",
                     text: "refresh",
+                    }
+                ],
                 },
             ],
         });
+    },
+
+    // === requests: new request ===
+    build_panel_create_new_request: function() {
+         Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
     },
 
     // == dataset ==

@@ -406,6 +406,14 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 {
                     text: "error",
                     dataIndex: "error",
+                    renderer: function(value, metadata, record, rowIndex, colIndex, store) {
+                        // console.log(record);
+                        // console.log(record.data.error);
+                        if (record.data && record.data.error && record.data.error.length>0) {
+                            return "<a>Error</a>";
+                        }
+                        return "OK";
+                    },
                 },
             ],
             title: "Files list",

@@ -144,6 +144,30 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             ],
 
             title: "Requests list",
+            tools: [
+                {
+                    xtype: "button",
+                    text: "new",
+                    tooltip: "create new transfer request",
+                },
+                {
+                    // xtype: 'tbseparator',
+                    xtype: 'tbspacer',
+                },
+                {
+                    xtype: "button",
+                    text: "view",
+                    tooltip: "view files in current request",
+                },
+                {
+                    // xtype: 'tbseparator',
+                    xtype: 'tbspacer',
+                },
+                {
+                    xtype: "button",
+                    text: "refresh",
+                },
+            ],
         });
     },
 
@@ -160,6 +184,12 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Files list",
+            tools: [
+                {
+                    xtype: "button",
+                    text: "refresh",
+                },
+            ],
         });
     },
 
@@ -204,6 +234,13 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Datasets list",
+            tools: [
+                {
+                    xtype: "button",
+                    text: "view",
+                    tooltip: "view files in current dataset",
+                },
+            ],
         });
     },
 
@@ -220,6 +257,12 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Files list",
+            tools: [
+                {
+                    xtype: "button",
+                    text: "refresh",
+                },
+            ],
         });
     },
 });

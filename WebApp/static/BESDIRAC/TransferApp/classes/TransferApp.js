@@ -142,6 +142,8 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     text: "owner",
                 },
             ],
+
+            title: "Requests list",
         });
     },
 
@@ -157,6 +159,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     text: "file",
                 },
             ],
+            title: "Files list",
         });
     },
 
@@ -200,6 +203,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     text: "owner",
                 },
             ],
+            title: "Datasets list",
         });
     },
 
@@ -215,6 +219,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                     text: "file",
                 },
             ],
+            title: "Files list",
         });
     },
 });

@@ -450,6 +450,8 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 fieldLabel: 'Protocol',
                 name: 'protocol',
                 store: ["DIRACDMS", "DIRACFTS"],
+                forceSelect: true,
+                queryMode: 'local',
                 allowBlank: false
             }],
         

@@ -275,6 +275,13 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                                 params: {
                                     reqid: reqid,
                                 },
+                                callback: function(records, operation, success) {
+                                    // do something after the load finishes
+                                    if (success) {
+                                        // show the value
+                                        me.panel_files_in_request.expand();
+                                    }
+                                },
                             });
                         }
                     }

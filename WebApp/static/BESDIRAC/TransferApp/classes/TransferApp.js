@@ -114,8 +114,8 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         me.build_panel_files_in_request();
         me.panel_requests = new Ext.create('Ext.panel.Panel', {
               floatable : false,
-              // layout : 'accordion',
-              layout : 'column',
+              layout : 'accordion',
+              // layout : 'column',
               header : false,
               border : false,
               items : [me.panel_requests_list, me.panel_files_in_request]
@@ -130,7 +130,6 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         var me = this;
 
         me.panel_requests_list = new Ext.create('Ext.grid.Panel', {
-            columnWidth: .60,
             columns: [
                 {
                     text: "id",
@@ -189,7 +188,6 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     build_panel_files_in_request : function() {
         var me = this;
         me.panel_files_in_request = new Ext.create('Ext.grid.Panel', {
-            columnWidth: .40,
             columns: [
                 {
                     text: "id",

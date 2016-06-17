@@ -813,6 +813,67 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     },
     // === dataset: import DFC datasets ===
     build_panel_import_dfc_dataset: function() {
+        // create panel
+        var panel = Ext.create('Ext.grid.Panel', {
+            id: "gPanelDFCDatasetsList", // the datasets name only
+            // DFC dataset datastore
+            store: {
+            proxy : {
+                type : 'ajax',
+                method : 'POST',
+                url : GLOBAL.BASE_URL + 'TransferApp/datasetList',
+                reader : {
+                  type : 'json',
+                  root : 'result'
+                },
+                timeout : 1800000
+            },
+            autoLoad : true,
+            fields : [
+                {
+                    name: 'id',
+                    type: 'int',
+                },
+                {
+                    name: 'owner',
+                    type: 'string',
+                },
+                {
+                    name: 'dataset',
+                    type: 'string',
+                },
+            ],
+            listeners: {
+                load : function(oStore, records, successful, eOpts) {
+                  var bResponseOK = (oStore.proxy.reader.rawData["success"] == "true");
+                  if (!bResponseOK) {
+                    GLOBAL.APP.CF.alert(oStore.proxy.reader.rawData["error"], "info");
+                    if (parseInt(oStore.proxy.reader.rawData["total"], 10) == 0) {
+                      me.dataStore.removeAll();
+                    }
+                  } else {
+                    console.log(records);
+                  }
+                },
+
+            },
+            },
+            columns: [
+                {
+                    text: "id",
+                    dataIndex: "id",
+                },
+                {
+                    text: "name",
+                    dataIndex: "dataset",
+                },
+                {
+                    text: "owner",
+                    dataIndex: "owner",
+                },
+            ],
+            title: "Datasets list",
+        });
         // create a window
         Ext.create('Ext.window.Window', {
             id : "gImportDFCDatasetWin",
@@ -820,7 +881,23 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             height: 200,
             width: 400,
             layout: 'fit',
-            //items: [panel],
+            items: [panel],
+            dockedItems: [
+            { // toolbar
+                xtype: "toolbar",
+                items: [
+                { // import
+                    xtype: "button",
+                    text: "import",
+                    tooltip: "import selected DFC dataset",
+                    handler: function() {
+                        Ext.MessageBox.alert('Import', 'Import selected');
+                    }
+                },
+                ],
+            },
+            ]
         }).show(); 
+
     },
 });

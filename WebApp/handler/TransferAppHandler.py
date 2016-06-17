@@ -3,10 +3,25 @@
 
 from WebAppDIRAC.Lib.WebHandler import WebHandler, WErr
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 import datetime
 
 class TransferAppHandler(WebHandler):
     AUTH_PROPS = "authenticated"
+
+    def __init__(self, *args, **kwargs ):
+        super( TransferAppHandler, self ).__init__( *args, **kwargs )
+        sessionData = self.getSessionData()
+        self.user = sessionData['user'].get( 'username', '' )
+        self.group = sessionData['user'].get( 'group', '' )
+        self.vo = getVOForGroup( self.group )
+        self.fc = FileCatalog( vo = self.vo )
+
+        self.log.always(self.user)
+        self.log.always(self.group)
+        self.log.always(self.vo)
+        self.log.always(self.fc)
 
     # = dataset management =
     # == list ==
@@ -74,6 +89,15 @@ class TransferAppHandler(WebHandler):
 
     # == list in DFC ==
     def web_DFCdatasetList(self):
+        # Load DFC
+        datasetname = ""
+        res = self.fc.getDatasets(datasetname)
+        self.log.always(res)
+        if not res["OK"]:
+            self.log.always( "\n".join(res["CallStack"]) )
+        res = self.fc.listDirectory("/")
+        self.log.always(res)
+        
         # use RPCClient
         transferRequest = RPCClient("Transfer/Dataset")
         condDict = {}

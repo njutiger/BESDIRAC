@@ -814,5 +814,13 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     // === dataset: import DFC datasets ===
     build_panel_import_dfc_dataset: function() {
         // create a window
+        Ext.create('Ext.window.Window', {
+            id : "gImportDFCDatasetWin",
+            title: 'Import DFC dataset',
+            height: 200,
+            width: 400,
+            layout: 'fit',
+            //items: [panel],
+        }).show(); 
     },
 });

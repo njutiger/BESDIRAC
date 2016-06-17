@@ -707,6 +707,20 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
 
                     }
                 },
+                {
+                    // import button
+                    // * import DFC dataset
+                    xtype: "button",
+                    text: "import",
+                    tooltip: "import files list in DFC dataset",
+                    handler: function() {
+                        // top windows contained:
+                        // + top button
+                        // + left: dataset
+                        // + right: file list
+                        me.build_panel_import_dfc_dataset();
+                    }
+                }
                 ],
                 },
             ],
@@ -796,5 +810,9 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // Ext.MessageBox.alert('Rendered One', 'Tab Two was rendered.');
         var selectedRows = me.panel_datasets_list.getSelectionModel().getSelection();
         console.log(selectedRows);
+    },
+    // === dataset: import DFC datasets ===
+    build_panel_import_dfc_dataset: function() {
+        // create a window
     },
 });

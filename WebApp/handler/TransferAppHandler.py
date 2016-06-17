@@ -72,6 +72,39 @@ class TransferAppHandler(WebHandler):
     # == create ==
     # == delete ==
 
+    # == list in DFC ==
+    def web_DFCdatasetList(self):
+        # use RPCClient
+        transferRequest = RPCClient("Transfer/Dataset")
+        condDict = {}
+        orderby = []
+        start = 0
+        limit = 50
+        res = transferRequest.showtotal(condDict)
+        #self.log.always(res)
+        #  {'OK': True, 'rpcStub': (('Transfer/Dataset', {'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'bes_user', 'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600}), 'showtotal', ({},)), 'Value': 68L} 
+        limit = res["Value"]
+
+        res = transferRequest.show(condDict, orderby, start, limit)
+        #self.log.always(res)
+        # {'OK': True, 
+        #  'rpcStub': (('Transfer/Dataset', {'delegatedDN': '/C=CN/O=HEP/OU=PHYS/O=IHEP/CN=Tian Yan', 'timeout': 600, 'skipCACheck': False, 'keepAliveLapse': 150, 'delegatedGroup': 'bes_user'}), 'show', ({}, [], 0, 68L)), 
+        #  'Value': (
+        #            (1L, 'my-dataset', 'lintao'), 
+        #            (2L, 'jpsi-test', 'besdirac02.ihep.ac.cn'), 
+        #            (3L, 'jpsi-test-10', 'besdirac02.ihep.ac.cn'), 
+        #           )
+        # } 
+        data = []
+        if res["OK"]:
+            for id, dataset, owner in res["Value"]:
+                data.append({
+                    "id": id,
+                    "owner": owner, 
+                    "dataset": dataset,
+                })
+        self.write({"result": data})
+
     # = transfer request (not including file list) =
     # == list ==
     def web_requestList(self):

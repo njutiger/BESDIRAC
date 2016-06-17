@@ -814,14 +814,14 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
     // === dataset: import DFC datasets ===
     build_panel_import_dfc_dataset: function() {
         // create panel
-        var panel = Ext.create('Ext.grid.Panel', {
+        // TODO: using DFC dataset interface
+        var panel = new Ext.create('Ext.grid.Panel', {
             id: "gPanelDFCDatasetsList", // the datasets name only
-            // DFC dataset datastore
-            store: {
+            store: { // DFC dataset datastore
             proxy : {
                 type : 'ajax',
                 method : 'POST',
-                url : GLOBAL.BASE_URL + 'TransferApp/datasetList',
+                url : GLOBAL.BASE_URL + 'TransferApp/DFCdatasetList',
                 reader : {
                   type : 'json',
                   root : 'result'

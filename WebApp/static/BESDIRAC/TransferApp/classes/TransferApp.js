@@ -671,7 +671,10 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Datasets list",
-            tools: [
+            dockedItems: [
+                {
+                xtype: "toolbar",
+                items: [
                 {
                     xtype: "button",
                     text: "view",
@@ -692,10 +695,19 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                                 params: {
                                     dataset: datasetid,
                                 },
+                                callback: function(records, operation, success) {
+                                    // do something after the load finishes
+                                    if (success) {
+                                        // show the value
+                                        me.panel_files_in_dataset.expand();
+                                    }
+                                },
                             });
                         }
 
                     }
+                },
+                ],
                 },
             ],
         });

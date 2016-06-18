@@ -90,13 +90,13 @@ class TransferAppHandler(WebHandler):
     # == list in DFC ==
     def web_DFCdatasetList(self):
         # Load DFC
-        datasetname = ""
+        datasetname = {"":""}
         res = self.fc.getDatasets(datasetname)
         self.log.always(res)
-        if not res["OK"]:
-            self.log.always( "\n".join(res["CallStack"]) )
-        res = self.fc.listDirectory("/")
-        self.log.always(res)
+        #if not res["OK"]:
+        #    self.log.always( "\n".join(res["CallStack"]) )
+        #res = self.fc.listDirectory("/")
+        #self.log.always(res)
         
         # use RPCClient
         transferRequest = RPCClient("Transfer/Dataset")

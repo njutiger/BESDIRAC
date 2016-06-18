@@ -129,6 +129,24 @@ class TransferAppHandler(WebHandler):
                 })
         self.write({"result": data})
 
+    # == list in DFC ==
+    def web_DFCdatasetListFiles(self):
+        dataset = None
+        if self.request.arguments.get("dataset", None):
+            dataset = self.request.arguments["dataset"][0]
+        data = []
+        cache = []
+        if dataset:
+            # TODO
+            pass
+
+        for i,f,di in cache:
+            data.append({
+                "id": i,
+                "file": f,
+            })
+        self.write({"result": data})
+
     # = transfer request (not including file list) =
     # == list ==
     def web_requestList(self):

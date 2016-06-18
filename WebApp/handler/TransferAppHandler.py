@@ -138,7 +138,9 @@ class TransferAppHandler(WebHandler):
         cache = []
         if dataset:
             # TODO
-            pass
+            res = self.fc.getDatasetFiles(dataset)
+            self.log.always(res)
+
 
         for i,f,di in cache:
             data.append({

@@ -817,6 +817,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
         // TODO: using DFC dataset interface
         var panel = new Ext.create('Ext.grid.Panel', {
             id: "gPanelDFCDatasetsList", // the datasets name only
+            selModel : Ext.create('Ext.selection.RowModel'),
             store: { // DFC dataset datastore
             proxy : {
                 type : 'ajax',
@@ -873,6 +874,16 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
                 },
             ],
             title: "Datasets list",
+        });
+        panel.getSelectionModel().on('selectionchange', function(sm, selectedRows, r) {
+            console.log(sm);
+            console.log(selectedRows);
+            for (var i = 0; i < selectedRows.length; ++i) {
+                // console.log(selectedRows[i].get("dataset"));
+                // put the name into input box
+                var txt = Ext.getCmp("gUserInputDataset");
+                txt.setValue(selectedRows[i].get("dataset"));
+            }
         });
         var panel_files = new Ext.create('Ext.grid.Panel', {
             id: "gPanelDFCDatasetsListFiles", // the datasets name only

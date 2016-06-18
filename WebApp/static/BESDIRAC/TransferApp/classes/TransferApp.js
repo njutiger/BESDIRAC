@@ -880,7 +880,7 @@ Ext.define('BESDIRAC.TransferApp.classes.TransferApp', {
             proxy : {
                 type : 'ajax',
                 method : 'POST',
-                url : GLOBAL.BASE_URL + 'TransferApp/datasetListFiles',
+                url : GLOBAL.BASE_URL + 'TransferApp/DFCdatasetListFiles',
                 reader : {
                   type : 'json',
                   root : 'result'

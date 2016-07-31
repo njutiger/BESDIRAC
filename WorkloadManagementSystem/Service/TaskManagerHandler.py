@@ -5,7 +5,7 @@ import time
 import json
 
 # DIRAC
-from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK, Time
+from DIRAC                                import gConfig, gLogger, S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler      import RequestHandler, getServiceOption
 from DIRAC.Core.DISET.RPCClient           import RPCClient
 from DIRAC.Core.Security                  import Properties

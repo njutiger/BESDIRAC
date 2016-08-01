@@ -2,7 +2,8 @@
 
 import json
 
-from DIRAC                import gConfig, S_OK, S_ERROR, Time
+from DIRAC                import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.DB   import DB
 
 

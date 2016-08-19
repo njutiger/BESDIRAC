@@ -3,6 +3,9 @@
 import os,sys,time
 from DIRAC.Core.Base import Script
 Script.initialize()
+
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -684,7 +687,7 @@ class Badger:
         """
 
         fc = self.client
-        result = fc.getDatasetFiles(datasetName)
+        result = returnSingleResult(fc.getDatasetFiles(datasetName))
         if result['OK']:
           lfns = result['Value']
           lfns.sort()

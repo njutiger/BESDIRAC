@@ -51,14 +51,14 @@ def getSiteVO( siteName ):
   domain = siteName.split( '.' )[ 0 ]
   if domain == 'CLOUD':
     vos = []
-    images = gConfig.getSections( '%s/CLOUD/%s/cloud/images' % ( _basePath, siteName ) )
-    if images[ 'OK' ]:
-      for image in images[ 'Value' ]:
-        group = gConfig.getValue( '%s/CLOUD/%s/cloud/images/%s/groupOwner' % ( _basePath, siteName, image ) )
-        if group is not None:
-          vos.add( Registry.getVOMSVOForGroup( group.strip() ) )
-        else:
-          return allVOs
+    clouds = gConfig.getSections( '%s/CLOUD/%s/Cloud/' % ( _basePath, siteName ) )
+    if clouds[ 'OK' ]:
+      for cloud in clouds[ 'Value' ]:
+        images = gConfig.getSections( '%s/CLOUD/%s/Cloud/%s/Images' % ( _basePath, siteName, cloud ) )
+        if images[ 'OK' ]:
+          for image in images[ 'Value' ]:
+            vo = gConfig.getValue( '%s/CLOUD/%s/Cloud/%s/Images/%s/VO' % ( _basePath, siteName, cloud, image ) )
+            vos.append( vo )
     if vos:
       return list( set( vos ) )
 

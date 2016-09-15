@@ -90,8 +90,8 @@ class CEBaseTest( TestBase ):
     job = Job()
     job.setName( self.testType )
     job.setJobGroup( 'CE-Test' )
-    job.setExecutable( self.executable[ 0 ], arguments = self.executable[ 1 ] )
-    job.setInputSandbox( '%s/%s' % ( self.__scriptPath, self.executable[ 1 ] ) )
+    job.setExecutable( self.executable )
+    job.setInputSandbox( '%s/%s' % ( self.__scriptPath, self.executable ) )
     if site and not CE:
       job.setDestination( site )
     if CE:
@@ -199,7 +199,7 @@ class CEBaseTest( TestBase ):
         ret = S_OK( { 'Download'  : False, 'Log' : outputRes[ 'Message' ] } )
       else:
         try:
-          logfile = open( '%s/%d/Script1_python.log' % ( self.__logPath, jobID ), 'r' )
+          logfile = open( '%s/%d/Script1_CodeOutput.log' % ( self.__logPath, jobID ), 'r' )
           log = logfile.read()
           logfile.close()
         except IOError, e:

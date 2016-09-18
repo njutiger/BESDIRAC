@@ -1,6 +1,24 @@
 BESDIRAC CHANGELOG
 ==================
 
+v0r16 (2016-09-18)
+---------------------
+
+### New Feature
+- ResourceStatus for IHEP DIRAC monitoring merged
+
+v0r15 (2016-08-22)
+---------------------
+
+### Change
+- Use DIRAC v6r15p13 to test UMN SE
+
+v0r14 (2016-08-01)
+---------------------
+
+### Change
+- Use DIRAC v6r15
+
 v0r13 (2015-10-30)
 ---------------------
 

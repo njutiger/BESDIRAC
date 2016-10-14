@@ -11,7 +11,7 @@ python /cvmfs/juno.ihep.ac.cn/sl6_amd64_gcc44/J16v2r1-Pre2/offline/Examples/Tuto
 """
 
 start = time.time()
-subp = subprocess.Popen( commands, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+subp = subprocess.Popen( ['bash', '-c', commands], stdout = subprocess.PIPE, stderr = subprocess.PIPE )
 stdout, stderr = subp.communicate()
 runningTime = time.time() - start
 
